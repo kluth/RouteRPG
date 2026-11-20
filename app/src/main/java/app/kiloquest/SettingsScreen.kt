@@ -46,6 +46,8 @@ fun SettingsScreen(state: UiState, nav: NavController) {
     BackHandler { if (picker) picker = false else nav.showSettings(false) }
 
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> if (granted) nav.setVoiceMode(true) }
+    val micForCommands = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> if (granted) nav.setVoiceCommands(true) }
+    val ctxForMic = androidx.compose.ui.platform.LocalContext.current
 
     if (picker) {
         app.kiloquest.ui.AvatarPicker(state.avatar, nav::setAvatar) { picker = false }
@@ -74,6 +76,18 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 SettingSwitch(stringResource(R.string.set_navi_voice), stringResource(R.string.set_navi_voice_hint), s.naviVoice) { v -> nav.updateSettings { it.copy(naviVoice = v) } }
                 SettingDivider()
                 SettingSwitch(stringResource(R.string.set_speed_limit), null, s.showSpeedLimit) { v -> nav.updateSettings { it.copy(showSpeedLimit = v) } }
+                SettingDivider()
+                SettingSwitch(stringResource(R.string.set_avoid_tolls), null, s.avoidTolls) { v -> nav.updateSettings { it.copy(avoidTolls = v) } }
+                SettingDivider()
+                SettingSwitch(stringResource(R.string.set_avoid_highways), null, s.avoidHighways) { v -> nav.updateSettings { it.copy(avoidHighways = v) } }
+                SettingDivider()
+                SettingSwitch(stringResource(R.string.set_avoid_ferries), null, s.avoidFerries) { v -> nav.updateSettings { it.copy(avoidFerries = v) } }
+                SettingDivider()
+                SettingSwitch(stringResource(R.string.set_voice_commands), stringResource(R.string.set_voice_commands_hint), s.voiceCommands) { v ->
+                    if (!v) nav.setVoiceCommands(false)
+                    else if (ctxForMic.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) nav.setVoiceCommands(true)
+                    else micForCommands.launch(android.Manifest.permission.RECORD_AUDIO)
+                }
                 SettingDivider()
                 SettingSwitch(stringResource(R.string.set_photo_prompts), stringResource(R.string.set_photo_prompts_hint), s.photoPrompts) { v -> nav.updateSettings { it.copy(photoPrompts = v) } }
                 SettingDivider()

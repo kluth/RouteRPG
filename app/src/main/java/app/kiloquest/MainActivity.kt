@@ -86,12 +86,26 @@ private const val INCIDENT_LAYER = "incident-layer"
 class MainActivity : ComponentActivity() {
     private val vm: NavController by lazy { (application as KiloQuestApp).nav }
 
+    /** Intents von Gemini/Assistant (Navigation, Suche, Aktionen) und `kiloquest://cmd/...` an die App weitergeben. */
+    private fun deliverIntent(i: android.content.Intent?) {
+        val data = i?.dataString ?: return
+        vm.handleIntent(i.action, data)
+        i.data = null // nicht erneut auswerten, wenn die Activity neu gezeichnet wird
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        deliverIntent(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Unter Android 15 ist Edge-to-Edge Pflicht; die Oberflaeche haelt selbst Abstand zu den Systemleisten
         enableEdgeToEdge()
         MapLibre.getInstance(this)
         (application as KiloQuestApp).link.resumeIfPaired()
+        if (savedInstanceState == null) deliverIntent(intent)
         setContent {
             // Benachrichtigungen (Android 13+): damit die Anzeige "Navigation laeuft" sichtbar ist; optional
             val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }

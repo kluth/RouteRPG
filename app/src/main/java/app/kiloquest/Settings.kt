@@ -16,6 +16,12 @@ data class AppSettings(
     val kiloVoice: Boolean = true,
     val keepScreenOn: Boolean = true,
     val showSpeedLimit: Boolean = true,
+    /** Routenwuensche: Mautstrassen, Autobahnen, Faehren meiden (gilt fuer jede neue Route). */
+    val avoidTolls: Boolean = false,
+    val avoidHighways: Boolean = false,
+    val avoidFerries: Boolean = false,
+    /** Freisprechen: Befehle mit der Anrede "Kilo" waehrend der Fahrt (Erkennung nur auf dem Geraet, nichts wird gespeichert). */
+    val voiceCommands: Boolean = false,
     /** Roadtrip-Fotostory: das Beifahrer-Geraet wird gelegentlich um ein Foto mit beiden Kameras gebeten. */
     val photoPrompts: Boolean = true,
     /** Fotos zusaetzlich in die Galerie kopieren (Pictures/KiloQuest). */
@@ -47,6 +53,10 @@ internal object SettingsStore {
             kiloVoice = p.getBoolean(P + "kilo_voice", d.kiloVoice),
             keepScreenOn = p.getBoolean(P + "keep_screen_on", d.keepScreenOn),
             showSpeedLimit = p.getBoolean(P + "speed_limit", d.showSpeedLimit),
+            avoidTolls = p.getBoolean(P + "avoid_tolls", d.avoidTolls),
+            avoidHighways = p.getBoolean(P + "avoid_highways", d.avoidHighways),
+            avoidFerries = p.getBoolean(P + "avoid_ferries", d.avoidFerries),
+            voiceCommands = p.getBoolean(P + "voice_commands", d.voiceCommands),
             photoPrompts = p.getBoolean(P + "photo_prompts", d.photoPrompts),
             photosToGallery = p.getBoolean(P + "photos_gallery", d.photosToGallery),
             overspeedWarning = p.getBoolean(P + "overspeed_warning", d.overspeedWarning),
@@ -68,6 +78,10 @@ internal object SettingsStore {
             .putBoolean(P + "kilo_voice", s.kiloVoice)
             .putBoolean(P + "keep_screen_on", s.keepScreenOn)
             .putBoolean(P + "speed_limit", s.showSpeedLimit)
+            .putBoolean(P + "avoid_tolls", s.avoidTolls)
+            .putBoolean(P + "avoid_highways", s.avoidHighways)
+            .putBoolean(P + "avoid_ferries", s.avoidFerries)
+            .putBoolean(P + "voice_commands", s.voiceCommands)
             .putBoolean(P + "photo_prompts", s.photoPrompts)
             .putBoolean(P + "photos_gallery", s.photosToGallery)
             .putBoolean(P + "overspeed_warning", s.overspeedWarning)

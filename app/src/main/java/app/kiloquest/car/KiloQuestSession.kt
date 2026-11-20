@@ -12,8 +12,14 @@ import app.kiloquest.KiloQuestApp
 import kotlinx.coroutines.launch
 
 class KiloQuestSession : Session() {
+    override fun onNewIntent(intent: Intent) {
+        // Gemini/Assistant im Auto: Navigation starten, suchen, Aktionen
+        intent.dataString?.let { (carContext.applicationContext as KiloQuestApp).nav.handleIntent(intent.action, it) }
+    }
+
     override fun onCreateScreen(intent: Intent): Screen {
         val nav = (carContext.applicationContext as KiloQuestApp).nav
+        intent.dataString?.let { nav.handleIntent(intent.action, it) }
         // Position auch ohne Handy-Activity verfolgen
         if (nav.hasLocationPermission()) nav.startLocationUpdates()
         val map = CarMapView(carContext, nav)

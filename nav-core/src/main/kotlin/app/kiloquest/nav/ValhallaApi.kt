@@ -24,7 +24,9 @@ object ValhallaApi {
         excludePolygons: List<List<LatLon>> = emptyList(),
         /** OSRM-kompatible Antwort (enthaelt Spurinformationen), siehe [LaneParser]. */
         osrm: Boolean = false,
-    ): String = buildRequest(listOf(from, to), languageTag, costing, excludePolygons, osrm)
+        /** Mautstrassen, Autobahnen oder Faehren meiden (Valhalla `use_tolls`/`use_highways`/`use_ferry` = 0). */
+        avoid: Set<RouteAvoid> = emptySet(),
+    ): String = buildRequest(listOf(from, to), languageTag, costing, excludePolygons, osrm, avoid)
 
     /** Allgemeine Anfrage mit beliebig vielen Orten (Start, Zwischenziele, Ziel); jedes Teilstueck wird ein "leg". */
     fun buildRequest(
@@ -33,6 +35,7 @@ object ValhallaApi {
         costing: String = "auto",
         excludePolygons: List<List<LatLon>> = emptyList(),
         osrm: Boolean = false,
+        avoid: Set<RouteAvoid> = emptySet(),
     ): String = buildJsonObject {
         put("costing", costing)
         if (osrm) {
@@ -46,6 +49,15 @@ object ValhallaApi {
             put("exclude_polygons", buildJsonArray {
                 for (ring in excludePolygons) add(buildJsonArray {
                     for (p in ring) add(buildJsonArray { add(JsonPrimitive(p.lon)); add(JsonPrimitive(p.lat)) })
+                })
+            })
+        }
+        if (avoid.isNotEmpty()) {
+            put("costing_options", buildJsonObject {
+                put(costing, buildJsonObject {
+                    if (RouteAvoid.TOLLS in avoid) put("use_tolls", 0.0)
+                    if (RouteAvoid.HIGHWAYS in avoid) put("use_highways", 0.0)
+                    if (RouteAvoid.FERRIES in avoid) put("use_ferry", 0.0)
                 })
             })
         }

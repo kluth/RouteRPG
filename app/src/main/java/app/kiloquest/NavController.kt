@@ -80,6 +80,11 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.currentCoroutineContext
 import app.kiloquest.nav.OfflinePackMeta
 import app.kiloquest.nav.OfflinePackCodec
+import app.kiloquest.nav.VoiceCommands
+import app.kiloquest.nav.VoiceCommand
+import app.kiloquest.nav.RouteAvoid
+import app.kiloquest.nav.NavIntents
+import app.kiloquest.nav.NavIntent
 import app.kiloquest.nav.ScenicFinder
 import app.kiloquest.nav.Scenic
 import app.kiloquest.nav.PhotoPrompter
@@ -462,6 +467,7 @@ class NavController(private val app: Application) : KidsActions {
     }
 
     fun selectPlace(place: Place) {
+        oneOffAvoid = emptySet()
         val recents = (listOf(place) + _state.value.recents.filter { it.name != place.name }).take(MAX_RECENTS)
         saveRecents(recents)
         _state.update { it.copy(destination = place, results = emptyList(), recents = recents) }
@@ -518,9 +524,10 @@ class NavController(private val app: Application) : KidsActions {
     /** Route plus Spurinformation (zweite Anfrage im OSRM-Format; Spuren sind optional). */
     private suspend fun loadRoute(from: LatLon, to: LatLon, excludes: List<List<LatLon>>): LoadedRoute {
         val lang = Locale.getDefault().toLanguageTag()
-        val route = ValhallaApi.parseRoute(fetchRoute(ValhallaApi.buildRouteRequest(from, to, lang, excludePolygons = excludes)))
+        val avoid = routeAvoid()
+        val route = ValhallaApi.parseRoute(fetchRoute(ValhallaApi.buildRouteRequest(from, to, lang, excludePolygons = excludes, avoid = avoid)))
         val lanes = runCatching {
-            LaneParser.parseOsrm(fetchRoute(ValhallaApi.buildRouteRequest(from, to, lang, excludePolygons = excludes, osrm = true)), route)
+            LaneParser.parseOsrm(fetchRoute(ValhallaApi.buildRouteRequest(from, to, lang, excludePolygons = excludes, osrm = true, avoid = avoid)), route)
         }.getOrDefault(emptyList())
         return LoadedRoute(route, lanes)
     }
@@ -716,6 +723,7 @@ class NavController(private val app: Application) : KidsActions {
         logDiary(DiaryKind.TRIP_START, _state.value.destination?.name.orEmpty())
         photoPrompter.start(System.currentTimeMillis())
         startScenicJob()
+        if (_state.value.settings.voiceCommands) startCommandListening()
         // Navigation laeuft auch im Hintergrund/bei gesperrtem Bildschirm weiter (Vordergrunddienst)
         KeepAliveService.start(app)
         _state.value.route?.maneuvers?.firstOrNull()?.instruction?.let(::speak)
@@ -770,6 +778,8 @@ class NavController(private val app: Application) : KidsActions {
         kiloClips.stop()
         photoPrompter.stop()
         scenicJob?.cancel()
+        stopCommandListening()
+        oneOffAvoid = emptySet()
     }
 
     private fun onLocation(loc: Location) {
@@ -1227,6 +1237,197 @@ class NavController(private val app: Application) : KidsActions {
             )
             if (_state.value.lodging?.stopIndex == index) _state.update { it.copy(lodging = ui) }
         }
+    }
+
+    // --- Freihaendige Bedienung: Gemini/Assistant-Intents und Sprachbefehle (Spec 008)
+
+    /** Einmalige Routenwuensche aus einem Intent (z. B. avoid=t); gelten bis zur naechsten manuellen Zielwahl. */
+    private var oneOffAvoid: Set<RouteAvoid> = emptySet()
+
+    private fun routeAvoid(): Set<RouteAvoid> {
+        val s = _state.value.settings
+        return buildSet {
+            if (s.avoidTolls) add(RouteAvoid.TOLLS)
+            if (s.avoidHighways) add(RouteAvoid.HIGHWAYS)
+            if (s.avoidFerries) add(RouteAvoid.FERRIES)
+            addAll(oneOffAvoid)
+        }
+    }
+
+    /** Sprachausgabe fuer Rueckmeldungen auf Sprachbefehle und Intents (nur Audio; Navigationsstimme, folgt deren Einstellung). */
+    private fun say(text: String) = speak(text)
+
+    /** Einstiegspunkt fuer Intents von Gemini/Assistant (`geo:`, `geo.action:`, `google.navigation:`) und `kiloquest://cmd/...`. */
+    fun handleIntent(action: String?, uri: String?) {
+        val intent = NavIntents.parse(action, uri) ?: return
+        when (intent) {
+            is NavIntent.Navigate -> navigateByIntent(intent)
+            is NavIntent.Search -> {
+                search(intent.query)
+                say(app.getString(R.string.intent_search_done))
+            }
+            is NavIntent.Action -> customAction(intent)
+            is NavIntent.Command -> runNamedCommand(intent.name)
+        }
+    }
+
+    private fun navigateByIntent(i: NavIntent.Navigate) {
+        // Google verlangt, dass nicht unterstuetzte Aktionen dem Nutzer gemeldet werden
+        if (i.kind == "add_a_stop") { say(app.getString(R.string.intent_unsupported_stop)); return }
+        oneOffAvoid = i.avoid
+        scope.launch {
+            val place = i.position?.let { Place(i.query ?: app.getString(R.string.intent_destination_unnamed), it) }
+                ?: i.query?.let { q -> runCatching { searchPlaces(q, Locale.getDefault().language).firstOrNull() }.getOrNull() }
+            if (place == null) { say(app.getString(R.string.intent_not_found)); return@launch }
+            _state.update { it.copy(destination = place, results = emptyList(), error = null) }
+            if (i.kind == "navigation") autoStartAfterRoute = true
+            calculateRoute()
+            say(app.getString(if (i.kind == "navigation") R.string.intent_navigating_to else R.string.intent_route_to, place.name))
+        }
+    }
+
+    private fun customAction(a: NavIntent.Action) {
+        when (a.act) {
+            "mute" -> { say(app.getString(R.string.cmd_muted)); updateSettings { it.copy(naviVoice = false) } }
+            "unmute" -> { updateSettings { it.copy(naviVoice = true) }; say(app.getString(R.string.cmd_unmuted)) }
+            "exit_navigation" -> { say(app.getString(R.string.cmd_navigation_ended)); stopNavigation() }
+            "eta", "time_to_destination", "distance_to_destination" -> sayRemaining()
+            "distance_to_next_turn", "time_to_next_turn", "query_next_turn" -> sayNextTurn()
+            "query_destination" -> sayDestination()
+            "query_current_road" -> sayCurrentRoad()
+            "avoid_tolls" -> setAvoid(tolls = true)
+            "allow_tolls" -> setAvoid(tolls = false)
+            "avoid_highways" -> setAvoid(highways = true)
+            "allow_highways" -> setAvoid(highways = false)
+            "avoid_ferries" -> setAvoid(ferries = true)
+            "allow_ferries" -> setAvoid(ferries = false)
+            else -> say(app.getString(R.string.intent_unsupported))
+        }
+    }
+
+    private fun setAvoid(tolls: Boolean? = null, highways: Boolean? = null, ferries: Boolean? = null) {
+        updateSettings { it.copy(avoidTolls = tolls ?: it.avoidTolls, avoidHighways = highways ?: it.avoidHighways, avoidFerries = ferries ?: it.avoidFerries) }
+        val text = when {
+            tolls == true -> R.string.cmd_avoid_tolls
+            tolls == false -> R.string.cmd_allow_tolls
+            highways == true -> R.string.cmd_avoid_highways
+            highways == false -> R.string.cmd_allow_highways
+            ferries == true -> R.string.cmd_avoid_ferries
+            else -> R.string.cmd_allow_ferries
+        }
+        say(app.getString(text))
+        // Laufende oder gezeigte Route mit den neuen Wuenschen neu berechnen
+        if (_state.value.destination != null && _state.value.route != null) calculateRoute()
+    }
+
+    private fun sayRemaining() {
+        val s = _state.value
+        val route = s.route
+        val g = s.guidance
+        if (route == null || g == null) { say(app.getString(R.string.cmd_no_trip)); return }
+        val seconds = if (route.lengthMeters > 0) route.durationSeconds * (g.remainingMeters / route.lengthMeters) else 0.0
+        val minutes = (seconds / 60).toInt().coerceAtLeast(0)
+        val duration = if (minutes >= 60) app.getString(R.string.unit_h_min, minutes / 60, minutes % 60) else app.getString(R.string.unit_min, minutes)
+        val clock = java.time.LocalTime.now().plusSeconds(seconds.toLong()).format(java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT))
+        say(app.getString(R.string.cmd_eta, duration, clock, distanceText(g.remainingMeters)))
+    }
+
+    private fun sayNextTurn() {
+        val s = _state.value
+        val g = s.guidance
+        val m = g?.let { s.route?.maneuvers?.getOrNull(it.nextManeuverIndex) }
+        if (g == null || m == null) { say(app.getString(R.string.cmd_no_trip)); return }
+        say(app.getString(R.string.cmd_next_turn, m.instruction, distanceText(g.metersToNextManeuver)))
+    }
+
+    private fun sayDestination() {
+        val name = _state.value.destination?.name
+        say(if (name.isNullOrBlank()) app.getString(R.string.cmd_no_trip) else app.getString(R.string.cmd_destination, name))
+    }
+
+    private fun sayCurrentRoad() {
+        val s = _state.value
+        val idx = (s.guidance?.nextManeuverIndex ?: 0) - 1
+        val road = s.route?.maneuvers?.getOrNull(idx.coerceAtLeast(0))?.streetNames?.firstOrNull()
+        say(if (road.isNullOrBlank()) app.getString(R.string.cmd_unknown_road) else app.getString(R.string.cmd_current_road, road))
+    }
+
+    private fun sayLimit() {
+        val limit = _state.value.speedLimit
+        say(if (limit == null || limit >= SpeedProfile.UNLIMITED) app.getString(R.string.cmd_no_limit) else app.getString(R.string.cmd_limit, limit))
+    }
+
+    private fun runNamedCommand(name: String) {
+        val cmd = when (name) {
+            "toilet" -> VoiceCommand.TOILET
+            "break" -> VoiceCommand.BREAK
+            "story" -> VoiceCommand.STORY
+            "mute" -> VoiceCommand.MUTE
+            "unmute" -> VoiceCommand.UNMUTE
+            "eta" -> VoiceCommand.ETA
+            else -> null
+        }
+        if (cmd == null) say(app.getString(R.string.intent_unsupported)) else executeCommand(cmd)
+    }
+
+    /** Fuehrt einen erkannten Sprachbefehl aus; die Antwort kommt als Sprachausgabe (der Fahrer muss nichts bedienen). */
+    fun executeCommand(cmd: VoiceCommand) {
+        when (cmd) {
+            VoiceCommand.TOILET -> toiletAlarm()
+            VoiceCommand.BREAK -> { say(app.getString(R.string.cmd_break)); suggestBreakNow() }
+            VoiceCommand.STORY -> tellStory()
+            VoiceCommand.MUTE -> customAction(NavIntent.Action("mute", emptyMap()))
+            VoiceCommand.UNMUTE -> customAction(NavIntent.Action("unmute", emptyMap()))
+            VoiceCommand.ETA -> sayRemaining()
+            VoiceCommand.NEXT_TURN -> sayNextTurn()
+            VoiceCommand.SPEED_LIMIT -> sayLimit()
+            VoiceCommand.DESTINATION -> sayDestination()
+            VoiceCommand.STOP_NAVIGATION -> customAction(NavIntent.Action("exit_navigation", emptyMap()))
+            VoiceCommand.HELP -> say(app.getString(R.string.cmd_help))
+        }
+    }
+
+    private var commandJob: Job? = null
+
+    /** Schaltet die Freisprech-Erkennung ein/aus (braucht On-Device-Erkennung und Mikrofon-Erlaubnis). Gibt zurueck, ob sie aktiv ist. */
+    fun setVoiceCommands(on: Boolean): Boolean {
+        val allowed = on && VoiceAnswers.isAvailable(app) && hasMicPermission()
+        updateSettings { it.copy(voiceCommands = allowed) }
+        if (allowed && _state.value.navigating) startCommandListening() else stopCommandListening()
+        return allowed
+    }
+
+    /** Einmal zuhoeren (Knopf im Beifahrer-Menue): Befehl ohne Anrede. */
+    fun listenForCommand() {
+        if (!VoiceAnswers.isAvailable(app) || !hasMicPermission()) { say(app.getString(R.string.cmd_voice_unavailable)); return }
+        scope.launch {
+            val heard = listenOnce()
+            val cmd = VoiceCommands.parseAny(heard, requireWake = false)
+            if (cmd != null) executeCommand(cmd) else say(app.getString(R.string.cmd_unknown))
+        }
+    }
+
+    /** Dauerhaft zuhoeren, solange navigiert wird: nur Befehle mit "Kilo ..." (nicht beim Sprechen der App, nicht waehrend einer Quiz-Antwort). */
+    private fun startCommandListening() {
+        if (commandJob?.isActive == true) return
+        commandJob = scope.launch {
+            var quiet = 0
+            while (isActive && _state.value.navigating && _state.value.settings.voiceCommands) {
+                if (tts?.isSpeaking == true || kiloClips.isPlaying || (_state.value.voiceMode && _state.value.quest != null)) { delay(1000); continue }
+                val heard = listenOnce()
+                val cmd = VoiceCommands.parseAny(heard, requireWake = true)
+                if (cmd != null) { quiet = 0; executeCommand(cmd); delay(1500); continue }
+                // Bei Stille/Fehlern laenger warten (Akku, Piepton mancher Geraete)
+                quiet = if (heard.isEmpty()) quiet + 1 else 0
+                delay(if (quiet >= 3) 4000 else 600)
+            }
+        }
+    }
+
+    private fun stopCommandListening() {
+        commandJob?.cancel(); commandJob = null
+        voice.stop()
+        _state.update { if (it.listening) it.copy(listening = false) else it }
     }
 
     // --- Roadtrip-Fotostory

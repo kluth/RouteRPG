@@ -70,6 +70,9 @@ fun ParentScreen(state: UiState, nav: NavController) {
                 OutlinedButton(onClick = nav::suggestBreakNow, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.copilot_break_now)) }
             }
             if (state.navigating) {
+                OutlinedButton(onClick = nav::listenForCommand, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.cmd_listen_now)) }
+            }
+            if (state.navigating) {
                 OutlinedButton(onClick = { shooting = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.photo_now)) }
             }
             app.kiloquest.link.KidsStatusCard(

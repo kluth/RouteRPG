@@ -516,3 +516,8 @@ Geschichten im Offline-Paket, schöner Export (PDF/Fotobuch).
 Umgesetzt (Spec 007): Foto-Bitten an den Beifahrer (zufällig oder bei schöner Gegend), Aufnahme mit beiden Kameras (gleichzeitig oder schnell
 nacheinander), Tagebuch-Einträge, Tages-Collage zum Teilen, optionale Galerie-Kopie. Offen: Kamera-Vorschau, Übertragung der Fotos an das
 Hauptgerät, Test auf echten Geräten (gleichzeitige Kameras), Video-Story.
+
+## 48. Freihändige Sprachbedienung
+Umgesetzt (Spec 008): Gemini/Assistant-Intents (`geo:`, `geo.action:`, `google.navigation:`) im Handy und in Android Auto, Sprachbefehle auf dem Gerät
+(„Kilo, …“, Knopf im Beifahrer-Menü), Routenwünsche (Maut, Autobahn, Fähre), eigene Deep Links. Offen: Zwischenstopps, Meldungen, Navigationsstatus
+für Gemini, Test auf echten Geräten und im DHU, Betrieb im Hintergrund.
