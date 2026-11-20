@@ -126,7 +126,7 @@ class AvatarMarker(private val ctx: Context, private val prefix: String, private
         }
         addedImages = names
         val id = Avatars.modelOf(newEmoji)
-        flier = id == "rocket" || id == "ufo" || (sh == null && Avatars.orientOf(newEmoji) != app.kiloquest.game.Orient.SIDE_LEFT)
+        flier = Avatars.isFlier(newEmoji) && sh?.model?.kind != ModelKind.WALKER
         // Fahrzeug-Bilder sind 192 px, Gehfiguren 128 px: gleiche Bildschirmgroesse
         icon?.setProperties(PropertyFactory.iconSize(when { sh == null -> 0.7f; sh.model.kind == ModelKind.WALKER -> 0.65f; else -> 0.5f }))
         puffLayer?.setProperties(PropertyFactory.circleColor(puffColor(newEmoji)))
@@ -138,6 +138,7 @@ class AvatarMarker(private val ctx: Context, private val prefix: String, private
     private fun puffColor(e: String): String = when (Avatars.modelOf(e)) {
         "sailboat", "speedboat", "liner", "rowboat", "cargoship", "galleon" -> "#FFFFFF"
         "rocket", "ufo" -> "#FFC247"
+        "an2", "toyplane" -> "#FFFFFF"
         "train_bullet", "train_city", "train_city_b" -> "#E8E8E8"
         else -> if (Avatars.orientOf(e) == app.kiloquest.game.Orient.POINTER) "#FFFFFF" else "#CFC6B4"
     }

@@ -320,8 +320,8 @@ fun KidMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier) {
         }
 
         // Figur schwebt bzw. federt, ohne Untergrund: 3D-Fahrzeuge als Drehbild, sonst Emoji
-        val isFlier = images == null || avatar == "🚀" || avatar == "🛸"
         val walker = sheet?.model?.kind == app.kiloquest.game.ModelKind.WALKER
+        val isFlier = !walker && app.kiloquest.game.Avatars.isFlier(avatar)
         val springAmp = if (moving) 1.6f else 0.4f
         val lift = if (isFlier) hover else if (walker) 1.dp.toPx() else 2.dp.toPx() + springAmp * dp * sin(shake * 2f * PI.toFloat())
         // Kurvenlage: zu Beginn einer Drehung neigt sich die Figur, dann richtet sie sich auf
@@ -353,6 +353,7 @@ fun KidMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier) {
 private fun puffColorFor(emoji: String): Color = when (app.kiloquest.game.Avatars.modelOf(emoji)) {
     "sailboat", "speedboat", "liner", "rowboat", "cargoship", "galleon" -> Color.White
     "rocket", "ufo" -> Color(0xFFFFC247)
+    "an2", "toyplane" -> Color.White
     "train_bullet", "train_city", "train_city_b" -> Color(0xFFE8E8E8)
     else -> if (app.kiloquest.game.Avatars.orientOf(emoji) == app.kiloquest.game.Orient.POINTER) Color.White else Color(0xFFCFC6B4)
 }

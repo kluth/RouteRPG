@@ -105,7 +105,13 @@ class MainActivity : ComponentActivity() {
                 if (vm.hasLocationPermission()) vm.startLocationUpdates()
                 else launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             }
-            app.kiloquest.ui.KiloQuestTheme { AppScreen(vm) }
+            val settings by vm.state.collectAsState()
+            val dark = when (settings.settings.theme) {
+                ThemeMode.SYSTEM -> androidx.compose.foundation.isSystemInDarkTheme()
+                ThemeMode.LIGHT -> false
+                ThemeMode.DARK -> true
+            }
+            app.kiloquest.ui.KiloQuestTheme(dark = dark) { AppScreen(vm) }
         }
     }
 }
@@ -115,8 +121,8 @@ private fun AppScreen(vm: NavController) {
     val state by vm.state.collectAsState()
     // Waehrend der Navigation bleibt das Display an
     val view = androidx.compose.ui.platform.LocalView.current
-    androidx.compose.runtime.DisposableEffect(state.navigating) {
-        view.keepScreenOn = state.navigating
+    androidx.compose.runtime.DisposableEffect(state.navigating, state.settings.keepScreenOn) {
+        view.keepScreenOn = state.navigating && state.settings.keepScreenOn
         onDispose { view.keepScreenOn = false }
     }
     val win = app.kiloquest.ui.rememberWindowInfo()
@@ -144,7 +150,7 @@ private fun AppScreen(vm: NavController) {
 @Composable
 internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
     val win = app.kiloquest.ui.rememberWindowInfo()
-    val overlays = !state.kidsScreen && !state.tripScreen && !state.riddleScreen && !state.parentScreen
+    val overlays = !state.kidsScreen && !state.tripScreen && !state.riddleScreen && !state.parentScreen && !state.settingsScreen
     // Obere Spalte: Suche/Vorschlaege (vor der Fahrt) bzw. Hinweise unter der Abbiege-Karte (waehrend der Fahrt).
     // Auf breiten Fenstern bleibt sie schmal und links, statt ueber die ganze Breite zu laufen.
     // Querformat waehrend der Fahrt: neben der Abbiege-Karte statt darunter (sonst bleibt zu wenig Platz)
@@ -194,8 +200,8 @@ internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
             QuestsPill({ vm.showKids(true) }, onLongClick = { vm.showParent(true) })
             app.kiloquest.ui.ToiletAlarmButton(vm::toiletAlarm, active = state.toilet?.phase.let { it != null && it != ToiletPhase.NONE })
         }
-        state.lanes?.let { LaneStrip(it, Modifier.align(Alignment.BottomCenter).padding(bottom = if (win.shortHeight) 76.dp else 100.dp)) }
-        SpeedSign(
+        if (state.settings.laneHints) state.lanes?.let { LaneStrip(it, Modifier.align(Alignment.BottomCenter).padding(bottom = if (win.shortHeight) 76.dp else 100.dp)) }
+        if (state.settings.showSpeedLimit) SpeedSign(
             limit = state.speedLimit,
             speedKmh = state.speedKmh,
             overspeed = state.overspeed,
@@ -208,11 +214,12 @@ internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
     if (state.tripScreen) TripScreen(state, vm)
     if (state.riddleScreen) RiddleScreen(state, vm)
     if (state.parentScreen) ParentScreen(state, vm)
+    if (state.settingsScreen) SettingsScreen(state, vm)
     // Gekoppeltes Geraet: Zustand vom Hauptgeraet
     val linkApp = LocalContext.current.applicationContext as? KiloQuestApp
     if (linkApp != null) {
         val client by linkApp.linkClient.state.collectAsState()
-        if (client.status == app.kiloquest.link.ClientStatus.CONNECTED && !state.parentScreen) {
+        if (client.status == app.kiloquest.link.ClientStatus.CONNECTED && !state.parentScreen && !state.settingsScreen) {
             val snap = client.snapshot
             if (client.role == app.kiloquest.link.Role.COPILOT) {
                 app.kiloquest.link.CopilotRemoteScreen(snap) { vm.showParent(true) }
@@ -415,6 +422,9 @@ private fun SearchPanel(state: UiState, vm: NavController) {
             )
             Button(onClick = { vm.search(query) }, enabled = !state.busy, modifier = Modifier.heightIn(min = 52.dp)) {
                 Text(stringResource(R.string.search_action))
+            }
+            androidx.compose.material3.IconButton(onClick = { vm.showSettings(true) }, modifier = Modifier.size(48.dp)) {
+                androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_settings), contentDescription = stringResource(R.string.settings_open))
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

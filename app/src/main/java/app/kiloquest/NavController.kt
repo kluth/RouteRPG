@@ -161,6 +161,8 @@ data class UiState(
     val avatar: String = Avatars.DEFAULT,
     /** Kinderkarte mit echten Kacheln (sonst schematisch); faellt ohne Netz von selbst auf schematisch zurueck. */
     val realMap: Boolean = true,
+    val settings: AppSettings = AppSettings(),
+    val settingsScreen: Boolean = false,
     /** Klo-Alarm: laeuft gerade (Suche, Fahrt zum Halt, Angekommen). */
     val toilet: ToiletState? = null,
     /** Ein Kind (Geraetename) hat "Ich muss mal" gedrueckt. */
@@ -272,6 +274,7 @@ class NavController(private val app: Application) : KidsActions {
             ageBand = runCatching { AgeBand.valueOf(prefs.getString("age", null) ?: "EXPLORER") }.getOrDefault(AgeBand.EXPLORER),
             players = prefs.getInt("players", 1).coerceIn(1, 4),
             realMap = prefs.getBoolean("real_map", true),
+            settings = SettingsStore.load(prefs),
             avatar = prefs.getString("avatar", null)?.let { Avatars.sanitizeCustom(it) } ?: Avatars.DEFAULT,
             album = book.collected.toSet(),
             totalPoints = prefs.getInt("total_points", 0),
@@ -470,6 +473,33 @@ class NavController(private val app: Application) : KidsActions {
     }
 
     /** Figur fuer die eigene Position waehlen (aus dem Katalog oder ein eigenes Emoji); ungueltige Eingaben werden ignoriert. */
+    fun showSettings(show: Boolean) = _state.update { it.copy(settingsScreen = show) }
+
+    fun updateSettings(transform: (AppSettings) -> AppSettings) {
+        val next = transform(_state.value.settings)
+        SettingsStore.save(prefs, next)
+        _state.update { it.copy(settings = next) }
+    }
+
+    /** Zuletzt gesuchte Ziele und Reise-Etappen vergessen. */
+    fun clearRecents() {
+        saveRecents(emptyList())
+        _state.update { it.copy(recents = emptyList()) }
+    }
+
+    /** Gemerkte Inhalte (gestellte Orte, Tiere, Fakten) und die Haeufigkeit fester Aufgaben zuruecksetzen. */
+    fun resetQuestMemory() {
+        prefs.edit().remove("content_used").remove("quest_usage").apply()
+        contentUsed.clear()
+    }
+
+    /** Alle Einstellungen dieses Dialogs auf Standard (Kinder-Daten, Album und Punkte bleiben). */
+    fun resetSettings() {
+        SettingsStore.save(prefs, AppSettings())
+        prefs.edit().putBoolean("sickness_mode", true).putBoolean("real_map", true).putBoolean("car_simple_map", false).apply()
+        _state.update { it.copy(settings = AppSettings(), realMap = true, sicknessMode = true, carSimpleMap = false) }
+    }
+
     override fun setRealMap(on: Boolean) {
         prefs.edit().putBoolean("real_map", on).apply()
         _state.update { it.copy(realMap = on) }
@@ -1016,6 +1046,7 @@ class NavController(private val app: Application) : KidsActions {
 
     /** Wetter entlang der Route zur geschaetzten Ankunftszeit (Open-Meteo); Ansage nur waehrend der Fahrt. */
     private suspend fun refreshWeather(announce: Boolean, speakSummary: Boolean = false) {
+        if (!_state.value.settings.weatherHints) { _state.update { it.copy(weather = null) }; return }
         val route = _state.value.route ?: return
         val along = _state.value.guidance?.alongMeters ?: 0.0
         val samples = WeatherApi.samples(route, along, System.currentTimeMillis() / 1000)
@@ -1050,6 +1081,7 @@ class NavController(private val app: Application) : KidsActions {
     } * 60_000L
 
     private fun updateBreaks(loc: Location, along: Double, nowMs: Long) {
+        if (!_state.value.settings.breakSuggestions) return
         val route = _state.value.route ?: return
         val kmh = if (loc.hasSpeed()) loc.speed * 3.6 else 0.0
         val due = breakPlanner.onTick(nowMs, kmh)
@@ -1199,7 +1231,7 @@ class NavController(private val app: Application) : KidsActions {
         val route = _state.value.route ?: return
         val kmh = if (loc.hasSpeed()) loc.speed * 3.6 else null
         val limit = speedProfile.limitAt(along)
-        val laneNow = laneAnnouncer?.current(along)
+        val laneNow = if (_state.value.settings.laneHints) laneAnnouncer?.current(along) else null
         _state.update {
             it.copy(
                 speedKmh = kmh?.toInt(),
@@ -1208,7 +1240,7 @@ class NavController(private val app: Application) : KidsActions {
                 lanes = laneNow,
             )
         }
-        laneAnnouncer?.next(along)?.let { g ->
+        if (_state.value.settings.laneHints) laneAnnouncer?.next(along)?.let { g ->
             val res = when (g.hint()) {
                 LaneHint.LEFT -> R.string.lane_hint_left
                 LaneHint.RIGHT -> R.string.lane_hint_right
@@ -1297,6 +1329,7 @@ class NavController(private val app: Application) : KidsActions {
     /** Berechnet eine Route um die Meldung herum und schlaegt sie vor, wenn sie sich lohnt. */
     private suspend fun considerReroute(ri: RouteIncident) {
         advisor.markConsidered(ri.incident.id)
+        if (!_state.value.settings.detourSuggestions) return
         val s = _state.value
         val from = s.position ?: return
         val dest = s.destination ?: return
@@ -1329,12 +1362,14 @@ class NavController(private val app: Application) : KidsActions {
 
     /** Navigationsansage: hat Vorrang und unterbricht Quest-Ansagen. */
     private fun speak(text: String) {
+        if (!_state.value.settings.naviVoice) return
         if (foreignActive) endForeign()
         arbiter.navSpoken(System.currentTimeMillis())
         tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "kq-nav-${System.nanoTime()}")
     }
 
     private fun speakQuest(text: String, utteranceId: String = "kq-quest-${System.nanoTime()}") {
+        if (!_state.value.settings.kiloVoice) return
         tts?.speak(text, TextToSpeech.QUEUE_ADD, null, utteranceId)
     }
 
@@ -1452,6 +1487,7 @@ class NavController(private val app: Application) : KidsActions {
 
     /** Zusaetzliche Live-Aufgabe einplanen (siehe BonusPlanner); wird gleich danach regulaer ausgeloest. */
     private fun maybeAddBonus(along: Double, metersToManeuver: Double) {
+        if (!_state.value.settings.liveQuests) return
         val adv = adventure ?: return
         val planner = bonusPlanner ?: return
         val q = planner.next(along, adv.active != null, adv.lastTriggerMeters, adv.upcoming().firstOrNull()?.triggerMeters, metersToManeuver) ?: return

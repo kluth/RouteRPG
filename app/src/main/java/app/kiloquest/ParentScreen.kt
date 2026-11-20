@@ -84,26 +84,9 @@ fun ParentScreen(state: UiState, nav: NavController) {
                 }
             }
 
-            Card(MaterialTheme.colorScheme.surface) {
-                AgePicker(state.ageBand, nav::setAgeBand)
-                PlayerPicker(state.players, nav::setPlayers)
-            }
-
-            Card(MaterialTheme.colorScheme.surface) {
-                SwitchRow(R.string.kids_sickness_mode, null, state.sicknessMode, true, nav::setSicknessMode)
-                SwitchRow(
-                    R.string.voice_mode,
-                    if (state.voiceAvailable) null else R.string.voice_unavailable,
-                    state.voiceMode,
-                    state.voiceAvailable,
-                ) { on ->
-                    if (!on) nav.setVoiceMode(false)
-                    else if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) ==
-                        android.content.pm.PackageManager.PERMISSION_GRANTED
-                    ) nav.setVoiceMode(true)
-                    else micPermission.launch(android.Manifest.permission.RECORD_AUDIO)
-                }
-                SwitchRow(R.string.car_simple_map, R.string.car_simple_map_hint, state.carSimpleMap, true, nav::setCarSimpleMap)
+            OutlinedButton(onClick = { nav.showParent(false); nav.showSettings(true) }, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+                androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_settings), contentDescription = null)
+                Text(stringResource(R.string.settings_open), Modifier.padding(start = 8.dp))
             }
 
             app.kiloquest.link.LinkHostCard()

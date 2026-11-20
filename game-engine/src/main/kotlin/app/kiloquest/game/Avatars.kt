@@ -56,6 +56,7 @@ object Avatars {
             AvatarCategory.HEROES,
             "🦸", "🦹", "🥷", "🧙", "🧚", "🧜", "🧛", "🧞", "🤖", "👽", "👻", "🤴", "👸", "🧑‍🚀", "🧑‍🚒", "🧑‍✈️", "🏴‍☠️", "🥷🏽", "🎅", "⛄",
             "👨", "👴", "👮", "🤓", "👦", "🧔", "👧", "👩", "💁", "👱", "👷", "💂", "🧟",
+            "🛡️", "🤵", "🧕", "🤠", "🕵️", "🧍", "👹",
         ) + a(
             AvatarCategory.FUN,
             "⭐", "🌈", "🔥", "⚡", "🍕", "🍦", "🍩", "⚽", "🏆", "🎸", "🎯", "👑", "💎", "🌟",
@@ -95,14 +96,16 @@ object Avatars {
         "🚆" to "train_bullet", "🚋" to "train_city", "🚂" to "train_city_b",
         "⛵" to "sailboat", "🚤" to "speedboat", "🚢" to "liner", "🛶" to "rowboat", "⛴️" to "cargoship", "🏴‍☠️" to "galleon",
         "🚀" to "rocket", "🛸" to "ufo",
+        "✈️" to "an2", "🛩️" to "toyplane",
     )
     /** Tiere (Kenney Cube Pets) und Personen (Kenney Mini Characters), beide CC0, mit Gehzyklus. */
     private val walkers: Map<String, String> = mapOf(
         "🐶" to "dog", "🐱" to "cat", "🦁" to "lion", "🐯" to "tiger", "🐰" to "bunny", "🐘" to "elephant", "🦒" to "giraffe",
         "🐷" to "pig", "🐮" to "cow", "🐒" to "monkey", "🐠" to "fish", "🦜" to "parrot", "🐥" to "chick", "🐛" to "caterpillar", "🐗" to "hog",
-        "👨" to "male_a", "👴" to "male_b", "👮" to "male_c", "🦹" to "male_d", "🤓" to "male_e", "👦" to "male_f", "🧔" to "male_g",
-        "👧" to "female_a", "👩" to "female_b", "💁" to "female_c", "👸" to "female_d", "🥷" to "female_e", "👱" to "female_f",
-        "👷" to "worker", "🤖" to "robot", "💂" to "soldier", "🤴" to "knight", "👽" to "alien", "🧟" to "zombie", "🦸" to "raider",
+        "👨" to "male_a", "👴" to "male_b", "👮" to "male_c", "🤵" to "male_d", "🤓" to "male_e", "👦" to "male_f", "🧔" to "male_g",
+        "👧" to "female_a", "👩" to "female_b", "💁" to "female_c", "👸" to "female_d", "🧕" to "female_e", "👱" to "female_f",
+        "🦸" to "hero_bolt", "🛡️" to "hero_heart", "🦹" to "hero_green", "🥷" to "ninja", "🕵️" to "agent", "👹" to "ogre", "🧍" to "dummy",
+        "👷" to "worker", "🤖" to "robot", "💂" to "soldier", "🤴" to "knight", "👽" to "alien", "🧟" to "zombie", "🤠" to "raider",
     )
 
     /** Alle 3D-Modelle (fuer den Test, dass jede Datei vorhanden ist). */
@@ -125,6 +128,14 @@ object Avatars {
     }
 
     fun frameFor(headingDegrees: Float?): Int = headingIndex(headingDegrees, FRAMES_3D)
+
+    private val fliers = setOf("rocket", "ufo", "an2", "toyplane")
+
+    /** Schwebt/fliegt statt zu federn: Flugzeuge, Raumschiffe und alle Emoji, die kein Seitenansicht-Fahrzeug sind. */
+    fun isFlier(emoji: String): Boolean {
+        val id = modelOf(emoji)
+        return if (id != null) id in fliers else orientOf(emoji) != Orient.SIDE_LEFT
+    }
 
     fun byCategory(c: AvatarCategory): List<Avatar> = all.filter { it.category == c }
 

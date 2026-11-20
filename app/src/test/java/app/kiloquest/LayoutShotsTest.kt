@@ -79,7 +79,7 @@ class LayoutShotsTest {
         destination = Place("Ziel", curvy.last()),
     )
 
-    private fun shot(name: String, w: Int, h: Int, dark: Boolean = false, state: () -> UiState, screen: Boolean = false, custom: (@androidx.compose.runtime.Composable (UiState) -> Unit)? = null) {
+    private fun shot(name: String, w: Int, h: Int, dark: Boolean = false, state: () -> UiState, screen: Boolean = false, custom: (@androidx.compose.runtime.Composable (UiState) -> Unit)? = null, customVm: (@androidx.compose.runtime.Composable (UiState, NavController) -> Unit)? = null) {
         val app = ApplicationProvider.getApplicationContext<Application>()
         val fake = object : KidsActions {
             override fun answerQuest(choice: Int?) {}
@@ -94,7 +94,7 @@ class LayoutShotsTest {
         rule.setContent {
             KiloQuestTheme(dark = dark) {
                 Box(Modifier.fillMaxSize().background(if (dark) Color(0xFF2B3036) else Color(0xFFE5E1D6))) {
-                    if (custom != null) custom(state()) else if (screen) KidsScreen(state(), fake) else AppOverlays(state(), vm)
+                    if (customVm != null) customVm(state(), vm) else if (custom != null) custom(state()) else if (screen) KidsScreen(state(), fake) else AppOverlays(state(), vm)
                 }
             }
         }
@@ -189,4 +189,19 @@ class LayoutShotsTest {
     })
     @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
     @Test fun avatarPickerAnimals() = shot("avatar-animals-390x844", 390, 844, state = { withMap.copy(avatar = "🐱") }, custom = { s -> app.kiloquest.ui.AvatarPicker(s.avatar, {}, {}) })
+
+    @Config(qualifiers = "w390dp-h1400dp-port-notnight-xxhdpi")
+    @Test fun settingsLong() = shot("settings-390", 390, 1400, state = { UiState(ageBand = AgeBand.EXPLORER, players = 2, avatar = "🚜") }, customVm = { s, vm -> SettingsScreen(s, vm) })
+    @Config(qualifiers = "w390dp-h1400dp-port-night-xxhdpi")
+    @Test fun settingsDark() = shot("settings-390-dark", 390, 1400, dark = true, state = { UiState(ageBand = AgeBand.MINI, players = 1) }, customVm = { s, vm -> SettingsScreen(s, vm) })
+    @Config(qualifiers = "w1000dp-h640dp-land-notnight-xxhdpi")
+    @Test fun settingsTablet() = shot("settings-1000x640", 1000, 640, state = { UiState() }, customVm = { s, vm -> SettingsScreen(s, vm) })
+
+    private fun mapOf(name: String, avatar: String, bearing: Float) = shot(name, 390, 500, state = { withMap.copy(avatar = avatar, bearing = bearing) }, custom = { s -> app.kiloquest.ui.KidMap(s, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize()) })
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi") @Test fun an2East() = mapOf("new-an2-east", "✈️", 90f)
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi") @Test fun an2North() = mapOf("new-an2-north", "✈️", 0f)
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi") @Test fun toyEast() = mapOf("new-toy-east", "🛩️", 90f)
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi") @Test fun toyNorth() = mapOf("new-toy-north", "🛩️", 0f)
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi") @Test fun heroEast() = mapOf("new-hero-east", "🦸", 90f)
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi") @Test fun ninjaSouth() = mapOf("new-ninja-south", "🥷", 180f)
 }
