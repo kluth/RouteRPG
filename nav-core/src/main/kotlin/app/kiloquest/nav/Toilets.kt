@@ -14,15 +14,25 @@ import kotlinx.serialization.json.put
 
 enum class ToiletKind { TOILETS, REST_AREA, SERVICES, FUEL }
 
-data class ToiletStop(val kind: ToiletKind, val name: String?, val position: LatLon)
+/** Ausstattung eines Halts, soweit bekannt (z. B. aus den Betreiberdaten der Autobahn). */
+enum class StopFeature { WHEELCHAIR_WC, PLAYGROUND, RESTAURANT, FUEL, SHOWER }
+
+/** [verified] = Toilette vom Betreiber bestaetigt (Autobahn GmbH), nicht nur aus OpenStreetMap geschlossen. */
+data class ToiletStop(
+    val kind: ToiletKind,
+    val name: String?,
+    val position: LatLon,
+    val verified: Boolean = false,
+    val features: Set<StopFeature> = emptySet(),
+)
 
 /** Ergebnis der Auswahl: Ziel und echte Fahrzeit (Sekunden) dorthin, null wenn nur geschaetzt. */
 data class ToiletChoice(val stop: ToiletStop, val seconds: Double?, val straightMeters: Double, val aheadMeters: Double? = null)
 
 /** Kandidat auf dem weiteren Reiseverlauf: [aheadMeters] bis zur Stelle auf der Route, [offsetMeters] Abstand von der Route (Umweg). */
 data class AheadStop(val stop: ToiletStop, val aheadMeters: Double, val offsetMeters: Double) {
-    /** Je kleiner, desto besser: Strecke bis dorthin plus doppelter Umweg (hin und zurueck). */
-    val score: Double get() = aheadMeters + 2 * offsetMeters
+    /** Je kleiner, desto besser: Strecke bis dorthin plus doppelter Umweg (hin und zurueck); bestaetigte Toiletten zaehlen 1 km naeher. */
+    val score: Double get() = aheadMeters + 2 * offsetMeters - (if (stop.verified) 1_000.0 else 0.0)
 }
 
 /**
@@ -34,7 +44,7 @@ object ToiletFinder {
     private val json = Json { ignoreUnknownKeys = true }
 
     /** Aufschlag in Sekunden: Tankstellen haben meist, aber nicht sicher eine Toilette. */
-    private fun penaltySeconds(k: ToiletKind) = if (k == ToiletKind.FUEL) 90.0 else 0.0
+    private fun penaltySeconds(s: ToiletStop) = (if (s.kind == ToiletKind.FUEL && !s.verified) 90.0 else 0.0) - (if (s.verified) 45.0 else 0.0)
 
     fun buildQuery(pos: LatLon, radiusMeters: Int): String {
         val at = "${"%.5f".format(java.util.Locale.ROOT, pos.lat)},${"%.5f".format(java.util.Locale.ROOT, pos.lon)}"
@@ -71,7 +81,8 @@ object ToiletFinder {
         minAheadMeters: Double = 150.0,
     ): List<AheadStop> {
         val out = ArrayList<AheadStop>()
-        for (c in candidates) {
+        // Bestaetigte Halte zuerst, damit bei Dubletten der Betreiber-Eintrag bleibt
+        for (c in candidates.sortedByDescending { it.verified }) {
             val pr = route.line.project(c.position)
             val ahead = pr.alongMeters - alongMeters
             if (ahead < minAheadMeters || ahead > windowMeters || pr.offsetMeters > corridorMeters) continue
@@ -113,6 +124,13 @@ object ToiletFinder {
         return out
     }
 
+    /**
+     * Fuegt Betreiberdaten ([verified], z. B. Autobahn-Rastplaetze) mit OpenStreetMap-Treffern zusammen: Treffer aus OSM, die
+     * weniger als [mergeMeters] neben einem bestaetigten Halt liegen, sind derselbe Ort und entfallen.
+     */
+    fun merge(osm: List<ToiletStop>, verified: List<ToiletStop>, mergeMeters: Double = 250.0): List<ToiletStop> =
+        verified + osm.filter { o -> verified.none { haversine(it.position, o.position) < mergeMeters } }
+
     fun matrixRequest(from: LatLon, targets: List<ToiletStop>, costing: String = "auto"): String = buildJsonObject {
         put("costing", costing)
         put("sources", buildJsonArray { add(buildJsonObject { put("lat", from.lat); put("lon", from.lon) }) })
@@ -143,10 +161,46 @@ object ToiletFinder {
         candidates.forEachIndexed { i, c ->
             val straight = haversine(pos, c.position)
             val t = seconds?.getOrNull(i)
-            val score = (t ?: (straight / (50.0 / 3.6))) + penaltySeconds(c.kind)
+            val score = (t ?: (straight / (50.0 / 3.6))) + penaltySeconds(c)
             if (seconds != null && t == null) return@forEachIndexed // laut Routing nicht erreichbar
             if (score < bestScore) { bestScore = score; best = ToiletChoice(c, t, straight) }
         }
         return best
+    }
+}
+
+/**
+ * Autobahn-Rastplaetze der Autobahn GmbH (frei, ohne Schluessel): `.../{Autobahn}/services/parking_lorry`. Jeder Eintrag hat
+ * Koordinate, Namen und Ausstattung; hier zaehlen nur Plaetze mit "Toilette vorhanden". Die Betreiberangabe ist verlaesslicher als
+ * OpenStreetMap, gilt aber nur fuer deutsche Autobahnen. Kein Netzwerkcode hier.
+ */
+object AutobahnRestAreas {
+    private val json = Json { ignoreUnknownKeys = true }
+
+    fun url(road: String) = AutobahnApi.url(road, "parking_lorry")
+
+    fun parse(body: String): List<ToiletStop> {
+        val items = (json.parseToJsonElement(body).jsonObject["parking_lorry"] as? JsonArray) ?: return emptyList()
+        return items.mapNotNull { runCatching { toStop(it.jsonObject) }.getOrNull() }
+    }
+
+    private fun toStop(o: JsonObject): ToiletStop? {
+        val feats = (o["lorryParkingFeatureIcons"] as? JsonArray).orEmpty().mapNotNull { it.jsonObject["description"]?.jsonPrimitive?.content }
+        if ("Toilette vorhanden" !in feats) return null
+        val c = o["coordinate"]?.jsonObject ?: return null
+        val lat = c["lat"]?.jsonPrimitive?.doubleOrNull ?: return null
+        val lon = c["long"]?.jsonPrimitive?.doubleOrNull ?: return null
+        val restaurant = feats.any { it.startsWith("Raststätte") || it == "Tankstelle mit Raststätte" }
+        val fuel = feats.any { it.startsWith("Tankstelle") }
+        val kind = if (restaurant) ToiletKind.SERVICES else ToiletKind.REST_AREA
+        val features = buildSet {
+            if ("Barrierefreie Toilettenkabine" in feats) add(StopFeature.WHEELCHAIR_WC)
+            if ("Spielplatz" in feats) add(StopFeature.PLAYGROUND)
+            if (restaurant) add(StopFeature.RESTAURANT)
+            if (fuel) add(StopFeature.FUEL)
+            if ("Dusche vorhanden" in feats) add(StopFeature.SHOWER)
+        }
+        val name = o["subtitle"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() }
+        return ToiletStop(kind, name, LatLon(lat, lon), verified = true, features = features)
     }
 }

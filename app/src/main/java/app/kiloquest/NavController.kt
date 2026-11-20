@@ -14,6 +14,8 @@ import androidx.core.content.ContextCompat
 import android.content.Context
 import app.kiloquest.game.AdventureSession
 import app.kiloquest.game.Avatars
+import app.kiloquest.nav.AutobahnRestAreas
+import app.kiloquest.nav.StopFeature
 import app.kiloquest.nav.ToiletChoice
 import app.kiloquest.nav.ToiletFinder
 import app.kiloquest.nav.ToiletKind
@@ -91,6 +93,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 
 data class QuestFeedback(val correct: Boolean, val points: Int, val correctOptionKey: String?)
@@ -1627,12 +1631,34 @@ class NavController(private val app: Application) : KidsActions {
         return findToiletAround(pos)
     }
 
+    /** Autobahn-Rastplaetze mit bestaetigter Toilette fuer die Autobahnen auf dem weiteren Weg (je Autobahn 12 Stunden gemerkt). */
+    private val restAreaCache = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, List<ToiletStop>>>()
+
+    private suspend fun autobahnRestAreas(route: Route, along: Double): List<ToiletStop> {
+        val names = route.maneuvers.filter { it.atMeters + it.lengthMeters >= along }.flatMap { it.streetNames }
+        val roads = AutobahnApi.roadsFromNames(names).take(4)
+        if (roads.isEmpty()) return emptyList()
+        val now = System.currentTimeMillis()
+        return kotlinx.coroutines.coroutineScope {
+            roads.map { r ->
+                async(Dispatchers.IO) {
+                    restAreaCache[r]?.takeIf { now - it.first < 12 * 3_600_000L }?.second
+                        ?: runCatching { AutobahnRestAreas.parse(fetchUrl(AutobahnRestAreas.url(r))) }.getOrNull()?.also { restAreaCache[r] = now to it }
+                        ?: emptyList()
+                }
+            }.awaitAll().flatten()
+        }
+    }
+
     private suspend fun findToiletAhead(route: Route, along: Double, pos: LatLon, corridorMeters: Double): ToiletChoice? {
+        val official = autobahnRestAreas(route, along)
         val tiers = listOf(15_000.0 to corridorMeters, 40_000.0 to corridorMeters * 1.5, 100_000.0 to corridorMeters * 2)
         for ((window, corridor) in tiers) {
             val w = minOf(window, route.lengthMeters - along)
             if (w < 300.0) break
-            val cands = runCatching { ToiletFinder.parse(fetchOverpass(ToiletFinder.buildRouteQuery(route, along, along + w, corridor.toInt()))) }.getOrDefault(emptyList())
+            val osm = runCatching { ToiletFinder.parse(fetchOverpass(ToiletFinder.buildRouteQuery(route, along, along + w, corridor.toInt()))) }.getOrDefault(emptyList())
+            // Betreiberdaten (Autobahn) und OpenStreetMap zusammen; faellt Overpass aus, reichen die Autobahn-Daten allein
+            val cands = ToiletFinder.merge(osm, official)
             val top = ToiletFinder.ahead(cands, route, along, w, corridor).take(8)
             if (top.isEmpty()) continue
             val stops = top.map { it.stop }
@@ -1667,7 +1693,9 @@ class NavController(private val app: Application) : KidsActions {
                 ToiletKind.FUEL -> R.string.toilet_kind_fuel
             },
         )
-        return if (s.name.isNullOrBlank()) kind else "$kind ${s.name}"
+        val base = if (s.name.isNullOrBlank()) kind else "$kind ${s.name}"
+        // Autobahn-Rastplaetze melden Spielplatz und Rollstuhl-WC: fuer Familien nuetzlich
+        return if (StopFeature.PLAYGROUND in s.features) base + " (" + app.getString(R.string.break_playground) + ")" else base
     }
 
     /** "Weiter": zurueck zum alten Ziel (oder Navigation beenden, wenn es keines gab). Gilt auch als Abbrechen. */

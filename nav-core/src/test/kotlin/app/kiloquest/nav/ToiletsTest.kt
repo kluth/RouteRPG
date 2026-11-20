@@ -107,4 +107,34 @@ class ToiletsTest {
         val x = at(ToiletKind.TOILETS, 51.06); val y = at(ToiletKind.TOILETS, 51.06005)
         assertEquals(1, ToiletFinder.ahead(listOf(x, y), route, 0.0, 20_000.0, 1_000.0).size)
     }
+
+    private fun res(n: String) = ToiletsTest::class.java.getResource("/$n")!!.readText()
+
+    @Test fun parsesRealAutobahnRestAreasKeepingOnlyThoseWithToilets() {
+        val stops = AutobahnRestAreas.parse(res("autobahn_parking_lorry.json"))
+        assertTrue(stops.isNotEmpty() && stops.size < 4, "the fixture has an entry without toilet: ${stops.size}")
+        assertTrue(stops.all { it.verified && it.position.lat in 47.0..55.5 && it.position.lon in 5.0..15.5 })
+        assertTrue(stops.any { StopFeature.WHEELCHAIR_WC in it.features })
+        assertTrue(stops.any { it.kind == ToiletKind.SERVICES && StopFeature.PLAYGROUND in it.features }, "restaurant + playground entry")
+        assertTrue(stops.all { !it.name.isNullOrBlank() })
+    }
+
+    @Test fun mergeKeepsVerifiedAndDropsOsmTwins() {
+        val v = ToiletStop(ToiletKind.REST_AREA, "Glindebusch", LatLon(53.2006, 9.2971), verified = true)
+        val twin = ToiletStop(ToiletKind.TOILETS, "WC", LatLon(53.2008, 9.2973))       // ca. 25 m daneben: derselbe Ort
+        val other = ToiletStop(ToiletKind.TOILETS, "WC Dorf", LatLon(53.25, 9.35))
+        assertEquals(listOf(v, other), ToiletFinder.merge(listOf(twin, other), listOf(v)))
+    }
+
+    @Test fun verifiedStopsRankAndWinAgainstEqualOsmStops() {
+        val osm = at(ToiletKind.REST_AREA, 51.07)
+        val ver = at(ToiletKind.REST_AREA, 51.0705).copy(verified = true)
+        val ranked = ToiletFinder.ahead(listOf(osm, ver), route, 5_000.0, 20_000.0, 2_000.0)
+        assertEquals(ver.position, ranked.first().stop.position)
+        assertEquals(ver, ToiletFinder.choose(pos, listOf(osm, ver), listOf(300.0, 310.0))!!.stop) // 45 s Bonus gleicht 10 s Rueckstand aus
+        // eine Tankstelle mit bestaetigter Toilette bekommt keinen Tankstellen-Aufschlag mehr
+        val fuelV = at(ToiletKind.FUEL, 51.01).copy(verified = true)
+        val toilets = at(ToiletKind.TOILETS, 51.02)
+        assertEquals(fuelV, ToiletFinder.choose(pos, listOf(toilets, fuelV), listOf(200.0, 190.0))!!.stop)
+    }
 }

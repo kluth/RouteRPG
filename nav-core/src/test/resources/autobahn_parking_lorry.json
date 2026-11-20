@@ -1,0 +1,244 @@
+{
+ "parking_lorry": [
+  {
+   "identifier": "DE-HB-000004",
+   "icon": "314-50",
+   "isBlocked": "false",
+   "future": false,
+   "startLcPosition": "0.663",
+   "display_type": "PARKING",
+   "subtitle": "Krummhörens Kuhlen",
+   "title": "A1 | Puttgarden",
+   "coordinate": {
+    "lat": 53.023113,
+    "long": 8.827308
+   },
+   "description": [
+    "PKW Stellplätze: 18",
+    "LKW Stellplätze: 4"
+   ],
+   "routeRecommendation": [],
+   "footer": [
+    "Koordinaten: 8.827308 lng, 53.023113 lat"
+   ],
+   "lorryParkingFeatureIcons": [
+    {
+     "icon": "almofont almo-restroom",
+     "description": "Toilette vorhanden",
+     "style": ""
+    },
+    {
+     "icon": "WC-Barrierefrei",
+     "description": "Barrierefreie Toilettenkabine",
+     "style": ""
+    },
+    {
+     "icon": "almofont almo-picnic_facility",
+     "description": "Picknickmöglichkeiten",
+     "style": ""
+    },
+    {
+     "icon": "fa fa-trash",
+     "description": "Mülleimer",
+     "style": ""
+    },
+    {
+     "icon": "Wildschutzzaun",
+     "description": "Wildschutzzaun",
+     "style": ""
+    }
+   ]
+  },
+  {
+   "identifier": "DE-NI-262403",
+   "icon": "314-50",
+   "isBlocked": "false",
+   "future": false,
+   "startLcPosition": "1.929",
+   "display_type": "PARKING",
+   "subtitle": "Hollenstedt Nord",
+   "title": "A1 | Saarbrücken",
+   "coordinate": {
+    "lat": 53.366571,
+    "long": 9.736326
+   },
+   "description": [
+    "PKW Stellplätze: 45",
+    "LKW Stellplätze: 34"
+   ],
+   "routeRecommendation": [],
+   "footer": [
+    "Koordinaten: 9.736326 lng, 53.366571 lat"
+   ],
+   "lorryParkingFeatureIcons": [
+    {
+     "icon": "almofont almo-utensils",
+     "description": "Raststätte/Restaurant",
+     "style": ""
+    },
+    {
+     "icon": "almofont almo-hotel",
+     "description": "Motel/Hotel",
+     "style": ""
+    },
+    {
+     "icon": "almofont almo-restroom",
+     "description": "Toilette vorhanden",
+     "style": ""
+    },
+    {
+     "icon": "WC-Barrierefrei",
+     "description": "Barrierefreie Toilettenkabine",
+     "style": ""
+    },
+    {
+     "icon": "ErsteHilfe",
+     "description": "Erste-Hilfe-Ausstattung",
+     "style": ""
+    },
+    {
+     "icon": "fa fa-heartbeat",
+     "description": "Defibrillator",
+     "style": ""
+    },
+    {
+     "icon": "fa fa-trash",
+     "description": "Mülleimer",
+     "style": ""
+    },
+    {
+     "icon": "almofont almo-playground",
+     "description": "Spielplatz",
+     "style": ""
+    },
+    {
+     "icon": "fa fa-shower",
+     "description": "Dusche vorhanden",
+     "style": ""
+    },
+    {
+     "icon": "Wildschutzzaun",
+     "description": "Wildschutzzaun",
+     "style": ""
+    },
+    {
+     "icon": "Laemschutzwand",
+     "description": "Lärmschutzwand",
+     "style": ""
+    }
+   ]
+  },
+  {
+   "identifier": "DE-SL-000003",
+   "icon": "314-50",
+   "isBlocked": "false",
+   "future": false,
+   "startLcPosition": "1.231",
+   "display_type": "PARKING",
+   "subtitle": "Sombach Mühle Ost",
+   "title": "A1 | Puttgarden",
+   "coordinate": {
+    "lat": 49.505158,
+    "long": 6.993234
+   },
+   "description": [
+    "LKW Stellplätze: 7"
+   ],
+   "routeRecommendation": [],
+   "footer": [
+    "Koordinaten: 6.993234 lng, 49.505158 lat"
+   ],
+   "lorryParkingFeatureIcons": [
+    {
+     "icon": "Wildschutzzaun",
+     "description": "Wildschutzzaun",
+     "style": ""
+    },
+    {
+     "icon": "fa fa-trash",
+     "description": "Mülleimer",
+     "style": ""
+    },
+    {
+     "icon": "almofont almo-picnic_facility",
+     "description": "Picknickmöglichkeiten",
+     "style": ""
+    }
+   ]
+  },
+  {
+   "identifier": "DE-NW-000047",
+   "icon": "314-50",
+   "isBlocked": "false",
+   "future": false,
+   "startLcPosition": "1.043",
+   "display_type": "PARKING",
+   "subtitle": "Ville West",
+   "title": "A1 | Saarbrücken",
+   "coordinate": {
+    "lat": 50.857684,
+    "long": 6.804703
+   },
+   "description": [
+    "PKW Stellplätze: 23",
+    "LKW Stellplätze: 55"
+   ],
+   "routeRecommendation": [],
+   "footer": [
+    "Koordinaten: 6.804703 lng, 50.857684 lat"
+   ],
+   "lorryParkingFeatureIcons": [
+    {
+     "icon": "almofont almo-utensils",
+     "description": "Raststätte/Restaurant",
+     "style": ""
+    },
+    {
+     "icon": "almofont almo-gaspump",
+     "description": "Tankstelle",
+     "style": ""
+    },
+    {
+     "icon": "Tank-und-Rast",
+     "description": "Tankstelle mit Raststätte",
+     "style": ""
+    },
+    {
+     "icon": "almofont almo-restroom",
+     "description": "Toilette vorhanden",
+     "style": ""
+    },
+    {
+     "icon": "WC-Barrierefrei",
+     "description": "Barrierefreie Toilettenkabine",
+     "style": ""
+    },
+    {
+     "icon": "fa fa-heartbeat",
+     "description": "Defibrillator",
+     "style": ""
+    },
+    {
+     "icon": "almofont almo-picnic_facility",
+     "description": "Picknickmöglichkeiten",
+     "style": ""
+    },
+    {
+     "icon": "fa fa-shower",
+     "description": "Dusche vorhanden",
+     "style": ""
+    },
+    {
+     "icon": "fa fa-trash",
+     "description": "Mülleimer",
+     "style": ""
+    },
+    {
+     "icon": "Wildschutzzaun",
+     "description": "Wildschutzzaun",
+     "style": ""
+    }
+   ]
+  }
+ ]
+}
