@@ -28,6 +28,12 @@ import app.kiloquest.nav.AnnouncementPlanner
 import app.kiloquest.nav.AutobahnApi
 import app.kiloquest.nav.ExclusionZones
 import app.kiloquest.nav.IncidentMatcher
+import app.kiloquest.nav.LaneAnnouncer
+import app.kiloquest.nav.LaneGuidance
+import app.kiloquest.nav.LaneHint
+import app.kiloquest.nav.LaneParser
+import app.kiloquest.nav.SpeedProfile
+import app.kiloquest.nav.TraceAttributes
 import app.kiloquest.nav.IncidentType
 import app.kiloquest.nav.RerouteAdvisor
 import app.kiloquest.nav.RouteIncident
@@ -58,7 +64,16 @@ fun Context.stringByKey(key: String, args: List<String> = emptyList()): String {
 }
 
 /** Vorschlag fuer eine schnellere Route um eine Verkehrsmeldung herum. */
-data class RerouteProposal(val route: Route, val savedMinutes: Int, val blocked: Boolean, val incident: RouteIncident)
+data class RerouteProposal(
+    val route: Route,
+    val lanes: List<LaneGuidance>,
+    val savedMinutes: Int,
+    val blocked: Boolean,
+    val incident: RouteIncident,
+)
+
+/** Route samt Spurinformation. */
+private data class LoadedRoute(val route: Route, val lanes: List<LaneGuidance>)
 
 data class UiState(
     val results: List<Place> = emptyList(),
@@ -85,12 +100,18 @@ data class UiState(
     val totalPoints: Int = 0,
     val incidents: List<RouteIncident> = emptyList(),
     val proposal: RerouteProposal? = null,
+    val speedKmh: Int? = null,
+    val speedLimit: Int? = null,
+    val overspeed: Boolean = false,
+    val lanes: LaneGuidance? = null,
 )
 
 private const val TRAFFIC_REFRESH_MS = 5 * 60_000L
 private const val MAX_TRAFFIC_ROADS = 10
 private const val ANNOUNCE_AHEAD_METERS = 100_000.0
 private const val MIN_SAVED_MINUTES = 5
+private const val SPEED_WINDOW_METERS = 25_000.0
+private const val SPEED_PREFETCH_METERS = 5_000.0
 
 /** Gemeinsamer Navigationszustand fuer Handy-UI und Android-Auto (lebt im Application-Prozess). */
 class NavController(private val app: Application) {
@@ -103,6 +124,10 @@ class NavController(private val app: Application) {
     private val advisor = RerouteAdvisor()
     private val announcedIncidents = HashSet<String>()
     private var trafficJob: Job? = null
+    private var speedProfile = SpeedProfile()
+    private var speedFetching = false
+    private var speedRetryAt = 0L
+    private var laneAnnouncer: LaneAnnouncer? = null
     /** Meter, die auf frueheren Routen schon gefahren wurden (Quest-Positionen gelten fuer die Gesamtfahrt). */
     private var questOffset = 0.0
     private val book = StickerBook(prefs.getStringSet("album", emptySet()).orEmpty())
@@ -177,12 +202,9 @@ class NavController(private val app: Application) {
         }
         scope.launch {
             _state.update { it.copy(busy = true, error = null) }
-            runCatching {
-                val req = ValhallaApi.buildRouteRequest(from, dest.position, Locale.getDefault().toLanguageTag())
-                ValhallaApi.parseRoute(fetchRoute(req))
-            }.onSuccess { route ->
-                engine = GuidanceEngine(route)
-                planner = AnnouncementPlanner(route)
+            runCatching { loadRoute(from, dest.position, emptyList()) }.onSuccess { loaded ->
+                val route = loaded.route
+                installRoute(loaded)
                 // Abenteuer nur beim ersten Berechnen anlegen, nicht bei Neuberechnung unterwegs
                 if (adventure == null || !_state.value.navigating) newAdventure(route)
                 else questOffset += _state.value.guidance?.alongMeters ?: 0.0
@@ -192,6 +214,26 @@ class NavController(private val app: Application) {
                 _state.update { it.copy(busy = false, error = R.string.error_route) }
             }
         }
+    }
+
+    /** Route plus Spurinformation (zweite Anfrage im OSRM-Format; Spuren sind optional). */
+    private suspend fun loadRoute(from: LatLon, to: LatLon, excludes: List<List<LatLon>>): LoadedRoute {
+        val lang = Locale.getDefault().toLanguageTag()
+        val route = ValhallaApi.parseRoute(fetchRoute(ValhallaApi.buildRouteRequest(from, to, lang, excludePolygons = excludes)))
+        val lanes = runCatching {
+            LaneParser.parseOsrm(fetchRoute(ValhallaApi.buildRouteRequest(from, to, lang, excludePolygons = excludes, osrm = true)), route)
+        }.getOrDefault(emptyList())
+        return LoadedRoute(route, lanes)
+    }
+
+    /** Richtet Fuehrung, Spuren und Tempolimit-Cache fuer eine neue Route ein. */
+    private fun installRoute(l: LoadedRoute) {
+        engine = GuidanceEngine(l.route)
+        planner = AnnouncementPlanner(l.route)
+        laneAnnouncer = LaneAnnouncer(l.lanes)
+        speedProfile = SpeedProfile()
+        speedFetching = false
+        speedRetryAt = 0L
     }
 
     private fun newAdventure(route: Route) {
@@ -282,6 +324,7 @@ class NavController(private val app: Application) {
             it.copy(
                 navigating = false, route = null, destination = null, guidance = null, quest = null, feedback = null,
                 kidsScreen = false, incidents = emptyList(), proposal = null,
+                speedKmh = null, speedLimit = null, overspeed = false, lanes = null,
             )
         }
         trafficJob?.cancel()
@@ -306,6 +349,7 @@ class NavController(private val app: Application) {
             return
         }
         planner?.next(g)?.let(::speak)
+        updateDrivingAssist(loc, g.alongMeters)
         adventure?.onProgress(questOffset + g.alongMeters)?.let { q -> onQuestTriggered(q, pos) }
         arbiter.poll(System.currentTimeMillis(), tts?.isSpeaking == true)?.let(::speakQuest)
         val now = System.currentTimeMillis()
@@ -313,6 +357,59 @@ class NavController(private val app: Application) {
             lastReroute = now
             speak(app.getString(R.string.rerouting))
             calculateRoute()
+        }
+    }
+
+    // ---------------------------------------------------------------- Tempolimit & Spuren
+
+    private fun updateDrivingAssist(loc: Location, along: Double) {
+        val route = _state.value.route ?: return
+        val kmh = if (loc.hasSpeed()) loc.speed * 3.6 else null
+        val limit = speedProfile.limitAt(along)
+        val laneNow = laneAnnouncer?.current(along)
+        _state.update {
+            it.copy(
+                speedKmh = kmh?.toInt(),
+                speedLimit = limit,
+                overspeed = kmh != null && SpeedProfile.isOverspeed(kmh, limit),
+                lanes = laneNow,
+            )
+        }
+        laneAnnouncer?.next(along)?.let { g ->
+            val res = when (g.hint()) {
+                LaneHint.LEFT -> R.string.lane_hint_left
+                LaneHint.RIGHT -> R.string.lane_hint_right
+                LaneHint.MIDDLE -> R.string.lane_hint_middle
+                LaneHint.ANY -> null
+            }
+            if (res != null) speak(app.getString(res))
+        }
+        ensureSpeedWindow(route, along)
+    }
+
+    /** Laedt die Tempolimits fuer die naechsten ca. 25 km nach, bevor das Fenster endet. */
+    private fun ensureSpeedWindow(route: Route, along: Double) {
+        val now = System.currentTimeMillis()
+        if (speedFetching || now < speedRetryAt) return
+        if (speedProfile.coveredUntilMeters >= route.lengthMeters - 1.0) return
+        if (speedProfile.coveredUntilMeters - along > SPEED_PREFETCH_METERS) return
+        speedFetching = true
+        val startM = (along - 200.0).coerceAtLeast(0.0)
+        val endM = minOf(route.lengthMeters, along + SPEED_WINDOW_METERS)
+        val last = route.line.points.size - 1
+        val i0 = route.line.indexAtMeters(startM)
+        val i1 = minOf(last, route.line.indexAtMeters(endM) + 1)
+        if (i1 <= i0) { speedFetching = false; return }
+        scope.launch {
+            val ok = runCatching {
+                val body = fetchValhalla("trace_attributes", TraceAttributes.buildRequest(route, i0, i1))
+                val segs = TraceAttributes.parse(body, route, i0)
+                if (_state.value.route === route) {
+                    speedProfile.addWindow(route.line.cumulative[i0], route.line.cumulative[i1], segs)
+                }
+            }.isSuccess
+            if (!ok) speedRetryAt = System.currentTimeMillis() + 30_000
+            speedFetching = false
         }
     }
 
@@ -371,20 +468,17 @@ class NavController(private val app: Application) {
         val from = s.position ?: return
         val dest = s.destination ?: return
         val route = s.route ?: return
-        val alt = runCatching {
-            val req = ValhallaApi.buildRouteRequest(
-                from, dest.position, Locale.getDefault().toLanguageTag(),
-                excludePolygons = ExclusionZones.forIncident(ri.incident),
-            )
-            ValhallaApi.parseRoute(fetchRoute(req))
+        val loaded = runCatching {
+            loadRoute(from, dest.position, ExclusionZones.forIncident(ri.incident))
         }.getOrNull() ?: return
+        val alt = loaded.route
 
         val remainingFraction = ((s.guidance?.remainingMeters ?: route.lengthMeters) / route.lengthMeters).coerceIn(0.0, 1.0)
         val currentSeconds = route.durationSeconds * remainingFraction + (ri.incident.delayMinutes ?: 0) * 60.0
         val savedMin = ((currentSeconds - alt.durationSeconds) / 60.0).toInt()
         // Bei Vollsperrung immer anbieten, sonst nur wenn es sich lohnt
         if (ri.incident.blocked || savedMin >= MIN_SAVED_MINUTES) {
-            _state.update { it.copy(proposal = RerouteProposal(alt, savedMin.coerceAtLeast(0), ri.incident.blocked, ri)) }
+            _state.update { it.copy(proposal = RerouteProposal(alt, loaded.lanes, savedMin.coerceAtLeast(0), ri.incident.blocked, ri)) }
             speak(app.getString(R.string.reroute_speech))
         }
     }
@@ -392,9 +486,8 @@ class NavController(private val app: Application) {
     fun acceptReroute() {
         val p = _state.value.proposal ?: return
         questOffset += _state.value.guidance?.alongMeters ?: 0.0
-        engine = GuidanceEngine(p.route)
-        planner = AnnouncementPlanner(p.route)
-        _state.update { it.copy(route = p.route, guidance = null, proposal = null, incidents = emptyList()) }
+        installRoute(LoadedRoute(p.route, p.lanes))
+        _state.update { it.copy(route = p.route, guidance = null, proposal = null, incidents = emptyList(), lanes = null) }
         scope.launch { refreshTraffic() }
     }
 

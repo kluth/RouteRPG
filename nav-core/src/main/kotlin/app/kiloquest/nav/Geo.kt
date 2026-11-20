@@ -38,6 +38,17 @@ class Polyline(val points: List<LatLon>) {
     }
     val lengthMeters: Double get() = cumulative.last()
 
+    /** Index des letzten Punktes, der hoechstens [meters] vom Start entfernt liegt. */
+    fun indexAtMeters(meters: Double): Int {
+        var lo = 0
+        var hi = cumulative.size - 1
+        while (lo < hi) {
+            val mid = (lo + hi + 1) ushr 1
+            if (cumulative[mid] <= meters) lo = mid else hi = mid - 1
+        }
+        return lo
+    }
+
     /**
      * Projiziert [p] auf den Linienzug. Es werden nur Segmente ab [fromSegment]
      * bis [fromSegment]+[window] geprueft (Fortschritt kann nicht springen); mit

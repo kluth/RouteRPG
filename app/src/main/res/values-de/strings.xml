@@ -109,4 +109,8 @@
     <string name="reroute_dismiss">Auf Route bleiben</string>
     <string name="reroute_speech">Verkehrsproblem voraus. Eine Umfahrung ist verfügbar. Bitte auf dem Display bestätigen.</string>
     <string name="traffic_banner">%1$s in %2$s (%3$s)</string>
+    <string name="lane_hint_left">Haltet euch links.</string>
+    <string name="lane_hint_right">Haltet euch rechts.</string>
+    <string name="lane_hint_middle">Nehmt die mittleren Spuren.</string>
+    <string name="speed_kmh">%1$d km/h</string>
 </resources>

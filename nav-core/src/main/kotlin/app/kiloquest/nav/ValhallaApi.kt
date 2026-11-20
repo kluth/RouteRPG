@@ -22,8 +22,14 @@ object ValhallaApi {
         costing: String = "auto",
         /** Sperrzonen (Ringe aus Punkten), z. B. um einen Stau, siehe [ExclusionZones]. */
         excludePolygons: List<List<LatLon>> = emptyList(),
+        /** OSRM-kompatible Antwort (enthaelt Spurinformationen), siehe [LaneParser]. */
+        osrm: Boolean = false,
     ): String = buildJsonObject {
         put("costing", costing)
+        if (osrm) {
+            put("format", "osrm")
+            put("banner_instructions", true)
+        }
         put("locations", buildJsonArray {
             add(buildJsonObject { put("lat", from.lat); put("lon", from.lon) })
             add(buildJsonObject { put("lat", to.lat); put("lon", to.lon) })

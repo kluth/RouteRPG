@@ -307,3 +307,12 @@ Grenzen/Offen:
 - Planungsdaten (Baustellen ohne Sperrung) werden bewusst nicht als Problem gewertet, um Fehlalarme zu vermeiden.
 - Keine Crowd-Daten und keine Live-Geschwindigkeiten; die ETA ist nur um die gemeldete Verzögerung angepasst.
 - Meldungstexte kommen im Original (Deutsch) aus der Quelle; Typ und Ansagen sind übersetzt.
+
+## 18. Stand Tempolimit & Spurhinweise
+
+Gebaut (Build/Lint/Tests grün; Datenformate gegen die echte Valhalla-API geprüft, **App selbst noch nicht auf dem Gerät/im Auto erprobt**):
+- **Tempolimit:** Aus Valhalla `/trace_attributes` (`edge_walk` über die Route, Einzelkanten mit `speed_limit` aus OSM `maxspeed`). Es wird fensterweise nachgeladen (25 km voraus, neu ab 5 km vor Fensterende), bei Fehler nach 30 s erneut. Anzeige als Tempolimit-Schild plus aktuelle Geschwindigkeit; Überschreitung (mehr als 3 km/h drüber) färbt das Schild rot. „Kein Limit" (255) zeigt ∞. Unbekanntes Limit: kein Schild. Keine Blitzerwarnung, nur Limit-Anzeige.
+- **Spurhinweise:** Zweite Routenanfrage im OSRM-Format (`format: osrm`) liefert pro Kreuzung die Spuren (gültig/aktiv); sie werden anhand der Manöverposition der nativen Route zugeordnet. Anzeige als Pfeilleiste ab 900 m vor dem Manöver, gesprochener Hinweis einmal ab 700 m („Haltet euch links/rechts/Nehmt die mittleren Spuren"), nur wenn die gültigen Spuren eindeutig links/mittig/rechts liegen.
+- **Auto:** Tempolimit-Schild und Spurpfeile werden auf die Auto-Karte gezeichnet (eigener Canvas). Die offiziellen Spur-Elemente der Car App Library brauchen ein Spurbild (Icon) und sind noch nicht umgesetzt.
+
+Grenzen: OSM-Daten sind lückenhaft (nicht überall Limit/Spuren hinterlegt, variable Anzeigen fehlen), wechselnde Limits (Zeit/Wetter) sind nicht abgedeckt. Die Spuren-Zuordnung setzt voraus, dass beide Anfragen dieselbe Route liefern; bei Abweichung bleiben Spuren leer.

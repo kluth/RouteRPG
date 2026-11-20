@@ -63,11 +63,14 @@ suspend fun searchPlaces(query: String, languageCode: String): List<Place> {
     }
 }
 
-suspend fun fetchRoute(requestJson: String): String {
+suspend fun fetchRoute(requestJson: String): String = fetchValhalla("route", requestJson)
+
+/** POST an den eigenen Valhalla-Server (`route`, `trace_attributes` ...). */
+suspend fun fetchValhalla(endpoint: String, requestJson: String): String {
     val base = BuildConfig.VALHALLA_URL.trimEnd('/')
     require(base.isNotBlank()) { "no server" }
     return http(
-        "$base/route", "POST", requestJson,
+        "$base/$endpoint", "POST", requestJson,
         mapOf("X-Api-Token" to BuildConfig.VALHALLA_TOKEN),
     )
 }

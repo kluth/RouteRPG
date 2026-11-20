@@ -6,13 +6,21 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import app.kiloquest.nav.SpeedProfile
+import app.kiloquest.nav.LaneGuidance
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -94,11 +102,21 @@ private fun AppScreen(vm: NavController) {
             if (!state.navigating) SearchPanel(state, vm)
             state.proposal?.let { ProposalCard(it, vm) }
             if (state.proposal == null) IncidentBanner(state)
+            if (state.navigating) state.lanes?.let { LaneStrip(it) }
             state.error?.let {
                 Surface(tonalElevation = 4.dp, modifier = Modifier.padding(top = 8.dp)) {
                     Text(stringResource(it), Modifier.padding(12.dp), color = MaterialTheme.colorScheme.error)
                 }
             }
+        }
+
+        if (state.navigating && !state.kidsScreen) {
+            SpeedSign(
+                limit = state.speedLimit,
+                speedKmh = state.speedKmh,
+                overspeed = state.overspeed,
+                modifier = Modifier.align(Alignment.BottomStart).padding(start = 12.dp, bottom = 110.dp),
+            )
         }
 
         if (state.kidsScreen) KidsScreen(state, vm)
@@ -180,6 +198,64 @@ private fun ProposalCard(p: RerouteProposal, vm: NavController) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = vm::acceptReroute) { Text(stringResource(R.string.reroute_accept)) }
                 androidx.compose.material3.OutlinedButton(onClick = vm::dismissReroute) { Text(stringResource(R.string.reroute_dismiss)) }
+            }
+        }
+    }
+}
+
+/** Verkehrszeichen-aehnliches Tempolimit; bei Ueberschreitung rot hinterlegt. */
+@Composable
+private fun SpeedSign(limit: Int?, speedKmh: Int?, overspeed: Boolean, modifier: Modifier = Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        if (limit != null) {
+            val unlimited = limit >= SpeedProfile.UNLIMITED
+            Box(
+                Modifier
+                    .size(72.dp)
+                    .background(if (overspeed) Color(0xFFFFCDD2) else Color.White, CircleShape)
+                    .border(7.dp, if (unlimited) Color.Gray else Color(0xFFD32F2F), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    if (unlimited) "∞" else limit.toString(),
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.headlineMedium,
+                )
+            }
+        }
+        if (speedKmh != null) {
+            Surface(tonalElevation = 4.dp, modifier = Modifier.padding(top = 4.dp)) {
+                Text(
+                    stringResource(R.string.speed_kmh, speedKmh),
+                    Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                    color = if (overspeed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
+    }
+}
+
+/** Spurpfeile vor der naechsten Kreuzung: gueltige Spuren hervorgehoben. */
+@Composable
+private fun LaneStrip(g: LaneGuidance) {
+    Surface(tonalElevation = 6.dp, modifier = Modifier.padding(top = 8.dp)) {
+        Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            for (lane in g.lanes) {
+                Box(
+                    Modifier
+                        .size(width = 44.dp, height = 56.dp)
+                        .background(if (lane.valid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        lane.symbol,
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = if (lane.valid) FontWeight.Bold else FontWeight.Normal,
+                        color = if (lane.valid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }

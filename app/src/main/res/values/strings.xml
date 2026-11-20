@@ -109,4 +109,8 @@
     <string name="reroute_dismiss">Stay on route</string>
     <string name="reroute_speech">Traffic ahead. A detour is available. Please confirm on the display.</string>
     <string name="traffic_banner">%1$s in %2$s (%3$s)</string>
+    <string name="lane_hint_left">Keep to the left lanes.</string>
+    <string name="lane_hint_right">Keep to the right lanes.</string>
+    <string name="lane_hint_middle">Take the middle lanes.</string>
+    <string name="speed_kmh">%1$d km/h</string>
 </resources>

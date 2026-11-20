@@ -32,4 +32,29 @@ object PolylineCodec {
         }
         return result
     }
+
+    /** Kodiert Punkte als Polyline (Valhalla: Praezision 6), Gegenstueck zu [decode]. */
+    fun encode(points: List<LatLon>, precision: Int = 6): String {
+        val factor = Math.pow(10.0, precision.toDouble())
+        val sb = StringBuilder()
+        var prevLat = 0L
+        var prevLon = 0L
+        fun put(v: Long) {
+            var x = if (v < 0) (v shl 1).inv() else v shl 1
+            while (x >= 0x20) {
+                sb.append(((0x20 or (x and 0x1f).toInt()) + 63).toChar())
+                x = x shr 5
+            }
+            sb.append((x.toInt() + 63).toChar())
+        }
+        for (p in points) {
+            val lat = Math.round(p.lat * factor)
+            val lon = Math.round(p.lon * factor)
+            put(lat - prevLat)
+            put(lon - prevLon)
+            prevLat = lat
+            prevLon = lon
+        }
+        return sb.toString()
+    }
 }

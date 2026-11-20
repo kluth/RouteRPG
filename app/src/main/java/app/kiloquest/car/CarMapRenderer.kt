@@ -10,6 +10,7 @@ import androidx.car.app.SurfaceCallback
 import androidx.car.app.SurfaceContainer
 import app.kiloquest.NavController
 import app.kiloquest.nav.LatLon
+import app.kiloquest.nav.SpeedProfile
 import kotlin.math.cos
 import kotlin.math.max
 
@@ -29,6 +30,14 @@ class CarMapRenderer(private val nav: NavController) {
     private val posPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL }
     private val posRing = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(30, 136, 229); style = Paint.Style.FILL }
 
+    private val signFill = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; style = Paint.Style.FILL }
+    private val signRing = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.rgb(211, 47, 47); style = Paint.Style.STROKE; strokeWidth = 12f }
+    private val signText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.BLACK; textSize = 56f; textAlign = Paint.Align.CENTER; isFakeBoldText = true
+    }
+    private val laneOn = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.WHITE; textSize = 64f; textAlign = Paint.Align.CENTER; isFakeBoldText = true }
+    private val laneOff = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.GRAY; textSize = 64f; textAlign = Paint.Align.CENTER }
+
     val surfaceCallback = object : SurfaceCallback {
         override fun onSurfaceAvailable(c: SurfaceContainer) { surface = c.surface; redraw() }
         override fun onSurfaceDestroyed(c: SurfaceContainer) { surface = null }
@@ -39,6 +48,31 @@ class CarMapRenderer(private val nav: NavController) {
         val s = surface?.takeIf { it.isValid } ?: return
         val canvas: Canvas = runCatching { s.lockCanvas(null) }.getOrNull() ?: return
         try { draw(canvas) } finally { s.unlockCanvasAndPost(canvas) }
+    }
+
+    /** Tempolimit (oben links im sichtbaren Bereich) und Spurpfeile (unten Mitte). */
+    private fun drawAssist(canvas: Canvas, area: Rect, st: app.kiloquest.UiState) {
+        val limit = st.speedLimit
+        if (st.navigating && limit != null) {
+            val unlimited = limit >= SpeedProfile.UNLIMITED
+            val cx = area.left + 90f
+            val cy = area.top + 90f
+            signFill.color = if (st.overspeed) Color.rgb(255, 205, 210) else Color.WHITE
+            signRing.color = if (unlimited) Color.GRAY else Color.rgb(211, 47, 47)
+            canvas.drawCircle(cx, cy, 64f, signFill)
+            canvas.drawCircle(cx, cy, 64f, signRing)
+            canvas.drawText(if (unlimited) "∞" else limit.toString(), cx, cy + 20f, signText)
+        }
+        val lanes = st.lanes?.lanes
+        if (st.navigating && lanes != null) {
+            val step = 80f
+            var x = area.exactCenterX() - step * (lanes.size - 1) / 2f
+            val y = area.bottom - 60f
+            for (l in lanes) {
+                canvas.drawText(l.symbol, x, y, if (l.valid) laneOn else laneOff)
+                x += step
+            }
+        }
     }
 
     private fun draw(canvas: Canvas) {
@@ -74,6 +108,7 @@ class CarMapRenderer(private val nav: NavController) {
             for (i in 1 until line.size) path.lineTo(x(line[i]), y(line[i]))
             canvas.drawPath(path, routePaint)
         }
+        drawAssist(canvas, area, st)
         if (pos != null) {
             canvas.drawCircle(x(pos), y(pos), 22f, posPaint)
             canvas.drawCircle(x(pos), y(pos), 14f, posRing)
