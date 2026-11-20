@@ -18,10 +18,18 @@ RES = ROOT / "app/src/main/res"
 OUT = ROOT / "design/icon"
 PLAY = ROOT / "store/play"
 
-# ---- Farben (passend zur App: Routenblau, Zielorange)
-BLUE_TOP, BLUE_BOTTOM = "#1768E8", "#0A2A5C"
-PIN_TOP, PIN_BOTTOM = "#FFC83A", "#FF7A00"
-NAVY, GOLD = "#0A2A5C", "#FFD54A"
+# ---- Farbvarianten (Name -> Palette). "default" ist das Standard-Icon; die anderen sind in den Einstellungen waehlbar (activity-alias).
+PALETTES = {
+    "default": dict(bg1="#1768E8", bg2="#0A2A5C", pin1="#FFC83A", pin2="#FF7A00", navy="#0A2A5C", star="#FFD54A", glow=0.22),
+    "night":   dict(bg1="#17243D", bg2="#04080F", pin1="#FFD35C", pin2="#FF9500", navy="#101B30", star="#FFE27A", glow=0.10),
+    "sunset":  dict(bg1="#FF7E5F", bg2="#5B1A8F", pin1="#FFFFFF", pin2="#FFE0B2", navy="#5B1A8F", star="#FFB300", glow=0.25),
+    "forest":  dict(bg1="#2FA463", bg2="#073A2B", pin1="#FFC83A", pin2="#FF7A00", navy="#073A2B", star="#FFD54A", glow=0.20),
+    "mono":    dict(bg1="#444B55", bg2="#101317", pin1="#FFFFFF", pin2="#C5CBD4", navy="#101317", star="#FFFFFF", glow=0.14),
+}
+VARIANTS = list(PALETTES)
+BLUE_TOP, BLUE_BOTTOM = PALETTES["default"]["bg1"], PALETTES["default"]["bg2"]
+PIN_TOP, PIN_BOTTOM = PALETTES["default"]["pin1"], PALETTES["default"]["pin2"]
+NAVY, GOLD = PALETTES["default"]["navy"], PALETTES["default"]["star"]
 
 # ---- Geometrie im 108x108-Raster (sichtbarer Bereich 72x72 in der Mitte, sichere Zone 66x66)
 PIN = "M54,83 C44,72 34,60 34,45 A20,20 0 0 1 74,45 C74,60 64,72 54,83 Z"
@@ -41,14 +49,15 @@ def star(cx, cy, ro, ri, n=5, rot=-90):
 STAR = star(CX, CY + 0.4, 8.3, 3.7)
 CIRCLE = f"M{CX - R_IN},{CY} a{R_IN},{R_IN} 0 1 0 {2 * R_IN},0 a{R_IN},{R_IN} 0 1 0 {-2 * R_IN},0 Z"
 
-DEFS = f"""
+def parts(pal):
+    """(defs, hintergrund, vordergrund, einfarbig) als SVG-Text fuer eine Palette."""
+    defs = f"""
 <defs>
-  <linearGradient id="bg" x1="0" y1="0" x2="108" y2="108" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="{BLUE_TOP}"/><stop offset="1" stop-color="{BLUE_BOTTOM}"/></linearGradient>
-  <radialGradient id="glow" cx="30" cy="24" r="62" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
-  <linearGradient id="pin" x1="54" y1="25" x2="54" y2="83" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="{PIN_TOP}"/><stop offset="1" stop-color="{PIN_BOTTOM}"/></linearGradient>
+  <linearGradient id="bg" x1="0" y1="0" x2="108" y2="108" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="{pal['bg1']}"/><stop offset="1" stop-color="{pal['bg2']}"/></linearGradient>
+  <radialGradient id="glow" cx="30" cy="24" r="62" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFFFF" stop-opacity="{pal['glow']}"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
+  <linearGradient id="pin" x1="54" y1="25" x2="54" y2="83" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="{pal['pin1']}"/><stop offset="1" stop-color="{pal['pin2']}"/></linearGradient>
 </defs>"""
-
-BACKGROUND = f"""
+    bg = f"""
 <rect x="-10" y="-10" width="128" height="128" fill="url(#bg)"/>
 <rect x="-10" y="-10" width="128" height="128" fill="url(#glow)"/>
 <path d="{ROAD}" fill="none" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="13" stroke-linecap="round"/>
@@ -56,43 +65,104 @@ BACKGROUND = f"""
 <path d="M29,30 l1.2,3.2 3.2,1.2 -3.2,1.2 -1.2,3.2 -1.2,-3.2 -3.2,-1.2 3.2,-1.2z" fill="#FFFFFF" fill-opacity="0.6"/>
 <path d="M80,36 l0.9,2.4 2.4,0.9 -2.4,0.9 -0.9,2.4 -0.9,-2.4 -2.4,-0.9 2.4,-0.9z" fill="#FFFFFF" fill-opacity="0.45"/>
 """
-
-FOREGROUND = f"""
+    fg = f"""
 <ellipse cx="54" cy="84.6" rx="12" ry="2.7" fill="#000000" fill-opacity="0.24"/>
 <path d="{PIN}" fill="url(#pin)"/>
 <path d="M40.6,36.5 A15.4,15.4 0 0 1 51,29.4" fill="none" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="1.7" stroke-linecap="round"/>
-<circle cx="{CX}" cy="{CY}" r="{R_IN}" fill="{NAVY}"/>
-<path d="{STAR}" fill="{GOLD}" stroke="{GOLD}" stroke-width="1.5" stroke-linejoin="round"/>
+<circle cx="{CX}" cy="{CY}" r="{R_IN}" fill="{pal['navy']}"/>
+<path d="{STAR}" fill="{pal['star']}" stroke="{pal['star']}" stroke-width="1.5" stroke-linejoin="round"/>
 """
-
-MONOCHROME = f"""
+    mono = f"""
 <path d="{PIN} {CIRCLE}" fill="#000000" fill-rule="evenodd"/>
 <path d="{STAR}" fill="#000000" stroke="#000000" stroke-width="1.5" stroke-linejoin="round"/>
 """
+    return defs, bg, fg, mono
 
 
-def svg(body, view="0 0 108 108", size=1024, clip=None):
-    """clip: None (Vollbild), 'round' oder 'rounded'; das Bild zeigt den sichtbaren Bereich (view)."""
-    x, y, w, h = [float(v) for v in view.split()]
-    mask = ""
-    cp = ""
-    if clip == "round":
-        cp = f'<clipPath id="m"><circle cx="{x + w / 2}" cy="{y + h / 2}" r="{w / 2}"/></clipPath>'
-        mask = ' clip-path="url(#m)"'
-    elif clip == "rounded":
-        cp = f'<clipPath id="m"><rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{w * 0.225}"/></clipPath>'
-        mask = ' clip-path="url(#m)"'
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="{view}">{DEFS}{cp}'
-            f'<g{mask}>{body}</g></svg>')
-
-
+DEFS, BACKGROUND, FOREGROUND, MONOCHROME = parts(PALETTES["default"])
 FULL = BACKGROUND + FOREGROUND
+
+
 VISIBLE = "18 18 72 72"  # der Bereich, den Launcher bei adaptiven Icons zeigen (72 von 108 dp)
 
 
-def png(body, path, size, clip=None, view=VISIBLE):
+# ---- Masken (Formen) fuer Vorschau und PNG-Varianten; Koordinaten im sichtbaren Bereich (x, y, w, h)
+def superellipse(x, y, w, h, n=4.0, steps=96):
+    pts = []
+    for k in range(steps):
+        t = 2 * math.pi * k / steps
+        c, s_ = math.cos(t), math.sin(t)
+        px = x + w / 2 + (w / 2) * math.copysign(abs(c) ** (2 / n), c)
+        py = y + h / 2 + (h / 2) * math.copysign(abs(s_) ** (2 / n), s_)
+        pts.append(f"{px:.2f},{py:.2f}")
+    return "M" + " L".join(pts) + " Z"
+
+
+def polygon_rounded(cx, cy, r, n, rot=-90):
+    pts = [(cx + r * math.cos(math.radians(rot + i * 360 / n)), cy + r * math.sin(math.radians(rot + i * 360 / n))) for i in range(n)]
+    return "M" + " L".join(f"{px:.2f},{py:.2f}" for px, py in pts) + " Z"
+
+
+def scallop(cx, cy, r, bumps=12, depth=0.06, steps=240):
+    pts = []
+    for k in range(steps):
+        t = 2 * math.pi * k / steps
+        rr = r * (1 - depth + depth * math.cos(bumps * t))
+        pts.append(f"{cx + rr * math.cos(t):.2f},{cy + rr * math.sin(t):.2f}")
+    return "M" + " L".join(pts) + " Z"
+
+
+def teardrop(x, y, w, h, big=0.5, small=0.08):
+    rb, rs = w * big, w * small
+    return (f"M{x + rb},{y} H{x + w - rb} A{rb},{rb} 0 0 1 {x + w},{y + rb} V{y + h - rb} A{rb},{rb} 0 0 1 {x + w - rb},{y + h} "
+            f"H{x + rs} A{rs},{rs} 0 0 1 {x},{y + h - rs} V{y + rb} A{rb},{rb} 0 0 1 {x + rb},{y} Z")
+
+
+def shape_path(name, view=VISIBLE):
+    x, y, w, h = [float(v) for v in view.split()]
+    cx, cy = x + w / 2, y + h / 2
+    if name == "circle":
+        return f"M{cx - w / 2},{cy} a{w / 2},{h / 2} 0 1 0 {w},0 a{w / 2},{h / 2} 0 1 0 {-w},0 Z"
+    if name == "squircle":
+        return superellipse(x, y, w, h, 4.0)
+    if name == "rounded":
+        r = w * 0.225
+        return f"M{x + r},{y} H{x + w - r} A{r},{r} 0 0 1 {x + w},{y + r} V{y + h - r} A{r},{r} 0 0 1 {x + w - r},{y + h} H{x + r} A{r},{r} 0 0 1 {x},{y + h - r} V{y + r} A{r},{r} 0 0 1 {x + r},{y} Z"
+    if name == "soft-square":
+        r = w * 0.10
+        return f"M{x + r},{y} H{x + w - r} A{r},{r} 0 0 1 {x + w},{y + r} V{y + h - r} A{r},{r} 0 0 1 {x + w - r},{y + h} H{x + r} A{r},{r} 0 0 1 {x},{y + h - r} V{y + r} A{r},{r} 0 0 1 {x + r},{y} Z"
+    if name == "teardrop":
+        return teardrop(x, y, w, h)
+    if name == "pill":  # senkrechte Kapsel, Inhalt bleibt mittig sichtbar
+        pw = w * 0.80
+        r = pw / 2
+        px = x + (w - pw) / 2
+        return f"M{px + r},{y} A{r},{r} 0 0 1 {px + pw},{y + r} V{y + h - r} A{r},{r} 0 0 1 {px + r},{y + h} A{r},{r} 0 0 1 {px},{y + h - r} V{y + r} A{r},{r} 0 0 1 {px + r},{y} Z"
+    if name == "hexagon":
+        return polygon_rounded(cx, cy, w / 2 * 1.0, 6, rot=-90)
+    if name == "cookie":
+        return scallop(cx, cy, w / 2, 12, 0.055)
+    if name == "square":
+        return f"M{x},{y} H{x + w} V{y + h} H{x} Z"
+    raise ValueError(name)
+
+
+SHAPES = ["square", "soft-square", "rounded", "squircle", "circle", "teardrop", "pill", "hexagon", "cookie"]
+
+
+def svg(body, view="0 0 108 108", size=1024, shape=None, defs=None):
+    """shape: None (Vollbild) oder ein Name aus SHAPES; das Bild zeigt den sichtbaren Bereich (view)."""
+    mask = cp = ""
+    if shape and shape != "square":
+        cp = f'<clipPath id="m"><path d="{shape_path(shape, view)}"/></clipPath>'
+        mask = ' clip-path="url(#m)"'
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="{view}">{defs or DEFS}{cp}'
+            f'<g{mask}>{body}</g></svg>')
+
+
+def png(body, path, size, shape=None, view=VISIBLE, defs=None):
     path.parent.mkdir(parents=True, exist_ok=True)
-    cairosvg.svg2png(bytestring=svg(body, view, size, clip).encode(), write_to=str(path), output_width=size, output_height=size)
+    cairosvg.svg2png(bytestring=svg(body, view, size, shape, defs).encode(), write_to=str(path), output_width=size, output_height=size)
 
 
 def write(path, text):
@@ -115,59 +185,156 @@ def a(c):  # "#RRGGBB" -> "#FFRRGGBB"
     return "#FF" + c[1:].upper()
 
 
-def build_android():
+def glow_hex(opacity):
+    return "#%02XFFFFFF" % round(opacity * 255)
+
+
+def android_layers(pal):
     bg = vd(
-        '    <path android:pathData="M0,0h108v108h-108z">\n' + grad_linear(0, 0, 108, 108, a(BLUE_TOP), a(BLUE_BOTTOM)) + '    </path>\n'
+        '    <path android:pathData="M0,0h108v108h-108z">\n' + grad_linear(0, 0, 108, 108, a(pal["bg1"]), a(pal["bg2"])) + '    </path>\n'
         '    <path android:pathData="M0,0h108v108h-108z">\n'
         '        <aapt:attr name="android:fillColor">\n            <gradient android:type="radial" android:centerX="30" android:centerY="24" android:gradientRadius="62">\n'
-        '                <item android:offset="0" android:color="#38FFFFFF"/>\n                <item android:offset="1" android:color="#00FFFFFF"/>\n            </gradient>\n        </aapt:attr>\n    </path>\n'
+        f'                <item android:offset="0" android:color="{glow_hex(pal["glow"])}"/>\n                <item android:offset="1" android:color="#00FFFFFF"/>\n            </gradient>\n        </aapt:attr>\n    </path>\n'
         f'    <path android:pathData="{ROAD}" android:strokeColor="#26FFFFFF" android:strokeWidth="13" android:strokeLineCap="round"/>\n'
         f'    <path android:pathData="{ROAD}" android:strokeColor="#61FFFFFF" android:strokeWidth="1.3" android:strokeLineCap="round"/>\n'
         '    <path android:pathData="M29,30 l1.2,3.2 3.2,1.2 -3.2,1.2 -1.2,3.2 -1.2,-3.2 -3.2,-1.2 3.2,-1.2z" android:fillColor="#99FFFFFF"/>\n'
         '    <path android:pathData="M80,36 l0.9,2.4 2.4,0.9 -2.4,0.9 -0.9,2.4 -0.9,-2.4 -2.4,-0.9 2.4,-0.9z" android:fillColor="#73FFFFFF"/>\n')
     fg = vd(
         '    <path android:pathData="M42,84.6 a12,2.7 0 1 0 24,0 a12,2.7 0 1 0 -24,0 z" android:fillColor="#3D000000"/>\n'
-        f'    <path android:pathData="{PIN}">\n' + grad_linear(54, 25, 54, 83, a(PIN_TOP), a(PIN_BOTTOM)) + '    </path>\n'
+        f'    <path android:pathData="{PIN}">\n' + grad_linear(54, 25, 54, 83, a(pal["pin1"]), a(pal["pin2"])) + '    </path>\n'
         '    <path android:pathData="M40.6,36.5 A15.4,15.4 0 0 1 51,29.4" android:strokeColor="#8CFFFFFF" android:strokeWidth="1.7" android:strokeLineCap="round"/>\n'
-        f'    <path android:pathData="{CIRCLE}" android:fillColor="{a(NAVY)}"/>\n'
-        f'    <path android:pathData="{STAR}" android:fillColor="{a(GOLD)}" android:strokeColor="{a(GOLD)}" android:strokeWidth="1.5" android:strokeLineJoin="round"/>\n')
+        f'    <path android:pathData="{CIRCLE}" android:fillColor="{a(pal["navy"])}"/>\n'
+        f'    <path android:pathData="{STAR}" android:fillColor="{a(pal["star"])}" android:strokeColor="{a(pal["star"])}" android:strokeWidth="1.5" android:strokeLineJoin="round"/>\n')
+    return bg, fg
+
+
+def build_android():
     mono = vd(
         f'    <path android:pathData="{PIN} {CIRCLE}" android:fillColor="#FF000000" android:fillType="evenOdd"/>\n'
         f'    <path android:pathData="{STAR}" android:fillColor="#FF000000" android:strokeColor="#FF000000" android:strokeWidth="1.5" android:strokeLineJoin="round"/>\n', extra_ns=False)
-    write(RES / "drawable/ic_launcher_background.xml", bg)
-    write(RES / "drawable/ic_launcher_foreground.xml", fg)
     write(RES / "drawable/ic_launcher_monochrome.xml", mono)
-    adaptive = ('<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
-                '    <background android:drawable="@drawable/ic_launcher_background"/>\n    <foreground android:drawable="@drawable/ic_launcher_foreground"/>\n'
-                '    <monochrome android:drawable="@drawable/ic_launcher_monochrome"/>\n</adaptive-icon>\n')
-    write(RES / "mipmap-anydpi-v26/ic_launcher.xml", adaptive)
-    write(RES / "mipmap-anydpi-v26/ic_launcher_round.xml", adaptive)
+    for v, pal in PALETTES.items():
+        suffix = "" if v == "default" else f"_{v}"
+        bg, fg = android_layers(pal)
+        write(RES / f"drawable/ic_launcher{suffix}_background.xml", bg)
+        write(RES / f"drawable/ic_launcher{suffix}_foreground.xml", fg)
+        adaptive = ('<?xml version="1.0" encoding="utf-8"?>\n<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">\n'
+                    f'    <background android:drawable="@drawable/ic_launcher{suffix}_background"/>\n    <foreground android:drawable="@drawable/ic_launcher{suffix}_foreground"/>\n'
+                    '    <monochrome android:drawable="@drawable/ic_launcher_monochrome"/>\n</adaptive-icon>\n')
+        write(RES / f"mipmap-anydpi-v26/ic_launcher{suffix}.xml", adaptive)
+        if v == "default":
+            write(RES / "mipmap-anydpi-v26/ic_launcher_round.xml", adaptive)
+        # Vorschau fuer die Auswahl in den Einstellungen (rund, 192 px)
+        defs, bgs, fgs, _ = parts(pal)
+        png(bgs + fgs, RES / f"drawable-nodpi/icon_preview_{v}.png", 192, "squircle", defs=defs)
     # Mipmap-PNG fuer aeltere Systeme, Verknuepfungen und Werkzeuge: quadratisch (abgerundet) und rund
     for d, px in {"mdpi": 48, "hdpi": 72, "xhdpi": 96, "xxhdpi": 144, "xxxhdpi": 192}.items():
         png(FULL, RES / f"mipmap-{d}/ic_launcher.png", px, "rounded")
-        png(FULL, RES / f"mipmap-{d}/ic_launcher_round.png", px, "round")
+        png(FULL, RES / f"mipmap-{d}/ic_launcher_round.png", px, "circle")
+    # Benachrichtigungs-Symbol (einfarbig, 24 dp): Pin mit Stern-Ausschnitt
+    write(RES / "drawable/ic_stat_kiloquest.xml",
+          '<?xml version="1.0" encoding="utf-8"?>\n<vector xmlns:android="http://schemas.android.com/apk/res/android"\n'
+          '    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">\n'
+          '    <group android:scaleX="0.4" android:scaleY="0.4" android:translateX="-9.6" android:translateY="-9.6">\n'
+          f'        <path android:pathData="{PIN} {CIRCLE}" android:fillColor="#FFFFFFFF" android:fillType="evenOdd"/>\n'
+          f'        <path android:pathData="{STAR}" android:fillColor="#FFFFFFFF" android:strokeColor="#FFFFFFFF" android:strokeWidth="1.5" android:strokeLineJoin="round"/>\n'
+          '    </group>\n</vector>\n')
+    # Start-Bildschirm (Android 12+): Marken-Hintergrund und Vordergrund-Ebene
+    write(RES / "values/themes.xml",
+          '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <style name="Theme.KiloQuest" parent="@android:style/Theme.Material.Light.NoActionBar" />\n</resources>\n')
+    write(RES / "values-v31/themes.xml",
+          '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <style name="Theme.KiloQuest" parent="@android:style/Theme.Material.Light.NoActionBar">\n'
+          f'        <item name="android:windowSplashScreenBackground">{PALETTES["default"]["bg2"]}</item>\n'
+          '        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>\n'
+          '    </style>\n</resources>\n')
 
 
 def build_design():
+    # Quellen (Standard-Palette)
     write(OUT / "kiloquest-icon.svg", svg(FULL, VISIBLE, 1024))
-    write(OUT / "kiloquest-icon-rounded.svg", svg(FULL, VISIBLE, 1024, "rounded"))
-    write(OUT / "kiloquest-icon-round.svg", svg(FULL, VISIBLE, 1024, "round"))
     write(OUT / "kiloquest-icon-background.svg", svg(BACKGROUND, "0 0 108 108", 1024))
     write(OUT / "kiloquest-icon-foreground.svg", svg(FOREGROUND, "0 0 108 108", 1024))
     write(OUT / "kiloquest-icon-monochrome.svg", svg(MONOCHROME, "0 0 108 108", 1024))
+    for sh in SHAPES:
+        write(OUT / f"svg/kiloquest-{sh}.svg", svg(FULL, VISIBLE, 1024, sh))
+    # PNG je Form und Groesse (Standard-Palette)
     sizes = [16, 32, 48, 64, 72, 96, 128, 144, 192, 256, 384, 512, 1024]
-    for s in sizes:
-        png(FULL, OUT / f"png/square/kiloquest-{s}.png", s)
-        png(FULL, OUT / f"png/rounded/kiloquest-{s}.png", s, "rounded")
-        png(FULL, OUT / f"png/round/kiloquest-{s}.png", s, "round")
-    # einfarbig (Vorschau fuer Themed Icons), 432 px = 108 dp bei xxxhdpi
-    cairosvg.svg2png(bytestring=svg(MONOCHROME, "0 0 108 108", 432, None).encode(), write_to=str(OUT / "png/kiloquest-monochrome-432.png"), output_width=432, output_height=432)
-    # WebP und ICO
+    for sh in SHAPES:
+        # die gaengigen Formen in allen Groessen, die uebrigen in den wichtigsten
+        for px in (sizes if sh in ("square", "rounded", "circle") else (48, 96, 192, 512, 1024)):
+            png(FULL, OUT / f"png/{sh}/kiloquest-{px}.png", px, sh)
+    # Farbvarianten (Themes): quadratisch/abgerundet/rund in wenigen Groessen + SVG
+    for v, pal in PALETTES.items():
+        defs, bgs, fgs, mono = parts(pal)
+        write(OUT / f"themes/{v}/kiloquest-{v}.svg", svg(bgs + fgs, VISIBLE, 1024, None, defs))
+        for sh in ("square", "rounded", "circle"):
+            for px in (48, 96, 192, 512, 1024):
+                png(bgs + fgs, OUT / f"themes/{v}/{sh}/kiloquest-{v}-{px}.png", px, sh, defs=defs)
+    # einfarbige Ebene: schwarz auf transparent, weiss auf transparent (fuer dunkle Flaechen)
+    cairosvg.svg2png(bytestring=svg(MONOCHROME, "0 0 108 108", 432).encode(), write_to=str(OUT / "png/monochrome/kiloquest-monochrome-432.png"), output_width=432, output_height=432) if (OUT / "png/monochrome").mkdir(parents=True, exist_ok=True) is None else None
+    white = svg(MONOCHROME.replace("#000000", "#FFFFFF"), "0 0 108 108", 432)
+    cairosvg.svg2png(bytestring=white.encode(), write_to=str(OUT / "png/monochrome/kiloquest-monochrome-white-432.png"), output_width=432, output_height=432)
+    # SVG-Favicon mit Hell-/Dunkelmodus (prefers-color-scheme)
+    ld, lbg, lfg, _ = parts(PALETTES["default"])
+    nd, nbg, nfg, _ = parts(PALETTES["night"])
+    nd_ids = nd.replace('id="bg"', 'id="bgN"').replace('id="glow"', 'id="glowN"').replace('id="pin"', 'id="pinN"')
+    nbg = nbg.replace("url(#bg)", "url(#bgN)").replace("url(#glow)", "url(#glowN)")
+    nfg = nfg.replace("url(#pin)", "url(#pinN)")
+    favicon = ('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="18 18 72 72">'
+               '<style>.d{display:none}@media (prefers-color-scheme: dark){.l{display:none}.d{display:inline}}</style>'
+               f'{ld}{nd_ids}<clipPath id="m"><path d="{shape_path("rounded")}"/></clipPath>'
+               f'<g class="l" clip-path="url(#m)">{lbg}{lfg}</g><g class="d" clip-path="url(#m)">{nbg}{nfg}</g></svg>')
+    write(OUT / "favicon.svg", favicon)
     base = Image.open(OUT / "png/rounded/kiloquest-1024.png").convert("RGBA")
     base.resize((512, 512), Image.LANCZOS).save(OUT / "kiloquest-512.webp", quality=92, method=6)
     base.save(OUT / "kiloquest.ico", sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
+    for px in (180, 192, 512):  # Web-App-Manifest / Apple-Touch (Vollbild, Betriebssystem rundet selbst)
+        png(FULL, OUT / f"web/icon-{px}.png", px)
     # Play Store: 512x512, 32 Bit PNG, quadratisch ohne eigene Rundung (Google maskiert selbst)
     png(FULL, PLAY / "icon-512.png", 512)
+    build_previews()
+
+
+def build_previews():
+    """Uebersichtsbilder: alle Formen, alle Farbvarianten, Themed-Icon-Beispiele (Hell/Dunkel)."""
+    cell, pad = 160, 20
+    sheet = Image.new("RGBA", (len(SHAPES) * (cell + pad) + pad, cell + 2 * pad), (236, 238, 242, 255))
+    for i, sh in enumerate(SHAPES):
+        im = Image.open(OUT / f"png/{sh}/kiloquest-192.png").convert("RGBA").resize((cell, cell), Image.LANCZOS)
+        sheet.alpha_composite(im, (pad + i * (cell + pad), pad))
+    sheet.save(OUT / "preview-shapes.png")
+
+    sheet = Image.new("RGBA", (len(PALETTES) * (cell + pad) + pad, cell + 2 * pad), (236, 238, 242, 255))
+    for i, v in enumerate(PALETTES):
+        im = Image.open(OUT / f"themes/{v}/rounded/kiloquest-{v}-192.png").convert("RGBA").resize((cell, cell), Image.LANCZOS)
+        sheet.alpha_composite(im, (pad + i * (cell + pad), pad))
+    sheet.save(OUT / "preview-colors.png")
+
+    # Themed Icons (Android 13+): das System faerbt die einfarbige Ebene mit Hintergrund-/Vordergrundfarbe der Wallpaper-Palette
+    tints = [  # (Hintergrund, Symbol, Seitenhintergrund)
+        ("#D6E3FF", "#001B3E", "#F4F6FA"), ("#C8F0D2", "#00210E", "#F4F8F5"), ("#FFDCC8", "#331200", "#FAF5F2"), ("#EBD8FF", "#25005A", "#F7F4FA"),
+        ("#2B4678", "#D6E3FF", "#12161C"), ("#265C3A", "#C8F0D2", "#121714"), ("#7A3B1C", "#FFDCC8", "#1A1512"), ("#563B80", "#EBD8FF", "#16121B"),
+    ]
+    cw = 4 * (cell + pad) + pad
+    sheet = Image.new("RGBA", (cw, 2 * (cell + pad) + pad), (255, 255, 255, 255))
+    mono_alpha = Image.open(OUT / "png/monochrome/kiloquest-monochrome-432.png").convert("RGBA").split()[3]
+    for i, (bgc, fgc, page) in enumerate(tints):
+        col, row = i % 4, i // 4
+        x, y = pad + col * (cell + pad), pad + row * (cell + pad)
+        tile = Image.new("RGBA", (cell, cell), page)
+        circle = Image.new("L", (cell * 4, cell * 4), 0)
+        from PIL import ImageDraw
+        ImageDraw.Draw(circle).ellipse((0, 0, cell * 4 - 1, cell * 4 - 1), fill=255)
+        bgimg = Image.new("RGBA", (cell, cell), bgc)
+        tile.paste(bgimg, (0, 0), circle.resize((cell, cell), Image.LANCZOS))
+        fg = Image.new("RGBA", (cell, cell), fgc)
+        # sichtbarer Bereich 72/108: einfarbige Ebene auf 108/72-fache Groesse skalieren und mittig zuschneiden
+        big = mono_alpha.resize((int(cell * 1.5), int(cell * 1.5)), Image.LANCZOS)
+        off = (big.width - cell) // 2
+        mask = big.crop((off, off, off + cell, off + cell))
+        tile.paste(fg, (0, 0), mask)
+        sheet.alpha_composite(tile, (x, y))
+    sheet.save(OUT / "preview-themed.png")
 
 
 if __name__ == "__main__":

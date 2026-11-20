@@ -4,6 +4,9 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
@@ -37,7 +40,7 @@ import app.kiloquest.ui.SettingSwitch
 import app.kiloquest.ui.SettingsSection
 import app.kiloquest.ui.screenColumn
 
-private enum class Dlg { NONE, CAMERAS, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES, SERVER, POWER, STORAGE, VOICE_HELP, CLOUD_WARN }
+private enum class Dlg { NONE, CAMERAS, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES, SERVER, POWER, STORAGE, VOICE_HELP, CLOUD_WARN, APP_ICON }
 
 /** Einstellungen: alles, was sich dauerhaft einstellen laesst, mit Abfragen vor dem Loeschen. */
 @Composable
@@ -79,6 +82,8 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                     stringResource(R.string.set_theme),
                     value = stringResource(themeLabel(s.theme)),
                 ) { dialog = Dlg.THEME }
+                SettingDivider()
+                SettingRow(stringResource(R.string.set_app_icon), stringResource(R.string.set_app_icon_hint), value = stringResource(AppIcon.current(ctx).labelRes)) { dialog = Dlg.APP_ICON }
             }
 
             SettingsSection(stringResource(R.string.sec_navigation)) {
@@ -287,6 +292,30 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                         androidx.compose.material3.TextButton(onClick = { dialog = Dlg.NONE }) { Text(close) }
                     }
                 },
+            )
+        }
+        Dlg.APP_ICON -> {
+            var chosen by rememberSaveable { mutableStateOf(AppIcon.current(ctx).name) }
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { dialog = Dlg.NONE },
+                title = { Text(stringResource(R.string.set_app_icon)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(stringResource(R.string.app_icon_info), style = MaterialTheme.typography.bodySmall)
+                        AppIcon.Variant.entries.forEach { v ->
+                            Row(
+                                Modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(role = androidx.compose.ui.semantics.Role.RadioButton) { chosen = v.name },
+                                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            ) {
+                                androidx.compose.material3.RadioButton(selected = chosen == v.name, onClick = null)
+                                androidx.compose.foundation.Image(painterResource(v.previewRes), contentDescription = null, modifier = Modifier.size(48.dp))
+                                Text(stringResource(v.labelRes), style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
+                    }
+                },
+                confirmButton = { androidx.compose.material3.TextButton(onClick = { AppIcon.apply(ctx, AppIcon.Variant.valueOf(chosen)); dialog = Dlg.NONE }) { Text(stringResource(R.string.dlg_save)) } },
+                dismissButton = { androidx.compose.material3.TextButton(onClick = { dialog = Dlg.NONE }) { Text(cancel) } },
             )
         }
         Dlg.CLOUD_WARN -> androidx.compose.material3.AlertDialog(

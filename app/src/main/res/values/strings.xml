@@ -897,4 +897,12 @@
     <string name="cloud_warn_text">Without an offline speech pack, Android uses the normal speech recognition service of this phone (usually from Google or the phone maker). The recording of what is said in the car can then be sent to that provider\'s servers and may be processed under its privacy terms. This includes voice commands, spoken quiz answers and audio games, so the voices of children can be recorded.\n\nKiloQuest itself stores and sends nothing. Allow this only if you understand and accept it, and only as long as you really need it. Better: download the offline speech pack in the voice input settings. You can switch this off at any time.</string>
     <string name="cloud_warn_allow">I understand, allow</string>
     <string name="voice_help_cloud">Allow anyway …</string>
+    <string name="set_app_icon">App icon</string>
+    <string name="set_app_icon_hint">Choose a colour variant for the launcher icon</string>
+    <string name="app_icon_info">The icon also follows your wallpaper colours if your phone supports themed icons (Android 13+). Changing it may restart the launcher for a moment.</string>
+    <string name="icon_default">Classic blue</string>
+    <string name="icon_night">Night</string>
+    <string name="icon_sunset">Sunset</string>
+    <string name="icon_forest">Forest</string>
+    <string name="icon_mono">Graphite</string>
 </resources>

@@ -68,7 +68,7 @@ class TripReminderWorker(context: Context, params: WorkerParameters) : Coroutine
             val open = PendingIntent.getActivity(c, 0, Intent(c, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
             for (r in due) {
                 val n = NotificationCompat.Builder(c, CHANNEL)
-                    .setSmallIcon(R.drawable.ic_stat_link)
+                    .setSmallIcon(R.drawable.ic_stat_kiloquest)
                     .setContentTitle(ReminderTexts.title(c, r))
                     .setContentText(ReminderTexts.body(c, r))
                     .setStyle(NotificationCompat.BigTextStyle().bigText(ReminderTexts.body(c, r)))

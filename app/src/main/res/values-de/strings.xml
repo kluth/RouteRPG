@@ -897,4 +897,12 @@
     <string name="cloud_warn_text">Ohne Offline-Sprachpaket nutzt Android den normalen Spracherkennungsdienst dieses Handys (meist von Google oder dem Hersteller). Die Aufnahme dessen, was im Auto gesprochen wird, kann dann an die Server dieses Anbieters geschickt und nach dessen Datenschutzbedingungen verarbeitet werden. Das betrifft Sprachbefehle, gesprochene Quiz-Antworten und Hörspiele, also können auch Kinderstimmen aufgenommen werden.\n\nKiloQuest selbst speichert und sendet nichts. Erlaube das nur, wenn du es verstehst und akzeptierst, und nur so lange, wie du es wirklich brauchst. Besser: das Offline-Sprachpaket in den Spracheingabe-Einstellungen herunterladen. Du kannst es jederzeit wieder ausschalten.</string>
     <string name="cloud_warn_allow">Verstanden, erlauben</string>
     <string name="voice_help_cloud">Trotzdem erlauben …</string>
+    <string name="set_app_icon">App-Icon</string>
+    <string name="set_app_icon_hint">Farbvariante für das Icon auf dem Startbildschirm wählen</string>
+    <string name="app_icon_info">Das Icon passt sich außerdem den Hintergrundfarben an, wenn dein Handy Themed Icons kann (Android 13+). Beim Wechsel lädt der Startbildschirm eventuell kurz neu.</string>
+    <string name="icon_default">Klassisch blau</string>
+    <string name="icon_night">Nacht</string>
+    <string name="icon_sunset">Sonnenuntergang</string>
+    <string name="icon_forest">Wald</string>
+    <string name="icon_mono">Graphit</string>
 </resources>
