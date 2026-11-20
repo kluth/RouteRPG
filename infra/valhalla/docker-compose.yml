@@ -1,0 +1,16 @@
+# Lokaler Valhalla-Routingserver (Entwicklung). Ungetestet in dieser Umgebung.
+# Start: docker compose up -d   -> http://localhost:8002/route
+services:
+  valhalla:
+    image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./data:/custom_files
+    environment:
+      - tile_urls=https://download.geofabrik.de/europe/germany/bremen-latest.osm.pbf
+      - use_tiles_ignore_pbf=False
+      - build_elevation=False
+      - build_admins=True
+      - build_time_zones=False
+      - server_threads=2

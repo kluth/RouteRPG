@@ -263,3 +263,10 @@ Umsetzung:
 3. **Rechtsform/Impressum/Datenschutz:** Privatperson oder Unternehmen? (Pflicht für Play Store und DSGVO.)
 4. **iOS/CarPlay:** Später relevant? (Bei Kotlin-Stack wäre das ein eigenes Projekt.)
 5. **Repo-Struktur:** Soll ich das Gradle-Projekt (Phase 0) jetzt aufsetzen?
+
+## 14. Entscheidungen Runde 3 (Phase-0-Start)
+
+- **Arbeitsname:** **KiloQuest** (Kilometer + Quest; international aussprechbar). Paket `app.kiloquest`. Der GitHub-Repo-Name `RouteRPG` bleibt vorerst.
+- **Nutzung:** privat, nur Android, kein iOS.
+- **Budget ≈ 0 €:** Backend zunächst minimal. Karte über OpenFreeMap (frei, ohne Key) für Entwicklung und privaten Gebrauch, später Offline-PMTiles. Routing per Valhalla auf eigenem PC oder Always-Free-VM; Verkehrs-Ingest erst in Phase 3. Keine Pflichtkosten vor einer Veröffentlichung.
+- **Gebaut in Phase 0:** Gradle-Monorepo (`:app`, `:game-engine`), MapLibre-Karte, Quest-Generator mit Tests, i18n (EN Standard, DE), CI, `AGENTS.md`, Valhalla-Compose.
