@@ -1,6 +1,7 @@
 package app.kiloquest.link
 
 import android.app.Application
+import app.kiloquest.KeepAliveService
 import app.kiloquest.NavController
 import app.kiloquest.UiState
 import kotlinx.coroutines.CoroutineScope
@@ -45,7 +46,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
     fun startHosting(): Boolean {
         if (!host.start()) return false
         _state.update { it.copy(hosting = true) }
-        LinkService.start(app) // Prozess am Leben halten, auch wenn die App im Hintergrund ist
+        KeepAliveService.start(app) // Prozess am Leben halten, auch wenn die App im Hintergrund ist
         pushJob?.cancel()
         pushJob = scope.launch {
             var last: UiState? = null

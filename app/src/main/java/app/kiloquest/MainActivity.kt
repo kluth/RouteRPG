@@ -87,8 +87,13 @@ class MainActivity : ComponentActivity() {
         MapLibre.getInstance(this)
         (application as KiloQuestApp).link.resumeIfPaired()
         setContent {
+            // Benachrichtigungen (Android 13+): damit die Anzeige "Navigation laeuft" sichtbar ist; optional
+            val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
             val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
                 if (it) vm.startLocationUpdates()
+                if (android.os.Build.VERSION.SDK_INT >= 33 &&
+                    checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                ) notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
             LaunchedEffect(Unit) {
                 if (vm.hasLocationPermission()) vm.startLocationUpdates()

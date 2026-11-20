@@ -510,6 +510,8 @@ class NavController(private val app: Application) : KidsActions {
     fun startNavigation() {
         if (_state.value.route == null) return
         _state.update { it.copy(navigating = true) }
+        // Navigation laeuft auch im Hintergrund/bei gesperrtem Bildschirm weiter (Vordergrunddienst)
+        KeepAliveService.start(app)
         _state.value.route?.maneuvers?.firstOrNull()?.instruction?.let(::speak)
         usedRiddles.clear()
         breakPlanner = BreakPlanner(intervalMs = breakIntervalMs(_state.value.ageBand))

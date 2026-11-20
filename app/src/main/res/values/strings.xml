@@ -326,4 +326,5 @@
     <string name="link_notif_client">Connected to %1$s</string>
     <string name="link_notif_client_connecting">Connecting to the main device…</string>
     <string name="link_notif_stop">Stop</string>
+    <string name="nav_notif_running">Navigating · %1$s to go</string>
 </resources>

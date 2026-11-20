@@ -9,6 +9,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import app.kiloquest.KeepAliveService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -83,7 +84,7 @@ class BtClient(private val ctx: Context, private val scope: CoroutineScope) {
         wanted = true
         // Zustand sofort setzen, damit der Dienst beim Start schon "aktiv" sieht
         _state.value = ClientState(status = ClientStatus.CONNECTING, hostName = hostNameOf(address))
-        LinkService.start(ctx)
+        KeepAliveService.start(ctx)
         job = scope.launch(Dispatchers.IO) {
             while (isActive && wanted) {
                 _state.update { it.copy(status = ClientStatus.CONNECTING, hostName = hostNameOf(address)) }

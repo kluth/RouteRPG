@@ -326,4 +326,5 @@
     <string name="link_notif_client">Verbunden mit %1$s</string>
     <string name="link_notif_client_connecting">Verbinde mit dem Hauptgerät …</string>
     <string name="link_notif_stop">Beenden</string>
+    <string name="nav_notif_running">Navigation läuft · noch %1$s</string>
 </resources>
