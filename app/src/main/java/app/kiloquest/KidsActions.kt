@@ -14,4 +14,7 @@ interface KidsActions {
     fun setRealMap(on: Boolean)
     /** Spielt eine Kilo-Aufnahme zum Text ab; false, wenn es keine gibt (dann liest die Sprachausgabe des Geraets vor). */
     fun speakAloud(text: String): Boolean = false
+    /** Hoergeschichte zu einem Ort in der Naehe vorlesen lassen (nur auf dem Hauptgeraet). */
+    fun tellStory() {}
+    fun dismissStory() {}
 }

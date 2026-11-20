@@ -609,4 +609,23 @@
     <string name="set_overspeed">Bei Tempoüberschreitung warnen</string>
     <string name="set_overspeed_hint">Sprachansage, wenn du dauerhaft über dem Tempolimit fährst</string>
     <string name="overspeed_warning">Tempolimit %1$d. Bitte langsamer fahren.</string>
+    <string name="diary_open">Reisetagebuch</string>
+    <string name="diary_title">Reisetagebuch</string>
+    <string name="diary_empty">Noch nichts da. Starte eine Fahrt: Länder, Geschichten, Aufgaben und Sticker werden automatisch auf diesem Gerät gespeichert.</string>
+    <string name="diary_stats_trip">%1$d Tage · %2$s · %3$d Länder</string>
+    <string name="diary_stats_play">%1$d Aufgaben · %2$d Punkte · %3$d Sticker · %4$d Geschichten</string>
+    <string name="diary_listen">Nochmal hören</string>
+    <string name="diary_share">Als Text teilen</string>
+    <string name="diary_clear">Tagebuch löschen</string>
+    <string name="diary_clear_msg">Alle Tagebuch-Einträge auf diesem Gerät werden gelöscht. Das lässt sich nicht rückgängig machen.</string>
+    <string name="diary_line_trip">🚗 Fahrt nach %1$s gestartet</string>
+    <string name="diary_line_arrival">🏁 Angekommen in %1$s (%2$s)</string>
+    <string name="diary_line_country">%1$s %2$s</string>
+    <string name="diary_line_story">📖 %1$s</string>
+    <string name="diary_line_quest">⭐ %1$s (+%2$d)</string>
+    <string name="diary_line_sticker">🎁 Neuer Sticker %1$s</string>
+    <string name="kids_story_button">Erzähl mir eine Geschichte</string>
+    <string name="story_loading">Ich suche eine Geschichte in der Nähe…</string>
+    <string name="story_none">Gerade keine Geschichte in der Nähe gefunden.</string>
+    <string name="story_close">Fertig</string>
 </resources>

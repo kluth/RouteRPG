@@ -150,7 +150,7 @@ private fun AppScreen(vm: NavController) {
 @Composable
 internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
     val win = app.kiloquest.ui.rememberWindowInfo()
-    val overlays = !state.kidsScreen && !state.tripScreen && !state.plansScreen && !state.riddleScreen && !state.parentScreen && !state.settingsScreen
+    val overlays = !state.kidsScreen && !state.tripScreen && !state.plansScreen && !state.diaryScreen && !state.riddleScreen && !state.parentScreen && !state.settingsScreen
     // Obere Spalte: Suche/Vorschlaege (vor der Fahrt) bzw. Hinweise unter der Abbiege-Karte (waehrend der Fahrt).
     // Auf breiten Fenstern bleibt sie schmal und links, statt ueber die ganze Breite zu laufen.
     // Querformat waehrend der Fahrt: neben der Abbiege-Karte statt darunter (sonst bleibt zu wenig Platz)
@@ -213,6 +213,7 @@ internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
     if (state.kidsScreen) KidsScreen(state, vm)
     if (state.tripScreen) TripScreen(state, vm)
     if (state.plansScreen) PlansScreen(state, vm)
+    if (state.diaryScreen) DiaryScreen(state, vm)
     if (state.riddleScreen) RiddleScreen(state, vm)
     if (state.parentScreen) ParentScreen(state, vm)
     if (state.settingsScreen) SettingsScreen(state, vm)

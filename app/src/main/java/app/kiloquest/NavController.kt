@@ -80,6 +80,9 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.currentCoroutineContext
 import app.kiloquest.nav.OfflinePackMeta
 import app.kiloquest.nav.OfflinePackCodec
+import app.kiloquest.nav.TravelDiary
+import app.kiloquest.nav.DiaryKind
+import app.kiloquest.nav.DiaryEntry
 import app.kiloquest.nav.OverspeedAlerter
 import app.kiloquest.nav.TripOps
 import app.kiloquest.nav.PlanStay
@@ -188,6 +191,9 @@ data class PlanResult(
     val packMb: Int = 0,
 )
 
+/** Hoergeschichte: wird gesucht ([loading]), ist da ([title]/[text]) oder nicht gefunden ([failed]). */
+data class StoryCard(val loading: Boolean = false, val title: String = "", val text: String = "", val failed: Boolean = false)
+
 private data class LoadedRoute(val route: Route, val lanes: List<LaneGuidance>)
 
 data class UiState(
@@ -251,6 +257,11 @@ data class UiState(
     /** Fest geplante Reisen mit Datum (auch Monate im Voraus). */
     val plans: List<PlannedTrip> = emptyList(),
     val plansScreen: Boolean = false,
+    /** Reisetagebuch (lokal) und seine Ansicht. */
+    val diary: List<DiaryEntry> = emptyList(),
+    val diaryScreen: Boolean = false,
+    /** Hoergeschichte auf Wunsch (Wikipedia, wird vorgelesen). */
+    val storyCard: StoryCard? = null,
     /** Gespeicherte Offline-Pakete (Routen, die ohne Netz navigierbar sind). */
     val packs: List<OfflinePackMeta> = emptyList(),
     val planOpenId: String? = null,
@@ -358,6 +369,7 @@ class NavController(private val app: Application) : KidsActions {
             booked = loadPlaces("booked"),
             plans = PlanStore.decode(prefs.getString("plans", null)),
             packs = packStore.list(),
+            diary = TravelDiary.decode(prefs.getString("diary", null)),
             riddles = loadRiddles(),
             voiceMode = prefs.getBoolean("voice_mode", false),
             voiceAvailable = VoiceAnswers.isAvailable(app),
@@ -647,6 +659,10 @@ class NavController(private val app: Application) : KidsActions {
             if (sticker != null) prefs.edit().putStringSet("album", book.collected.toSet()).apply()
         }
         prefs.edit().putInt("total_points", total).apply()
+        if (q.type != QuestType.STORY) {
+            logDiary(DiaryKind.QUEST, app.stringByKey(q.textKey, q.args).take(90), points = r.pointsAwarded)
+        }
+        sticker?.let { logDiary(DiaryKind.STICKER, it.emoji) }
         arbiter.cancelQuest()
         _state.update {
             it.copy(
@@ -681,6 +697,7 @@ class NavController(private val app: Application) : KidsActions {
     fun startNavigation() {
         if (_state.value.route == null) return
         _state.update { it.copy(navigating = true) }
+        logDiary(DiaryKind.TRIP_START, _state.value.destination?.name.orEmpty())
         // Navigation laeuft auch im Hintergrund/bei gesperrtem Bildschirm weiter (Vordergrunddienst)
         KeepAliveService.start(app)
         _state.value.route?.maneuvers?.firstOrNull()?.instruction?.let(::speak)
@@ -752,6 +769,7 @@ class NavController(private val app: Application) : KidsActions {
                 return
             }
             val stageMessage = onStageArrived()
+            logDiary(DiaryKind.ARRIVAL, _state.value.destination?.name.orEmpty(), meters = _state.value.route?.lengthMeters ?: 0.0)
             speak(stageMessage ?: app.getString(R.string.arrived))
             stopNavigation()
             return
@@ -964,6 +982,7 @@ class NavController(private val app: Application) : KidsActions {
             val previous = _state.value.country
             if (code != previous) {
                 _state.update { it.copy(country = code) }
+                noteCountry(code)
                 if (previous != null) onCountryChanged(code)
             }
             return
@@ -977,6 +996,7 @@ class NavController(private val app: Application) : KidsActions {
                 val previous = _state.value.country
                 if (code == previous) return@launch
                 _state.update { it.copy(country = code) }
+                noteCountry(code)
                 if (previous != null) onCountryChanged(code)
             } finally {
                 countryChecking = false
@@ -1186,6 +1206,70 @@ class NavController(private val app: Application) : KidsActions {
             )
             if (_state.value.lodging?.stopIndex == index) _state.update { it.copy(lodging = ui) }
         }
+    }
+
+    // --- Reisetagebuch und Hoergeschichten
+
+    private fun logDiary(
+        kind: DiaryKind, title: String, text: String = "", country: String? = null, points: Int = 0, meters: Double = 0.0,
+        pos: LatLon? = _state.value.position,
+    ) {
+        val now = System.currentTimeMillis()
+        val e = DiaryEntry(
+            java.util.UUID.randomUUID().toString(), now, java.time.LocalDate.now().toEpochDay().toInt(), kind.name,
+            title.take(200), text.take(1500), country, points, meters, pos?.lat, pos?.lon,
+        )
+        val next = TravelDiary.add(_state.value.diary, e)
+        if (next === _state.value.diary) return
+        prefs.edit().putString("diary", TravelDiary.encode(next)).apply()
+        _state.update { it.copy(diary = next) }
+    }
+
+    fun showDiary(show: Boolean) = _state.update { it.copy(diaryScreen = show) }
+
+    fun clearDiary() {
+        prefs.edit().remove("diary").apply()
+        _state.update { it.copy(diary = emptyList()) }
+    }
+
+    /** Einen Tagebuch-Eintrag mit Text (Geschichte) noch einmal vorlesen. */
+    fun speakDiaryEntry(e: DiaryEntry) {
+        if (e.text.isBlank()) return
+        kiloClips.stop()
+        tts?.speak(e.title + ". " + e.text, TextToSpeech.QUEUE_FLUSH, null, "kq-diary-${System.nanoTime()}")
+    }
+
+    private fun noteCountry(code: String) {
+        if (!_state.value.navigating) return
+        logDiary(DiaryKind.COUNTRY, Locale("", code).getDisplayCountry(Locale.getDefault()), country = code)
+    }
+
+    /** Hoergeschichte auf Wunsch: eine laengere Wikipedia-Geschichte zu einem Ort in der Naehe, vorgelesen und im Tagebuch gemerkt. */
+    override fun tellStory() {
+        val pos = _state.value.position
+        if (pos == null) { _state.update { it.copy(storyCard = StoryCard(failed = true)) }; return }
+        _state.update { it.copy(storyCard = StoryCard(loading = true)) }
+        scope.launch {
+            val lang = Locale.getDefault().language
+            var story: Story? = null
+            for (l in listOf(lang, "en").distinct()) {
+                val list = runCatching { WikiStories.parseListen(fetchUrl(WikiStories.buildListenUrl(l, pos.lat, pos.lon))) }.getOrDefault(emptyList())
+                story = pickFresh(list, { "story:" + it.title }) { WikiStories.pick(it, Random.Default) }
+                if (story != null) break
+            }
+            if (story == null) {
+                _state.update { it.copy(storyCard = StoryCard(failed = true)) }
+                return@launch
+            }
+            _state.update { it.copy(storyCard = StoryCard(title = story.title, text = story.text)) }
+            logDiary(DiaryKind.STORY, story.title, story.text, pos = pos)
+            speakQuest(story.title + ". " + story.text)
+        }
+    }
+
+    override fun dismissStory() {
+        tts?.stop()
+        _state.update { it.copy(storyCard = null) }
     }
 
     // --- Fest geplante Reisen
@@ -1964,6 +2048,7 @@ class NavController(private val app: Application) : KidsActions {
     }
 
     private fun announceQuest(q: Quest) {
+        if (q.textKey == WikiStories.TEXT_KEY && q.args.size >= 2) logDiary(DiaryKind.STORY, q.args[0], q.args[1])
         val s = _state.value
         val text = buildString {
             if (s.players > 1) append(app.getString(R.string.kids_turn, app.getString(R.string.kids_player, s.currentPlayer + 1))).append(' ')

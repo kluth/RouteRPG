@@ -57,6 +57,10 @@ fun ParentScreen(state: UiState, nav: NavController) {
                 app.kiloquest.ui.ToiletStatusCard(state.toilet, nav::resumeAfterToilet)
             }
 
+            OutlinedButton(onClick = { nav.showDiary(true) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                Text(stringResource(R.string.diary_open))
+            }
+
             val p = state.proposal
             if (p != null) {
                 Card(MaterialTheme.colorScheme.primaryContainer) {

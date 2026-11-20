@@ -35,23 +35,36 @@ object WikiStories {
     /** Sprache muss ein Wikipedia-Sprachcode sein (2-3 Buchstaben), sonst Englisch. */
     fun safeLang(lang: String): String = if (Regex("^[a-z]{2,3}$").matches(lang)) lang else "en"
 
-    fun buildUrl(lang: String, lat: Double, lon: Double, age: AgeBand, radiusMeters: Int = 8000, limit: Int = 12): String {
+    /** Laengere Hoergeschichten (Vorlesen auf Wunsch): mehr Saetze, groesserer Umkreis. */
+    const val LISTEN_SENTENCES = 6
+    private const val LISTEN_MAX_CHARS = 900
+
+    fun buildUrl(lang: String, lat: Double, lon: Double, age: AgeBand, radiusMeters: Int = 8000, limit: Int = 12, sentencesOverride: Int? = null): String {
         fun e(s: String) = URLEncoder.encode(s, "UTF-8")
         val params = listOf(
             "action" to "query", "generator" to "geosearch",
             "ggscoord" to "$lat|$lon", "ggsradius" to radiusMeters.toString(), "ggslimit" to limit.toString(),
             "prop" to "extracts", "exintro" to "1", "explaintext" to "1",
-            "exsentences" to sentences(age).toString(), "exlimit" to limit.toString(),
+            "exsentences" to (sentencesOverride ?: sentences(age)).toString(), "exlimit" to limit.toString(),
             "format" to "json", "formatversion" to "2",
         )
         return "https://${safeLang(lang)}.wikipedia.org/w/api.php?" + params.joinToString("&") { (k, v) -> "$k=${e(v)}" }
     }
 
-    fun parse(body: String, age: AgeBand): List<Story> {
+    fun parse(body: String, age: AgeBand): List<Story> = parseWith(body, maxChars(age), 40)
+
+    /** URL fuer eine laengere Geschichte (Hoergeschichte) rund um die Position. */
+    fun buildListenUrl(lang: String, lat: Double, lon: Double): String =
+        buildUrl(lang, lat, lon, AgeBand.PRO, radiusMeters = 15_000, limit = 10, sentencesOverride = LISTEN_SENTENCES)
+
+    /** Laengere Auszuege; zu kurze Eintraege (unter 120 Zeichen) sind keine Geschichte. */
+    fun parseListen(body: String): List<Story> = parseWith(body, LISTEN_MAX_CHARS, 120)
+
+    private fun parseWith(body: String, maxChars: Int, minChars: Int): List<Story> {
         val pages = json.decodeFromString<Response>(body).query?.pages.orEmpty()
         return pages.mapNotNull { p ->
-            val text = clean(p.extract.orEmpty(), maxChars(age))
-            if (p.title.isBlank() || text.length < 40) null else Story(p.title, text)
+            val text = clean(p.extract.orEmpty(), maxChars)
+            if (p.title.isBlank() || text.length < minChars) null else Story(p.title, text)
         }
     }
 

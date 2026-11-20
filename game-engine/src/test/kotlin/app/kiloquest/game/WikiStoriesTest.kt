@@ -64,4 +64,23 @@ class WikiStoriesTest {
         assertEquals(listOf("Kiruna", "Eine Stadt im Norden."), ok.args)
         assertEquals(RouteFacts.FALLBACK_KEY, WikiStories.resolve(ph, null).textKey)
     }
+
+    @Test
+    fun `listen url asks for long extracts in a wide radius`() {
+        val u = WikiStories.buildListenUrl("de", 51.4, 6.7)
+        assertTrue("exsentences=${WikiStories.LISTEN_SENTENCES}" in u)
+        assertTrue("ggsradius=15000" in u)
+        assertTrue(u.startsWith("https://de.wikipedia.org/"))
+        // ungueltige Sprache faellt auf Englisch zurueck
+        assertTrue(WikiStories.buildListenUrl("../x", 1.0, 1.0).startsWith("https://en.wikipedia.org/"))
+    }
+
+    @Test
+    fun `listen parse keeps long texts and drops short ones`() {
+        val long = "Ein langer Satz über einen Ort. ".repeat(12).trim()
+        val body = """{"query":{"pages":[{"title":"Lang","extract":"$long"},{"title":"Kurz","extract":"Zu kurz für eine Geschichte."}]}}"""
+        val r = WikiStories.parseListen(body)
+        assertEquals(listOf("Lang"), r.map { it.title })
+        assertTrue(r.single().text.length in 120..900)
+    }
 }

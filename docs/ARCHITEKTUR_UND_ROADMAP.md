@@ -506,3 +506,8 @@ erst gebaut, wenn ein Land nach amtlicher Quelle oder Anwaltsprüfung freigegebe
 überschritten wird; Wiederholung frühestens nach 90 s, sofort bei neuem niedrigerem Limit, Nachholen statt Unterbrechen bei laufender
 Ansage. Betrifft nur das eigene Tempo, nutzt keine Kamerastandorte und gilt daher in allen Ländern (anders als die Blitzerwarnung, §44).
 Einstellung „Bei Tempoüberschreitung warnen“ (Standard an). Das rote Tempolimit-Schild bleibt zusätzlich.
+
+## 46. Reisetagebuch und Hörgeschichten
+Umgesetzt (Spec 006): lokales Reisetagebuch mit automatischen Einträgen, Statistik, Teilen als Text; Hörgeschichten auf Wunsch aus Wikipedia
+(vorgelesen, mit Lizenzhinweis, im Tagebuch zum erneuten Anhören). Offen: Foto-Erinnerungen, Geschichten für gekoppelte Kindergeräte,
+Geschichten im Offline-Paket, schöner Export (PDF/Fotobuch).
