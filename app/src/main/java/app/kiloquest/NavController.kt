@@ -498,7 +498,7 @@ class NavController(private val app: Application) : KidsActions {
             _state.update { it.copy(error = R.string.error_no_position) }
             return
         }
-        if (BuildConfig.VALHALLA_URL.isBlank()) {
+        if (!ServerConfig.configured) {
             _state.update { it.copy(error = R.string.error_no_server) }
             return
         }
@@ -1491,6 +1491,14 @@ class NavController(private val app: Application) : KidsActions {
 
     fun showDiary(show: Boolean) = _state.update { it.copy(diaryScreen = show) }
 
+    /** Einen einzelnen Tagebuch-Eintrag samt eigener Fotos loeschen (Datenschutz). */
+    fun deleteDiaryEntry(e: DiaryEntry) {
+        e.photoFiles().forEach { n -> PhotoStore.file(app, n)?.delete() }
+        val next = TravelDiary.remove(_state.value.diary, e.id)
+        prefs.edit().putString("diary", TravelDiary.encode(next)).apply()
+        _state.update { it.copy(diary = next) }
+    }
+
     fun clearDiary() {
         PhotoStore.deleteAll(app)
         prefs.edit().remove("diary").apply()
@@ -1628,7 +1636,7 @@ class NavController(private val app: Application) : KidsActions {
             _state.update { it.copy(planResult = PlanResult(error = R.string.plan_need_places)) }
             return
         }
-        if (BuildConfig.VALHALLA_URL.isBlank()) {
+        if (!ServerConfig.configured) {
             _state.update { it.copy(planResult = PlanResult(error = R.string.error_no_server)) }
             return
         }
@@ -1734,7 +1742,7 @@ class NavController(private val app: Application) : KidsActions {
         val t = _state.value.trip ?: return
         val start = (if (t.currentStage > 0) t.stops.getOrNull(t.currentStage - 1)?.position else null) ?: t.origin ?: return
         val remaining = t.stops.drop(t.currentStage)
-        if (remaining.isEmpty() || BuildConfig.VALHALLA_URL.isBlank()) return
+        if (remaining.isEmpty() || !ServerConfig.configured) return
         scope.launch {
             _state.update { it.copy(trip = it.trip?.copy(loading = true)) }
             val legs = runCatching {
@@ -2483,7 +2491,7 @@ class NavController(private val app: Application) : KidsActions {
     fun toiletAlarm() {
         val pos = _state.value.position
         if (pos == null) { _state.update { it.copy(error = R.string.error_no_position) }; return }
-        if (BuildConfig.VALHALLA_URL.isBlank()) { _state.update { it.copy(error = R.string.error_no_server) }; return }
+        if (!ServerConfig.configured) { _state.update { it.copy(error = R.string.error_no_server) }; return }
         _state.value.toilet?.let { t ->
             // Alarm laeuft schon: ein weiterer Tipp wiederholt nur die Ansage (kein neuer Start, kein Abbruch)
             when (t.phase) {

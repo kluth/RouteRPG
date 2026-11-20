@@ -63,15 +63,44 @@ suspend fun searchPlaces(query: String, languageCode: String): List<Place> {
     }
 }
 
+/**
+ * Zugang zum eigenen Routing-Server. Der Token liegt nur auf dem Geraet (SharedPreferences, kein Backup) und wird in den
+ * Einstellungen eingegeben; die URL darf als Vorgabe aus dem Build kommen, ein Token nur bei `-PembedToken=true`.
+ */
+object ServerConfig {
+    private const val KEY_URL = "server_url"
+    private const val KEY_TOKEN = "server_token"
+    @Volatile private var urlOverride = ""
+    @Volatile private var tokenOverride = ""
+
+    val url: String get() = urlOverride.ifBlank { BuildConfig.VALHALLA_URL }
+    val token: String get() = tokenOverride.ifBlank { BuildConfig.VALHALLA_TOKEN }
+    val configured: Boolean get() = url.isNotBlank()
+
+    fun load(p: android.content.SharedPreferences) {
+        urlOverride = p.getString(KEY_URL, "") ?: ""
+        tokenOverride = p.getString(KEY_TOKEN, "") ?: ""
+    }
+
+    /** Nur https:// ist erlaubt (der Token darf nie im Klartext uebers Netz). Leere URL = Build-Vorgabe. */
+    fun save(p: android.content.SharedPreferences, newUrl: String, newToken: String): Boolean {
+        val u = newUrl.trim()
+        if (u.isNotEmpty() && !u.startsWith("https://", ignoreCase = true)) return false
+        p.edit().putString(KEY_URL, u).putString(KEY_TOKEN, newToken.trim()).apply()
+        load(p)
+        return true
+    }
+}
+
 suspend fun fetchRoute(requestJson: String): String = fetchValhalla("route", requestJson)
 
 /** POST an den eigenen Valhalla-Server (`route`, `trace_attributes` ...). */
 suspend fun fetchValhalla(endpoint: String, requestJson: String): String {
-    val base = BuildConfig.VALHALLA_URL.trimEnd('/')
+    val base = ServerConfig.url.trimEnd('/')
     require(base.isNotBlank()) { "no server" }
     return http(
         "$base/$endpoint", "POST", requestJson,
-        mapOf("X-Api-Token" to BuildConfig.VALHALLA_TOKEN),
+        mapOf("X-Api-Token" to ServerConfig.token),
     )
 }
 

@@ -9,7 +9,7 @@
     <string name="route_summary">%1$s · %2$s</string>
     <string name="remaining_summary">%1$s left</string>
     <string name="error_no_position">No GPS position yet. Please wait a moment and try again.</string>
-    <string name="error_no_server">Routing server is not configured (valhalla.url in local.properties).</string>
+    <string name="error_no_server">Routing server is not configured: enter address and token in Settings.</string>
     <string name="error_route">Route could not be calculated.</string>
     <string name="error_search">Search failed.</string>
     <string name="error_no_results">No results.</string>
@@ -436,7 +436,7 @@
     <string name="dlg_recents_msg">The list of recently searched destinations will be emptied.</string>
     <string name="dlg_memory_msg">KiloQuest forgets which places, animals and facts it already asked about, so they can come up again.</string>
     <string name="dlg_reset_msg">All settings in this screen go back to their defaults. Points, stickers and paired devices stay.</string>
-    <string name="privacy_text">KiloQuest has no ads, no tracking and no analytics.\n\nYour position is used only for navigation on this device and is never stored on a server of ours. To plan routes, search places and load traffic, weather and quest content, the app asks free services (your own route server, OpenStreetMap services, Wikipedia, iNaturalist, Open-Meteo, the German Autobahn API) with the places needed for each request. Nothing is linked to a person.\n\nPaired devices exchange the game state and the position of the car only via Bluetooth, and only with devices you allowed. Points, stickers, settings and figures stay on the device.\n\nThe roadtrip photo story uses the camera only when the co-driver taps "Take photo". Photos stay on the device (optionally also in your gallery) and are never uploaded.</string>
+    <string name="privacy_text">KiloQuest has no ads, no tracking and no analytics, and no account.\n\nOn this device only: points, stickers, settings, figures, the travel diary and photos. Nothing of this is uploaded. Backups of the app data are switched off. You can delete single photo entries, the whole diary, or export everything as a ZIP file in Settings.\n\nServices that receive requests (your IP address and the places needed for the request, no name, no account):\n• Your own routing server (routes, speed limits): your server may log requests; you are its operator.\n• Photon / komoot (place search, country of a position), Overpass API (rest stops, viewpoints), OpenFreeMap (map tiles), Wikipedia (stories), Open-Meteo (weather), iNaturalist (animal quests), Autobahn API (German traffic).\n\nPaired devices exchange game state, route, position of the car, speed and distance only via Bluetooth, and only with devices you allowed.\n\nCamera and microphone: the camera is used only when the co-driver taps "Take photo"; the microphone only for voice answers and, if you switch it on, for commands with the name "Kilo". Speech is recognised on the device and is not stored. Photos are re-encoded without location data.\n\nDetails: docs/legal/datenschutz.md in the project.</string>
     <string name="licenses_text">Maps: © OpenStreetMap contributors (ODbL), map tiles from OpenFreeMap, rendering by MapLibre (BSD).\nRouting: Valhalla (MIT).\nStories: Wikipedia (CC BY-SA). Animals: iNaturalist. Weather: Open-Meteo. Traffic: Autobahn GmbH.\n\n3D figures: Kenney (kenney.nl), CC0: Car Kit, Train Kit, Watercraft Kit, Space Kit, Cube Pets, Mini Characters, Blocky Characters; aircraft from OpenGameArt, CC0.\nKilo and emoji: Noto Emoji (Google).\nIcons: Material Symbols (Apache 2.0).\nFonts: Atkinson Hyperlegible and Nunito (SIL OFL 1.1).</string>
     <string name="set_toilet_corridor">Toilet alert: search corridor</string>
     <string name="set_toilet_corridor_hint">How far from the route a stop may be</string>
@@ -694,4 +694,17 @@
     <string name="cmd_voice_unavailable">Voice commands need the microphone permission and an offline speech pack.</string>
     <string name="cmd_help">You can say: toilet alert, break, how long, next turn, speed limit, where are we going, tell me a story, announcements off or on, end navigation. Start with Kilo.</string>
     <string name="cmd_listen_now">Voice command</string>
+    <string name="sec_server">Routing server</string>
+    <string name="set_server">Server access</string>
+    <string name="set_server_hint_ok">Token saved on this device</string>
+    <string name="set_server_hint_missing">Token missing: enter it once</string>
+    <string name="set_server_info">The access token is stored only on this device and is not part of the app file. Leave the token empty to keep the saved one.</string>
+    <string name="set_server_url">Server address (https://…)</string>
+    <string name="set_server_token">Access token</string>
+    <string name="set_server_https">Only https:// addresses are allowed.</string>
+    <string name="dlg_save">Save</string>
+    <string name="diary_delete_one">Delete this photo entry</string>
+    <string name="diary_delete_one_msg">The entry and its photos are removed from this device. This cannot be undone.</string>
+    <string name="set_export">Export my data</string>
+    <string name="set_export_hint">Diary and photos as one ZIP file to share or back up</string>
 </resources>

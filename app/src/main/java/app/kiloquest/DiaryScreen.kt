@@ -72,6 +72,7 @@ internal fun diaryShareText(ctx: Context, entries: List<DiaryEntry>): String {
 fun DiaryScreen(state: UiState, nav: NavController) {
     val ctx = LocalContext.current
     var confirmClear by remember { mutableStateOf(false) }
+    var deleteEntry by remember { mutableStateOf<DiaryEntry?>(null) }
     BackHandler { nav.showDiary(false) }
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.screenColumn().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -104,6 +105,7 @@ fun DiaryScreen(state: UiState, nav: NavController) {
                                     if (bmp != null) androidx.compose.foundation.Image(bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.weight(1f).height(140.dp))
                                 }
                             }
+                            TextButton(onClick = { deleteEntry = e }) { Text(stringResource(R.string.diary_delete_one), color = MaterialTheme.colorScheme.error) }
                             return@forEach
                         }
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -126,6 +128,12 @@ fun DiaryScreen(state: UiState, nav: NavController) {
             }
             OutlinedButton(onClick = { nav.showDiary(false) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.kids_back)) }
         }
+    }
+    deleteEntry?.let { entry ->
+        app.kiloquest.ui.ConfirmDialog(
+            stringResource(R.string.diary_delete_one), stringResource(R.string.diary_delete_one_msg), stringResource(R.string.dlg_delete), stringResource(R.string.dlg_cancel),
+            onConfirm = { nav.deleteDiaryEntry(entry) }, onDismiss = { deleteEntry = null },
+        )
     }
     if (confirmClear) {
         ConfirmDialog(

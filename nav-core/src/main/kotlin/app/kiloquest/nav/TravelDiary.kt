@@ -59,6 +59,8 @@ object TravelDiary {
      * Fuegt [e] hinzu. Dubletten: dieselbe Geschichte nur einmal; dasselbe Land nicht zweimal hintereinander am selben Tag;
      * dieselbe Id nie doppelt. Bei mehr als [MAX_ENTRIES] fallen die aeltesten weg.
      */
+    fun remove(list: List<DiaryEntry>, id: String): List<DiaryEntry> = list.filterNot { it.id == id }
+
     fun add(list: List<DiaryEntry>, e: DiaryEntry): List<DiaryEntry> {
         if (list.any { it.id == e.id }) return list
         when (e.kindOrNull) {

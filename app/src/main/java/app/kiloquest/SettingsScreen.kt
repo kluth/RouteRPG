@@ -34,7 +34,7 @@ import app.kiloquest.ui.SettingSwitch
 import app.kiloquest.ui.SettingsSection
 import app.kiloquest.ui.screenColumn
 
-private enum class Dlg { NONE, CAMERAS, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES }
+private enum class Dlg { NONE, CAMERAS, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES, SERVER }
 
 /** Einstellungen: alles, was sich dauerhaft einstellen laesst, mit Abfragen vor dem Loeschen. */
 @Composable
@@ -140,6 +140,10 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 SettingSwitch(stringResource(R.string.car_simple_map), stringResource(R.string.car_simple_map_hint), state.carSimpleMap, onChange = nav::setCarSimpleMap)
             }
 
+            SettingsSection(stringResource(R.string.sec_server)) {
+                SettingRow(stringResource(R.string.set_server), stringResource(if (ServerConfig.token.isBlank()) R.string.set_server_hint_missing else R.string.set_server_hint_ok)) { dialog = Dlg.SERVER }
+            }
+
             SettingsSection(stringResource(R.string.sec_devices)) {
                 SettingRow(stringResource(R.string.set_pair), stringResource(R.string.set_pair_hint)) { nav.showSettings(false); nav.showParent(true) }
             }
@@ -152,6 +156,14 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 SettingRow(stringResource(R.string.set_reset_memory), stringResource(R.string.set_reset_memory_hint), destructive = true) { dialog = Dlg.MEMORY }
                 SettingDivider()
                 SettingRow(stringResource(R.string.set_reset_all), destructive = true) { dialog = Dlg.RESET }
+                SettingDivider()
+                SettingRow(stringResource(R.string.set_export), stringResource(R.string.set_export_hint)) {
+                    val zip = DataExport.build(ctx, state.diary)
+                    val uri = androidx.core.content.FileProvider.getUriForFile(ctx, ctx.packageName + ".files", zip)
+                    val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("application/zip")
+                        .putExtra(android.content.Intent.EXTRA_STREAM, uri).addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    ctx.startActivity(android.content.Intent.createChooser(send, ctx.getString(R.string.set_export)).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
+                }
                 SettingDivider()
                 SettingRow(stringResource(R.string.set_privacy)) { dialog = Dlg.PRIVACY }
             }
@@ -218,6 +230,34 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 }
             }
             InfoDialog(stringResource(R.string.set_cameras), stringResource(R.string.cameras_info) + "\n\n" + rules, close) { dialog = Dlg.NONE }
+        }
+        Dlg.SERVER -> {
+            val prefs = ctx.getSharedPreferences("kq", android.content.Context.MODE_PRIVATE)
+            var url by rememberSaveable { mutableStateOf(ServerConfig.url) }
+            var token by rememberSaveable { mutableStateOf("") }
+            var bad by rememberSaveable { mutableStateOf(false) }
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { dialog = Dlg.NONE },
+                title = { Text(stringResource(R.string.set_server)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(R.string.set_server_info), style = MaterialTheme.typography.bodyMedium)
+                        androidx.compose.material3.OutlinedTextField(url, { url = it; bad = false }, singleLine = true, label = { Text(stringResource(R.string.set_server_url)) }, isError = bad, supportingText = { if (bad) Text(stringResource(R.string.set_server_https)) })
+                        androidx.compose.material3.OutlinedTextField(
+                            token, { token = it }, singleLine = true, label = { Text(stringResource(R.string.set_server_token)) },
+                            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password),
+                        )
+                    }
+                },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(onClick = {
+                        // leeres Tokenfeld = bisherigen Token behalten
+                        if (ServerConfig.save(prefs, url, token.ifBlank { ServerConfig.token })) dialog = Dlg.NONE else bad = true
+                    }) { Text(stringResource(R.string.dlg_save)) }
+                },
+                dismissButton = { androidx.compose.material3.TextButton(onClick = { dialog = Dlg.NONE }) { Text(cancel) } },
+            )
         }
         Dlg.PRIVACY -> InfoDialog(stringResource(R.string.set_privacy), stringResource(R.string.privacy_text), close) { dialog = Dlg.NONE }
         Dlg.LICENSES -> InfoDialog(stringResource(R.string.set_licenses), stringResource(R.string.licenses_text), close) { dialog = Dlg.NONE }

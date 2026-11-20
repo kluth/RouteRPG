@@ -22,7 +22,7 @@ Zeilenweises JSON (UTF-8, eine Nachricht pro Zeile, höchstens 256 KB). Version 
 
 ## Sicherheit und Datenschutz
 - Nur Geräte, die der Beifahrer ausdrücklich erlaubt hat; Rechte-Prüfung auf dem Hauptgerät je Nachricht (`DeviceRoster.allows`).
-- Kein Internet, keine Cloud, keine Telemetrie. Es werden nur Spielzustand und der selbst gewählte Gerätename übertragen, keine Standorte.
+- Kein Internet, keine Cloud, keine Telemetrie. Es werden nur Spielzustand und der selbst gewählte Gerätename übertragen, Position des Autos nur per Bluetooth an erlaubte Geräte (Spec 001 war veraltet).
 - Höchstens 4 Kind- und 2 Beifahrer-Geräte.
 
 ## Grenzen (bewusst)

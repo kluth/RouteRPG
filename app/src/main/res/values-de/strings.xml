@@ -9,7 +9,7 @@
     <string name="route_summary">%1$s · %2$s</string>
     <string name="remaining_summary">noch %1$s</string>
     <string name="error_no_position">Noch keine GPS-Position. Bitte kurz warten und erneut versuchen.</string>
-    <string name="error_no_server">Routing-Server nicht konfiguriert (valhalla.url in local.properties).</string>
+    <string name="error_no_server">Routing-Server nicht konfiguriert: Adresse und Token in den Einstellungen eingeben.</string>
     <string name="error_route">Route konnte nicht berechnet werden.</string>
     <string name="error_search">Suche fehlgeschlagen.</string>
     <string name="error_no_results">Keine Treffer.</string>
@@ -436,7 +436,7 @@
     <string name="dlg_recents_msg">Die Liste der zuletzt gesuchten Ziele wird geleert.</string>
     <string name="dlg_memory_msg">KiloQuest vergisst, zu welchen Orten, Tieren und Fakten schon gefragt wurde, sie können also wieder vorkommen.</string>
     <string name="dlg_reset_msg">Alle Einstellungen auf diesem Bildschirm gehen auf Standard zurück. Punkte, Sticker und gekoppelte Geräte bleiben.</string>
-    <string name="privacy_text">KiloQuest hat keine Werbung, kein Tracking und keine Analyse.\n\nDeine Position wird nur für die Navigation auf diesem Gerät genutzt und nie auf einem Server von uns gespeichert. Um Routen zu planen, Orte zu suchen und Verkehr, Wetter und Aufgabeninhalte zu laden, fragt die App freie Dienste (euren eigenen Routenserver, OpenStreetMap-Dienste, Wikipedia, iNaturalist, Open-Meteo, die Autobahn-API) mit den Orten, die für die jeweilige Anfrage nötig sind. Nichts wird einer Person zugeordnet.\n\nGekoppelte Geräte tauschen Spielstand und Position des Autos nur per Bluetooth aus, und nur mit Geräten, die du erlaubt hast. Punkte, Sticker, Einstellungen und Figuren bleiben auf dem Gerät.\n\nDie Roadtrip-Fotostory nutzt die Kamera nur, wenn der Beifahrer auf „Foto machen“ tippt. Fotos bleiben auf dem Gerät (auf Wunsch zusätzlich in deiner Galerie) und werden nie hochgeladen.</string>
+    <string name="privacy_text">KiloQuest hat keine Werbung, kein Tracking, keine Analyse und kein Konto.\n\nNur auf diesem Gerät: Punkte, Sticker, Einstellungen, Figuren, das Reisetagebuch und die Fotos. Nichts davon wird hochgeladen. Sicherungen der App-Daten sind ausgeschaltet. In den Einstellungen kannst du einzelne Foto-Einträge löschen, das ganze Tagebuch löschen oder alles als ZIP-Datei exportieren.\n\nDienste, die Anfragen erhalten (deine IP-Adresse und die für die Anfrage nötigen Orte, kein Name, kein Konto):\n• Dein eigener Routenserver (Routen, Tempolimits): dein Server kann Anfragen protokollieren; du bist sein Betreiber.\n• Photon / komoot (Ortssuche, Land einer Position), Overpass-API (Rastplätze, Aussichtspunkte), OpenFreeMap (Kartenkacheln), Wikipedia (Geschichten), Open-Meteo (Wetter), iNaturalist (Tier-Aufgaben), Autobahn-API (deutscher Verkehr).\n\nGekoppelte Geräte tauschen Spielstand, Route, Position des Autos, Tempo und Strecke nur per Bluetooth aus, und nur mit Geräten, die du erlaubt hast.\n\nKamera und Mikrofon: Die Kamera wird nur genutzt, wenn der Beifahrer auf „Foto machen“ tippt; das Mikrofon nur für Sprachantworten und, wenn du es einschaltest, für Befehle mit der Anrede „Kilo“. Sprache wird auf dem Gerät erkannt und nicht gespeichert. Fotos werden ohne Ortsdaten neu kodiert.\n\nEinzelheiten: docs/legal/datenschutz.md im Projekt.</string>
     <string name="licenses_text">Karten: © OpenStreetMap-Mitwirkende (ODbL), Kacheln von OpenFreeMap, Darstellung mit MapLibre (BSD).\nRouting: Valhalla (MIT).\nGeschichten: Wikipedia (CC BY-SA). Tiere: iNaturalist. Wetter: Open-Meteo. Verkehr: Autobahn GmbH.\n\n3D-Figuren: Kenney (kenney.nl), CC0: Car Kit, Train Kit, Watercraft Kit, Space Kit, Cube Pets, Mini Characters, Blocky Characters; Flugzeuge von OpenGameArt, CC0.\nKilo und Emoji: Noto Emoji (Google).\nSymbole: Material Symbols (Apache 2.0).\nSchriften: Atkinson Hyperlegible und Nunito (SIL OFL 1.1).</string>
     <string name="set_toilet_corridor">Klo-Alarm: Suchkorridor</string>
     <string name="set_toilet_corridor_hint">Wie weit ein Halt von der Route entfernt sein darf</string>
@@ -694,4 +694,17 @@
     <string name="cmd_voice_unavailable">Sprachbefehle brauchen die Mikrofon-Erlaubnis und ein Offline-Sprachpaket.</string>
     <string name="cmd_help">Du kannst sagen: Klo-Alarm, Pause, wie lange noch, nächste Abbiegung, Tempolimit, wohin fahren wir, erzähl eine Geschichte, Ansagen aus oder an, Navigation beenden. Beginne mit Kilo.</string>
     <string name="cmd_listen_now">Sprachbefehl</string>
+    <string name="sec_server">Routing-Server</string>
+    <string name="set_server">Serverzugang</string>
+    <string name="set_server_hint_ok">Token auf diesem Gerät gespeichert</string>
+    <string name="set_server_hint_missing">Token fehlt: einmal eingeben</string>
+    <string name="set_server_info">Der Zugangs-Token wird nur auf diesem Gerät gespeichert und steckt nicht in der App-Datei. Leer lassen, um den gespeicherten Token zu behalten.</string>
+    <string name="set_server_url">Serveradresse (https://…)</string>
+    <string name="set_server_token">Zugangs-Token</string>
+    <string name="set_server_https">Nur https://-Adressen sind erlaubt.</string>
+    <string name="dlg_save">Speichern</string>
+    <string name="diary_delete_one">Foto-Eintrag löschen</string>
+    <string name="diary_delete_one_msg">Der Eintrag und seine Fotos werden von diesem Gerät entfernt. Das lässt sich nicht rückgängig machen.</string>
+    <string name="set_export">Meine Daten exportieren</string>
+    <string name="set_export_hint">Tagebuch und Fotos als eine ZIP-Datei zum Teilen oder Sichern</string>
 </resources>

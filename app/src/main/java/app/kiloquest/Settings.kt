@@ -25,7 +25,7 @@ data class AppSettings(
     /** Roadtrip-Fotostory: das Beifahrer-Geraet wird gelegentlich um ein Foto mit beiden Kameras gebeten. */
     val photoPrompts: Boolean = true,
     /** Fotos zusaetzlich in die Galerie kopieren (Pictures/KiloQuest). */
-    val photosToGallery: Boolean = true,
+    val photosToGallery: Boolean = false,
     /** Sprachansage "Tempolimit N" bei dauerhafter Ueberschreitung (gilt ueberall, betrifft nur das eigene Tempo). */
     val overspeedWarning: Boolean = true,
     val laneHints: Boolean = true,

@@ -22,12 +22,17 @@ android {
             rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
         }
         buildConfigField("String", "VALHALLA_URL", "\"${local.getProperty("valhalla.url", "")}\"")
-        buildConfigField("String", "VALHALLA_TOKEN", "\"${local.getProperty("valhalla.token", "")}\"")
+        // Der Token wird NICHT mehr in die APK einkompiliert (jeder koennte ihn auslesen): Eingabe in den Einstellungen.
+        // Nur fuer lokale Entwicklung: ./gradlew -PembedToken=true ... legt ihn aus local.properties in die APK.
+        val embed = project.findProperty("embedToken") == "true"
+        buildConfigField("String", "VALHALLA_TOKEN", "\"${if (embed) local.getProperty("valhalla.token", "") else ""}\"")
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
     compileOptions {

@@ -85,4 +85,10 @@ class TravelDiaryTest {
         assertEquals("", TravelDiary.flag(null))
         assertTrue(TravelDiary.flag("SE").isNotEmpty())
     }
+
+    @Test fun removeDropsOnlyThatEntry() {
+        val l = listOf(e("a", 100, DiaryKind.QUEST), e("b", 200, DiaryKind.QUEST))
+        assertEquals(listOf("b"), TravelDiary.remove(l, "a").map { it.id })
+        assertEquals(l, TravelDiary.remove(l, "x"))
+    }
 }
