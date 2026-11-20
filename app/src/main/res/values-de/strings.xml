@@ -444,4 +444,6 @@
     <string name="corridor_1_hint">Nah an der Route, kleiner Umweg</string>
     <string name="corridor_2_hint">Ausgewogen (empfohlen)</string>
     <string name="corridor_4_hint">Mehr Auswahl, größere Umwege; die Suche wird bei Bedarf automatisch breiter</string>
+    <string name="toilet_none_open">Alle Toiletten in der Nähe sind gerade geschlossen.</string>
+    <string name="toilet_open_until">geöffnet bis %1$s</string>
 </resources>

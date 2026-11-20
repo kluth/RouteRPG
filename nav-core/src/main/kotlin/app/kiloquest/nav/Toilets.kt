@@ -24,10 +24,19 @@ data class ToiletStop(
     val position: LatLon,
     val verified: Boolean = false,
     val features: Set<StopFeature> = emptySet(),
+    /** OSM-Tag `opening_hours`, falls vorhanden (siehe [OpeningHours]). */
+    val openingHours: String? = null,
 )
 
 /** Ergebnis der Auswahl: Ziel und echte Fahrzeit (Sekunden) dorthin, null wenn nur geschaetzt. */
-data class ToiletChoice(val stop: ToiletStop, val seconds: Double?, val straightMeters: Double, val aheadMeters: Double? = null)
+data class ToiletChoice(
+    val stop: ToiletStop,
+    val seconds: Double?,
+    val straightMeters: Double,
+    val aheadMeters: Double? = null,
+    /** Wenn bekannt: Uhrzeit, zu der der Halt heute schliesst (offen bei Ankunft). */
+    val closesAt: java.time.LocalTime? = null,
+)
 
 /** Kandidat auf dem weiteren Reiseverlauf: [aheadMeters] bis zur Stelle auf der Route, [offsetMeters] Abstand von der Route (Umweg). */
 data class AheadStop(val stop: ToiletStop, val aheadMeters: Double, val offsetMeters: Double) {
@@ -111,7 +120,7 @@ object ToiletFinder {
         val lon = o["lon"]?.jsonPrimitive?.doubleOrNull ?: o["center"]?.jsonObject?.get("lon")?.jsonPrimitive?.doubleOrNull ?: return null
         // Toiletten, die nicht oeffentlich sind, ueberspringen
         if (kind == ToiletKind.TOILETS && (tag("access") == "private" || tag("access") == "customers")) return null
-        return ToiletStop(kind, tag("name"), LatLon(lat, lon))
+        return ToiletStop(kind, tag("name"), LatLon(lat, lon), openingHours = tag("opening_hours"))
     }
 
     /** Die [n] naechsten (Luftlinie) Kandidaten, Dubletten (gleiche Art, unter 120 m) entfernt. */
@@ -152,18 +161,39 @@ object ToiletFinder {
 
     /**
      * Waehlt das Ziel mit der kuerzesten Fahrzeit (plus Aufschlag je Art). Ohne Fahrzeiten (offline) entscheidet die
-     * Luftlinie, ebenfalls mit Aufschlag (als 50 km/h umgerechnet).
+     * Luftlinie, ebenfalls mit Aufschlag (als 50 km/h umgerechnet). Mit [nowMs] werden Halte uebersprungen, die bei der
+     * Ankunft laut `opening_hours` geschlossen sind oder in den ersten [minOpenMinutes] Minuten danach schliessen;
+     * unbekannte Zeiten schliessen nichts aus.
      */
-    fun choose(pos: LatLon, candidates: List<ToiletStop>, secondsOrNull: List<Double?>?): ToiletChoice? {
+    fun choose(
+        pos: LatLon,
+        candidates: List<ToiletStop>,
+        secondsOrNull: List<Double?>?,
+        nowMs: Long? = null,
+        zone: java.time.ZoneId = java.time.ZoneId.systemDefault(),
+        minOpenMinutes: Int = 10,
+    ): ToiletChoice? {
         val seconds = secondsOrNull?.takeIf { it.isNotEmpty() }
         var best: ToiletChoice? = null
         var bestScore = Double.MAX_VALUE
         candidates.forEachIndexed { i, c ->
             val straight = haversine(pos, c.position)
             val t = seconds?.getOrNull(i)
-            val score = (t ?: (straight / (50.0 / 3.6))) + penaltySeconds(c)
             if (seconds != null && t == null) return@forEachIndexed // laut Routing nicht erreichbar
-            if (score < bestScore) { bestScore = score; best = ToiletChoice(c, t, straight) }
+            val travel = t ?: (straight / (50.0 / 3.6))
+            var closesAt: java.time.LocalTime? = null
+            if (nowMs != null && c.openingHours != null) {
+                val arrival = java.time.LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(nowMs + (travel * 1000).toLong()), zone)
+                val st = OpeningHours.statusAt(c.openingHours, arrival)
+                if (st.state == OpenState.CLOSED) return@forEachIndexed
+                st.closesAt?.let { close ->
+                    val minutesLeft = java.time.Duration.between(arrival.toLocalTime(), close).toMinutes().let { if (it < 0) it + 24 * 60 else it }
+                    if (minutesLeft < minOpenMinutes) return@forEachIndexed
+                    closesAt = close
+                }
+            }
+            val score = travel + penaltySeconds(c)
+            if (score < bestScore) { bestScore = score; best = ToiletChoice(c, t, straight, closesAt = closesAt) }
         }
         return best
     }

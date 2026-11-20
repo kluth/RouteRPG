@@ -240,6 +240,8 @@ class NavController(private val app: Application) : KidsActions {
     private val tripStatics = HashMap<String, Int>()
     /** Ziel, zu dem es nach dem Klo-Halt weitergeht (null, wenn vorher nicht navigiert wurde). */
     private var toiletResume: Place? = null
+    /** Beim letzten Klo-Alarm gab es Kandidaten, aber alle waren bei Ankunft geschlossen. */
+    private var toiletOnlyClosed = false
     private var toiletJob: kotlinx.coroutines.Job? = null
     /** Altersstufe je gekoppeltem Kinder-Geraet (Spielernummer = Index). */
     private var kidBands: List<AgeBand> = emptyList()
@@ -1587,15 +1589,16 @@ class NavController(private val app: Application) : KidsActions {
         _state.update { it.copy(toilet = ToiletState(ToiletPhase.SEARCHING), toiletRequest = null, error = null) }
         speak(app.getString(R.string.toilet_searching))
         toiletJob = scope.launch {
+            toiletOnlyClosed = false
             val choice = findToilet(pos)
             if (choice == null) {
-                speak(app.getString(R.string.toilet_none))
+                speak(app.getString(if (toiletOnlyClosed) R.string.toilet_none_open else R.string.toilet_none))
                 _state.update { it.copy(toilet = ToiletState(ToiletPhase.NONE)) }
                 delay(8_000)
                 _state.update { if (it.toilet?.phase == ToiletPhase.NONE) it.copy(toilet = null) else it }
                 return@launch
             }
-            val label = toiletLabel(choice.stop)
+            val label = toiletLabel(choice.stop) + (choice.closesAt?.let { " · " + app.getString(R.string.toilet_open_until, java.time.format.DateTimeFormatter.ofLocalizedTime(java.time.format.FormatStyle.SHORT).format(it)) } ?: "")
             val dest = Place(label, choice.stop.position)
             runCatching { loadRoute(pos, dest.position, emptyList()) }.onSuccess { loaded ->
                 val wasNavigating = _state.value.navigating
@@ -1671,7 +1674,8 @@ class NavController(private val app: Application) : KidsActions {
             val seconds = runCatching {
                 ToiletFinder.parseMatrix(fetchValhalla("sources_to_targets", ToiletFinder.matrixRequest(pos, stops)), stops.size)
             }.getOrNull()
-            val choice = ToiletFinder.choose(pos, stops, seconds) ?: continue
+            val choice = ToiletFinder.choose(pos, stops, seconds, System.currentTimeMillis())
+            if (choice == null) { toiletOnlyClosed = true; continue }
             return choice.copy(aheadMeters = top.firstOrNull { it.stop == choice.stop }?.aheadMeters)
         }
         return null
@@ -1685,7 +1689,8 @@ class NavController(private val app: Application) : KidsActions {
             val seconds = runCatching {
                 ToiletFinder.parseMatrix(fetchValhalla("sources_to_targets", ToiletFinder.matrixRequest(pos, near)), near.size)
             }.getOrNull()
-            ToiletFinder.choose(pos, near, seconds)?.let { return it }
+            val c = ToiletFinder.choose(pos, near, seconds, System.currentTimeMillis())
+            if (c == null) toiletOnlyClosed = true else return c
         }
         return null
     }

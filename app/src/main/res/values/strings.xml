@@ -444,4 +444,6 @@
     <string name="corridor_1_hint">Close to the route, little detour</string>
     <string name="corridor_2_hint">Balanced (recommended)</string>
     <string name="corridor_4_hint">More choice, bigger detours; the search widens automatically if nothing is found</string>
+    <string name="toilet_none_open">All toilets nearby are closed right now.</string>
+    <string name="toilet_open_until">open until %1$s</string>
 </resources>

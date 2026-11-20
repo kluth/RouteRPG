@@ -174,4 +174,46 @@ class ToiletsTest {
         val twin = osm.copy(position = LatLon(51.0501, 7.0001))
         assertEquals(listOf(ver), RestStops.merge(listOf(twin), listOf(ver)))
     }
+
+    // 16.11.2026 (Montag) 12:00 Ortszeit
+    private val noonMonday = java.time.LocalDateTime.of(2026, 11, 16, 12, 0).atZone(java.time.ZoneId.of("Europe/Berlin")).toInstant().toEpochMilli()
+    private val berlin = java.time.ZoneId.of("Europe/Berlin")
+
+    @Test fun parseReadsOpeningHours() {
+        val body = """{"elements":[{"type":"node","lat":51.001,"lon":7.0,"tags":{"amenity":"toilets","opening_hours":"Mo-Fr 08:00-18:00"}}]}"""
+        assertEquals("Mo-Fr 08:00-18:00", ToiletFinder.parse(body)[0].openingHours)
+    }
+
+    @Test fun closedAtArrivalIsSkipped() {
+        val closed = stop(ToiletKind.TOILETS, 0.001).copy(openingHours = "Mo-Fr 08:00-10:00")
+        val open = stop(ToiletKind.TOILETS, 0.02).copy(openingHours = "Mo-Fr 08:00-18:00")
+        val unknown = stop(ToiletKind.TOILETS, 0.03)
+        val c = ToiletFinder.choose(pos, listOf(closed, open, unknown), listOf(60.0, 300.0, 200.0), noonMonday, berlin)!!
+        assertEquals(unknown, c.stop) // unbekannte Zeiten bleiben im Rennen und sind hier schneller als "open"
+        val c2 = ToiletFinder.choose(pos, listOf(closed, open), listOf(60.0, 300.0), noonMonday, berlin)!!
+        assertEquals(open, c2.stop)
+        assertEquals(java.time.LocalTime.of(18, 0), c2.closesAt)
+    }
+
+    @Test fun closesTooSoonAfterArrivalIsSkipped() {
+        val shutsSoon = stop(ToiletKind.TOILETS, 0.001).copy(openingHours = "Mo-Fr 08:00-12:05")
+        val fine = stop(ToiletKind.TOILETS, 0.02)
+        // Ankunft 12:03 (Fahrzeit 180 s), Schluss 12:05: weniger als 10 Minuten Luft
+        assertEquals(fine, ToiletFinder.choose(pos, listOf(shutsSoon, fine), listOf(180.0, 400.0), noonMonday, berlin)!!.stop)
+        // ohne Zeit (nowMs = null) wird nichts gefiltert
+        assertEquals(shutsSoon, ToiletFinder.choose(pos, listOf(shutsSoon, fine), listOf(180.0, 400.0))!!.stop)
+    }
+
+    @Test fun nightArrivalUsesTravelTime() {
+        // Jetzt 11:50, Fahrzeit 20 Minuten: Ankunft 12:10; "12:00-18:00" ist dann offen, "08:00-12:05" geschlossen
+        val now = noonMonday - 10 * 60_000
+        val later = stop(ToiletKind.TOILETS, 0.01).copy(openingHours = "Mo-Su 12:00-18:00")
+        val earlier = stop(ToiletKind.TOILETS, 0.02).copy(openingHours = "Mo-Su 08:00-12:05")
+        assertEquals(later, ToiletFinder.choose(pos, listOf(earlier, later), listOf(1200.0, 1100.0), now, berlin)!!.stop)
+    }
+
+    @Test fun allClosedGivesNull() {
+        val c = stop(ToiletKind.TOILETS, 0.001).copy(openingHours = "Mo-Fr 20:00-22:00")
+        assertNull(ToiletFinder.choose(pos, listOf(c), listOf(100.0), noonMonday, berlin))
+    }
 }
