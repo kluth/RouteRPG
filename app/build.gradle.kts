@@ -57,4 +57,5 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
     implementation(libs.maplibre)
+    implementation(libs.androidx.car.app)
 }

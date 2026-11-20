@@ -11,8 +11,6 @@ import android.os.Looper
 import android.speech.tts.TextToSpeech
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
 import app.kiloquest.nav.AnnouncementPlanner
 import app.kiloquest.nav.GuidanceEngine
 import app.kiloquest.nav.GuidanceState
@@ -20,6 +18,9 @@ import app.kiloquest.nav.LatLon
 import app.kiloquest.nav.Route
 import app.kiloquest.nav.ValhallaApi
 import java.util.Locale
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -36,7 +37,9 @@ data class UiState(
     @StringRes val error: Int? = null,
 )
 
-class NavViewModel(app: Application) : AndroidViewModel(app) {
+/** Gemeinsamer Navigationszustand fuer Handy-UI und Android-Auto (lebt im Application-Prozess). */
+class NavController(private val app: Application) {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state
 
@@ -52,7 +55,7 @@ class NavViewModel(app: Application) : AndroidViewModel(app) {
     private var listening = false
 
     fun hasLocationPermission() = ContextCompat.checkSelfPermission(
-        getApplication(), Manifest.permission.ACCESS_FINE_LOCATION,
+        app, Manifest.permission.ACCESS_FINE_LOCATION,
     ) == PackageManager.PERMISSION_GRANTED
 
     /** Position schon vor dem Navigationsstart verfolgen (fuer Routenstart). */
@@ -70,7 +73,7 @@ class NavViewModel(app: Application) : AndroidViewModel(app) {
 
     fun search(query: String) {
         if (query.isBlank()) return
-        viewModelScope.launch {
+        scope.launch {
             _state.update { it.copy(busy = true, error = null) }
             runCatching { searchPlaces(query, Locale.getDefault().language) }
                 .onSuccess { r ->
@@ -98,7 +101,7 @@ class NavViewModel(app: Application) : AndroidViewModel(app) {
             _state.update { it.copy(error = R.string.error_no_server) }
             return
         }
-        viewModelScope.launch {
+        scope.launch {
             _state.update { it.copy(busy = true, error = null) }
             runCatching {
                 val req = ValhallaApi.buildRouteRequest(from, dest.position, Locale.getDefault().toLanguageTag())
@@ -134,7 +137,7 @@ class NavViewModel(app: Application) : AndroidViewModel(app) {
         val g = eng.update(pos)
         _state.update { it.copy(guidance = g) }
         if (g.arrived) {
-            speak(getApplication<Application>().getString(R.string.arrived))
+            speak(app.getString(R.string.arrived))
             stopNavigation()
             return
         }
@@ -142,7 +145,7 @@ class NavViewModel(app: Application) : AndroidViewModel(app) {
         val now = System.currentTimeMillis()
         if (g.isOffRoute && now - lastReroute > 15_000) {
             lastReroute = now
-            speak(getApplication<Application>().getString(R.string.rerouting))
+            speak(app.getString(R.string.rerouting))
             calculateRoute()
         }
     }
@@ -151,9 +154,4 @@ class NavViewModel(app: Application) : AndroidViewModel(app) {
         tts?.speak(text, TextToSpeech.QUEUE_ADD, null, "kq-${System.nanoTime()}")
     }
 
-    override fun onCleared() {
-        if (listening) locationManager.removeUpdates(listener)
-        tts?.shutdown()
-        super.onCleared()
-    }
 }

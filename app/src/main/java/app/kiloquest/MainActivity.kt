@@ -6,7 +6,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,7 +57,7 @@ private const val ROUTE_SOURCE = "route-source"
 private const val ROUTE_LAYER = "route-layer"
 
 class MainActivity : ComponentActivity() {
-    private val vm: NavViewModel by viewModels()
+    private val vm: NavController by lazy { (application as KiloQuestApp).nav }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,7 +76,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun AppScreen(vm: NavViewModel) {
+private fun AppScreen(vm: NavController) {
     val state by vm.state.collectAsState()
     Box(Modifier.fillMaxSize()) {
         MapScreen(
@@ -132,7 +131,7 @@ private fun AppScreen(vm: NavViewModel) {
 }
 
 @Composable
-private fun SearchPanel(state: UiState, vm: NavViewModel) {
+private fun SearchPanel(state: UiState, vm: NavController) {
     var query by remember { mutableStateOf("") }
     Surface(tonalElevation = 6.dp) {
         Column(Modifier.padding(8.dp)) {

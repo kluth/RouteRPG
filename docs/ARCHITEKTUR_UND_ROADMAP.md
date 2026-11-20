@@ -275,4 +275,5 @@ Umsetzung:
 
 Fertig und getestet (Unit-Tests grün): `:nav-core` mit Geometrie/Projektion, Polyline-Decoder, Valhalla-Anfrage/-Parser, Guidance-Engine (Fortschritt, Off-Route, Ankunft), Ansage-Planer.
 Gebaut, noch nicht auf dem Gerät erprobt: Zielsuche (Photon), Routenabfrage, Routenlinie auf der Karte, Sprachansagen (TTS), Neuberechnung bei Abweichung.
-Offen in Phase 1: Android-Auto-Anbindung (`:feature-car`), Tempolimit/Spurhinweise, Favoriten, Tests im Auto.
+Android Auto: `KiloQuestCarService` (Kategorie NAVIGATION), `NavScreen` mit `NavigationTemplate` (Abbiegeinfo, Stopp-Button) und Canvas-Karte (Route + Position) auf der Auto-Surface. Handy-UI und Auto teilen den Zustand über `NavController` (Application-Prozess). Gebaut/lint-geprüft, **noch nicht im Auto/DHU getestet**; Host-Validator erlaubt aktuell alle Hosts (nur privat/Sideload).
+Offen in Phase 1: Test mit DHU und im Auto, MapLibre-Karte statt Canvas im Auto, Abbiegepfeile, Tempolimit/Spurhinweise, Favoriten, Zielsuche aus dem Auto.

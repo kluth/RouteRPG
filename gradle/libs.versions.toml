@@ -7,6 +7,7 @@ coreKtx = "1.15.0"
 lifecycle = "2.8.7"
 maplibre = "11.8.0"
 junit = "4.13.2"
+carApp = "1.4.0"
 serialization = "1.7.3"
 coroutines = "1.9.0"
 
@@ -18,6 +19,7 @@ androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-kt
 compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
 compose-ui = { module = "androidx.compose.ui:ui" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
+androidx-car-app = { module = "androidx.car.app:app", version.ref = "carApp" }
 maplibre = { module = "org.maplibre.gl:android-sdk", version.ref = "maplibre" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
