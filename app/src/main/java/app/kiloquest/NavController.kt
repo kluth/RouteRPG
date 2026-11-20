@@ -1508,7 +1508,15 @@ class NavController(private val app: Application) : KidsActions {
         val pos = _state.value.position
         if (pos == null) { _state.update { it.copy(error = R.string.error_no_position) }; return }
         if (BuildConfig.VALHALLA_URL.isBlank()) { _state.update { it.copy(error = R.string.error_no_server) }; return }
-        if (_state.value.toilet?.phase == ToiletPhase.SEARCHING) return
+        _state.value.toilet?.let { t ->
+            // Alarm laeuft schon: ein weiterer Tipp wiederholt nur die Ansage (kein neuer Start, kein Abbruch)
+            when (t.phase) {
+                ToiletPhase.SEARCHING -> return
+                ToiletPhase.HEADING -> { speak(app.getString(R.string.toilet_found, t.label, app.getString(R.string.unit_min, ((t.seconds ?: 60.0) / 60).toInt().coerceAtLeast(1)))); return }
+                ToiletPhase.ARRIVED -> { speak(app.getString(R.string.toilet_arrived)); return }
+                ToiletPhase.NONE -> Unit
+            }
+        }
         toiletJob?.cancel()
         _state.update { it.copy(toilet = ToiletState(ToiletPhase.SEARCHING), toiletRequest = null, error = null) }
         speak(app.getString(R.string.toilet_searching))

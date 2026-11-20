@@ -14,6 +14,9 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -23,15 +26,38 @@ import app.kiloquest.R
 import app.kiloquest.ToiletPhase
 import app.kiloquest.ToiletState
 
-/** Grosser Klo-Alarm-Knopf: ein Tipp, kein Nachfragen (Kinder brauchen es manchmal schnell). */
+/** Alarm-Gelb: im Alarmmodus ist der Knopf gelb und wackelt (auffaellig, ohne Text lesen zu muessen). */
+private val AlarmYellow = androidx.compose.ui.graphics.Color(0xFFFFC107)
+private val OnAlarmYellow = androidx.compose.ui.graphics.Color(0xFF3B2A00)
+
+/** Laesst ein Element wackeln (leichtes Hin- und Herdrehen), solange [enabled]; sonst unveraendert. */
 @Composable
-fun ToiletAlarmButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun Modifier.wobble(enabled: Boolean): Modifier {
+    if (!enabled) return this
+    val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "wobble")
+    val angle by transition.animateFloat(
+        initialValue = -7f, targetValue = 7f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            androidx.compose.animation.core.tween(110, easing = androidx.compose.animation.core.LinearEasing),
+            androidx.compose.animation.core.RepeatMode.Reverse,
+        ),
+        label = "wobbleAngle",
+    )
+    return this.graphicsLayer { rotationZ = angle }
+}
+
+/**
+ * Grosser Klo-Alarm-Knopf: ein Tipp, kein Nachfragen (Kinder brauchen es manchmal schnell).
+ * [active]: Alarm laeuft, dann gelb und wackelnd; ein weiterer Tipp wiederholt nur die Ansage.
+ */
+@Composable
+fun ToiletAlarmButton(onClick: () -> Unit, modifier: Modifier = Modifier, active: Boolean = false) {
     Surface(
         onClick = onClick,
-        modifier = modifier,
+        modifier = modifier.wobble(active),
         shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.errorContainer,
-        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        color = if (active) AlarmYellow else MaterialTheme.colorScheme.errorContainer,
+        contentColor = if (active) OnAlarmYellow else MaterialTheme.colorScheme.onErrorContainer,
         shadowElevation = 6.dp,
     ) {
         Row(Modifier.padding(start = 14.dp, end = 18.dp).heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -101,9 +127,21 @@ fun ToiletRequestCard(name: String?, onStart: () -> Unit, onDismiss: () -> Unit,
     }
 }
 
-/** "Ich muss mal!" fuer Kinder: fragt nur an. */
+/** "Ich muss mal!" fuer Kinder: fragt nur an. [active]: Der Alarm laeuft, der Knopf ist gelb und wackelt. */
 @Composable
-fun ToiletKidButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ToiletKidButton(onClick: () -> Unit, modifier: Modifier = Modifier, active: Boolean = false) {
+    if (active) {
+        Surface(
+            modifier = modifier.heightIn(min = 56.dp).wobble(true),
+            shape = RoundedCornerShape(20.dp), color = AlarmYellow, contentColor = OnAlarmYellow, shadowElevation = 4.dp,
+        ) {
+            Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                Icon(painterResource(R.drawable.ic_wc), contentDescription = null, modifier = Modifier.size(32.dp))
+                Text(stringResource(R.string.toilet_kid_active), modifier = Modifier.padding(start = 8.dp), style = MaterialTheme.typography.titleSmall)
+            }
+        }
+        return
+    }
     OutlinedButton(onClick = onClick, modifier = modifier.heightIn(min = 56.dp), shape = RoundedCornerShape(20.dp)) {
         Icon(painterResource(R.drawable.ic_wc), contentDescription = null, modifier = Modifier.size(24.dp))
         Text(stringResource(R.string.toilet_kid_button), modifier = Modifier.padding(start = 8.dp), style = MaterialTheme.typography.titleSmall)

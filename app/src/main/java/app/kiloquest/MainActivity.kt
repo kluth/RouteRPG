@@ -189,7 +189,7 @@ internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             QuestsPill({ vm.showKids(true) }, onLongClick = { vm.showParent(true) })
-            if (state.toilet == null) app.kiloquest.ui.ToiletAlarmButton(vm::toiletAlarm)
+            app.kiloquest.ui.ToiletAlarmButton(vm::toiletAlarm, active = state.toilet?.phase.let { it != null && it != ToiletPhase.NONE })
         }
         state.lanes?.let { LaneStrip(it, Modifier.align(Alignment.BottomCenter).padding(bottom = if (win.shortHeight) 76.dp else 100.dp)) }
         SpeedSign(

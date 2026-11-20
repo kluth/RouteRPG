@@ -96,13 +96,21 @@ fun MiniKids(state: UiState, nav: KidsActions) {
                             }
                             Text(ctx.stringByKey(q.textKey, q.args), style = miniStyle(30), textAlign = TextAlign.Center)
                             if (q.kind == QuestKind.CHOICE) {
+                                // Kein Lesen noetig: jede Antwort hat Form und Farbe (Kreis, Quadrat, Dreieck)
+                                val shapes = listOf(R.drawable.ic_shape_circle, R.drawable.ic_shape_square, R.drawable.ic_shape_triangle)
+                                val colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.tertiary, MaterialTheme.colorScheme.secondary)
                                 q.optionKeys.forEachIndexed { i, key ->
                                     Button(
                                         onClick = { nav.answerQuest(i) },
-                                        modifier = Modifier.fillMaxWidth().height(80.dp),
+                                        modifier = Modifier.fillMaxWidth().height(84.dp),
                                         shape = RoundedCornerShape(28.dp),
-                                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary),
-                                    ) { Text(ctx.stringByKey(key), style = miniStyle(26)) }
+                                        colors = ButtonDefaults.buttonColors(containerColor = colors[i % 3], contentColor = Color.White),
+                                    ) {
+                                        Box(Modifier.size(52.dp).background(Color.White, CircleShape), contentAlignment = Alignment.Center) {
+                                            Icon(painterResource(shapes[i % 3]), contentDescription = null, tint = colors[i % 3], modifier = Modifier.size(30.dp))
+                                        }
+                                        Text(ctx.stringByKey(key), Modifier.padding(start = 14.dp).weight(1f), style = miniStyle(26), textAlign = TextAlign.Start)
+                                    }
                                 }
                             } else {
                                 Button(
@@ -120,7 +128,10 @@ fun MiniKids(state: UiState, nav: KidsActions) {
                                 modifier = Modifier.fillMaxWidth().height(72.dp),
                                 shape = RoundedCornerShape(28.dp),
                                 border = androidx.compose.foundation.BorderStroke(3.dp, MaterialTheme.colorScheme.outlineVariant),
-                            ) { Text(stringResource(R.string.mini_not_yet), style = miniStyle(24), color = MaterialTheme.colorScheme.onSurface) }
+                            ) {
+                                Icon(painterResource(R.drawable.ic_skip_next), contentDescription = null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(stringResource(R.string.mini_not_yet), Modifier.padding(start = 10.dp), style = miniStyle(22), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                         }
                     }
                 }
@@ -144,7 +155,10 @@ fun MiniKids(state: UiState, nav: KidsActions) {
                                 modifier = Modifier.fillMaxWidth().height(96.dp),
                                 shape = RoundedCornerShape(32.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary, contentColor = MaterialTheme.colorScheme.onSecondary),
-                            ) { Text(stringResource(R.string.kids_next), style = miniStyle(34)) }
+                            ) {
+                                Icon(painterResource(R.drawable.ic_arrow_forward), contentDescription = null, modifier = Modifier.size(48.dp))
+                                Text(stringResource(R.string.kids_next), Modifier.padding(start = 12.dp), style = miniStyle(34))
+                            }
                         }
                     }
                 }
@@ -165,7 +179,10 @@ fun MiniKids(state: UiState, nav: KidsActions) {
                     }
                 }
             }
-            if (asked) {
+            val alarm = state.toilet?.phase.let { it != null && it != app.kiloquest.ToiletPhase.NONE }
+            if (alarm) {
+                ToiletKidButton({}, Modifier.fillMaxWidth(), active = true)
+            } else if (asked) {
                 Text(stringResource(R.string.toilet_kid_sent), style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
             } else {
                 ToiletKidButton({ asked = true; nav.requestToilet() }, Modifier.fillMaxWidth())

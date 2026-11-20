@@ -61,8 +61,10 @@ class LayoutShotsTest {
     private val miniChoice = mini.copy(quest = quest)
     private val toiletDrive = driving.copy(
         toilet = ToiletState(ToiletPhase.HEADING, "Raststätte Hünxe", 240.0, 3200.0),
-        toiletRequest = "Mias Tablet",
     )
+
+    private val driveNoToilet = driving
+    private val miniAlarm = mini.copy(toilet = ToiletState(ToiletPhase.HEADING, "Raststätte", 240.0, 3200.0))
 
     private fun shot(name: String, w: Int, h: Int, dark: Boolean = false, state: () -> UiState, screen: Boolean = false) {
         val app = ApplicationProvider.getApplicationContext<Application>()
@@ -122,4 +124,7 @@ class LayoutShotsTest {
     @Test fun toiletPortrait() = shot("toilet-360x780", 360, 780, state = { toiletDrive })
     @Config(qualifiers = "w780dp-h360dp-land-notnight-xxhdpi")
     @Test fun toiletLandscape() = shot("toilet-780x360", 780, 360, state = { toiletDrive })
+
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun miniAlarmShot() = shot("mini-alarm-390x844", 390, 844, state = { miniAlarm }, screen = true)
 }
