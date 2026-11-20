@@ -20,6 +20,8 @@ data class RestStop(
     val offsetMeters: Double,
     val playgroundNearby: Boolean,
     val toiletsNearby: Boolean,
+    /** Ausstattung vom Betreiber bestaetigt (Autobahn GmbH) statt aus OpenStreetMap geschlossen. */
+    val verified: Boolean = false,
 )
 
 /** Rast- und Spielplaetze entlang der Route aus OpenStreetMap (Overpass). Kein Netzwerkcode hier. */
@@ -89,6 +91,10 @@ object RestStops {
         return Item(kind, tag("name"), LatLon(lat, lon))
     }
 
+    /** Betreiberdaten und OpenStreetMap-Treffer zusammen; OSM-Treffer unter [mergeMeters] neben einem Betreiber-Eintrag entfallen (derselbe Ort). */
+    fun merge(osm: List<RestStop>, official: List<RestStop>, mergeMeters: Double = 250.0): List<RestStop> =
+        (official + osm.filter { o -> official.none { haversine(it.position, o.position) < mergeMeters } }).sortedBy { it.alongMeters }
+
     /** Beste Pause nahe [targetAlongMeters]: Spielplatz und WC zaehlen, Umweg und Abstand zum Ziel kosten. */
     fun pick(stops: List<RestStop>, targetAlongMeters: Double): RestStop? = stops.maxByOrNull { score(it, targetAlongMeters) }
 
@@ -98,7 +104,7 @@ object RestStops {
             StopKind.PLAYGROUND -> 2.0
             StopKind.TOILETS -> 1.0
         }
-        return base + (if (s.playgroundNearby) 2.0 else 0.0) + (if (s.toiletsNearby) 1.0 else 0.0) -
+        return base + (if (s.playgroundNearby) 2.0 else 0.0) + (if (s.toiletsNearby) 1.0 else 0.0) + (if (s.verified) 1.5 else 0.0) -
             s.offsetMeters / 300.0 - abs(s.alongMeters - targetAlongMeters) / 20_000.0
     }
 

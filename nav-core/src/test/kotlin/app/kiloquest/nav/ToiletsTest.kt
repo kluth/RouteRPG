@@ -137,4 +137,41 @@ class ToiletsTest {
         val toilets = at(ToiletKind.TOILETS, 51.02)
         assertEquals(fuelV, ToiletFinder.choose(pos, listOf(toilets, fuelV), listOf(200.0, 190.0))!!.stop)
     }
+
+    @Test fun allRestAreasCanBeParsedIncludingThoseWithoutToilet() {
+        val all = AutobahnRestAreas.parse(res("autobahn_parking_lorry.json"), requireToilet = false)
+        val withWc = AutobahnRestAreas.parse(res("autobahn_parking_lorry.json"))
+        assertTrue(all.size > withWc.size)
+        assertTrue(withWc.all { StopFeature.TOILET in it.features })
+        assertTrue(all.any { StopFeature.TOILET !in it.features })
+    }
+
+    @Test fun oppositeCarriagewayIsExcluded() {
+        // Route fuehrt nach Norden: rechts = Osten (Lon +), links = Westen. Rastplaetze in Gegenrichtung liegen links (Westen).
+        val ours = at(ToiletKind.REST_AREA, 51.08, 130.0).copy(verified = true)
+        val opposite = at(ToiletKind.REST_AREA, 51.08, -130.0).copy(verified = true)
+        val onLine = at(ToiletKind.REST_AREA, 51.09, 10.0).copy(verified = true)
+        assertTrue(AutobahnRestAreas.onOurSide(route, ours))
+        assertTrue(!AutobahnRestAreas.onOurSide(route, opposite))
+        assertTrue(AutobahnRestAreas.onOurSide(route, onLine))
+    }
+
+    @Test fun restAreasBecomeBreakCandidatesWithFacilities() {
+        val s = ToiletStop(ToiletKind.SERVICES, "Hollenstedt Nord", at(ToiletKind.SERVICES, 51.08, 100.0).position, true,
+            setOf(StopFeature.TOILET, StopFeature.PLAYGROUND, StopFeature.RESTAURANT))
+        val out = AutobahnRestAreas.toRestStops(listOf(s), route, 5_000.0, 20_000.0)
+        assertEquals(1, out.size)
+        val b = out[0]
+        assertEquals(StopKind.SERVICES, b.kind)
+        assertTrue(b.playgroundNearby && b.toiletsNearby && b.verified)
+        assertTrue(AutobahnRestAreas.toRestStops(listOf(s), route, 12_000.0, 20_000.0).isEmpty(), "outside the window")
+    }
+
+    @Test fun verifiedBreakStopsBeatEqualOsmStops() {
+        val osm = RestStop(StopKind.REST_AREA, null, LatLon(51.0, 7.0), 10_000.0, 100.0, playgroundNearby = true, toiletsNearby = true)
+        val ver = osm.copy(position = LatLon(51.05, 7.0), alongMeters = 10_200.0, verified = true)
+        assertEquals(ver, RestStops.pick(listOf(osm, ver), 10_000.0))
+        val twin = osm.copy(position = LatLon(51.0501, 7.0001))
+        assertEquals(listOf(ver), RestStops.merge(listOf(twin), listOf(ver)))
+    }
 }

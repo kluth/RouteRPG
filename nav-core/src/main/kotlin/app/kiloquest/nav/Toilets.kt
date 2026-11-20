@@ -15,7 +15,7 @@ import kotlinx.serialization.json.put
 enum class ToiletKind { TOILETS, REST_AREA, SERVICES, FUEL }
 
 /** Ausstattung eines Halts, soweit bekannt (z. B. aus den Betreiberdaten der Autobahn). */
-enum class StopFeature { WHEELCHAIR_WC, PLAYGROUND, RESTAURANT, FUEL, SHOWER }
+enum class StopFeature { TOILET, WHEELCHAIR_WC, PLAYGROUND, RESTAURANT, FUEL, SHOWER }
 
 /** [verified] = Toilette vom Betreiber bestaetigt (Autobahn GmbH), nicht nur aus OpenStreetMap geschlossen. */
 data class ToiletStop(
@@ -179,14 +179,45 @@ object AutobahnRestAreas {
 
     fun url(road: String) = AutobahnApi.url(road, "parking_lorry")
 
-    fun parse(body: String): List<ToiletStop> {
+    /** Alle Rastplaetze; mit [requireToilet] nur die mit "Toilette vorhanden" (Standard, fuer den Klo-Alarm). */
+    fun parse(body: String, requireToilet: Boolean = true): List<ToiletStop> {
         val items = (json.parseToJsonElement(body).jsonObject["parking_lorry"] as? JsonArray) ?: return emptyList()
-        return items.mapNotNull { runCatching { toStop(it.jsonObject) }.getOrNull() }
+        return items.mapNotNull { runCatching { toStop(it.jsonObject, requireToilet) }.getOrNull() }
     }
 
-    private fun toStop(o: JsonObject): ToiletStop? {
+    /**
+     * Liegt der Platz auf unserer Fahrbahn? Rastplaetze gibt es je Richtung; die der Gegenrichtung liegen links von der Route
+     * (Rechtsverkehr) und sind nicht erreichbar. Mehr als [toleranceMeters] links der Linie zaehlt als Gegenfahrbahn (echte A1-Daten: unsere Seite 28 bis 50 m rechts, Gegenrichtung 38 bis 74 m links).
+     */
+    fun onOurSide(route: Route, stop: ToiletStop, toleranceMeters: Double = 15.0): Boolean {
+        val pr = route.line.project(stop.position)
+        val a = route.line.points[pr.segmentIndex]
+        val b = route.line.points[(pr.segmentIndex + 1).coerceAtMost(route.line.points.size - 1)]
+        val kx = Math.cos(Math.toRadians(a.lat)) * 111_320.0
+        val ky = 110_540.0
+        val bx = (b.lon - a.lon) * kx; val by = (b.lat - a.lat) * ky
+        val px = (stop.position.lon - a.lon) * kx; val py = (stop.position.lat - a.lat) * ky
+        val len = Math.sqrt(bx * bx + by * by)
+        if (len == 0.0) return true
+        val leftMeters = (bx * py - by * px) / len // positiv = links der Fahrtrichtung
+        return leftMeters <= toleranceMeters
+    }
+
+    /** Als Pausen-Kandidaten (mit Ausstattung): nur Plaetze zwischen [fromMeters] und [toMeters] und hoechstens [maxOffsetMeters] von der Route. */
+    fun toRestStops(stops: List<ToiletStop>, route: Route, fromMeters: Double, toMeters: Double, maxOffsetMeters: Double = 700.0): List<RestStop> =
+        stops.mapNotNull { s ->
+            val pr = route.line.project(s.position)
+            if (pr.offsetMeters > maxOffsetMeters || pr.alongMeters < fromMeters || pr.alongMeters > toMeters) return@mapNotNull null
+            RestStop(
+                kind = if (s.kind == ToiletKind.SERVICES) StopKind.SERVICES else StopKind.REST_AREA,
+                name = s.name, position = s.position, alongMeters = pr.alongMeters, offsetMeters = pr.offsetMeters,
+                playgroundNearby = StopFeature.PLAYGROUND in s.features, toiletsNearby = StopFeature.TOILET in s.features, verified = true,
+            )
+        }
+
+    private fun toStop(o: JsonObject, requireToilet: Boolean): ToiletStop? {
         val feats = (o["lorryParkingFeatureIcons"] as? JsonArray).orEmpty().mapNotNull { it.jsonObject["description"]?.jsonPrimitive?.content }
-        if ("Toilette vorhanden" !in feats) return null
+        if (requireToilet && "Toilette vorhanden" !in feats) return null
         val c = o["coordinate"]?.jsonObject ?: return null
         val lat = c["lat"]?.jsonPrimitive?.doubleOrNull ?: return null
         val lon = c["long"]?.jsonPrimitive?.doubleOrNull ?: return null
@@ -194,6 +225,7 @@ object AutobahnRestAreas {
         val fuel = feats.any { it.startsWith("Tankstelle") }
         val kind = if (restaurant) ToiletKind.SERVICES else ToiletKind.REST_AREA
         val features = buildSet {
+            if ("Toilette vorhanden" in feats) add(StopFeature.TOILET)
             if ("Barrierefreie Toilettenkabine" in feats) add(StopFeature.WHEELCHAIR_WC)
             if ("Spielplatz" in feats) add(StopFeature.PLAYGROUND)
             if (restaurant) add(StopFeature.RESTAURANT)

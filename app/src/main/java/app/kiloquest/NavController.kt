@@ -1116,9 +1116,14 @@ class NavController(private val app: Application) : KidsActions {
             try {
                 val from = along + 4_000.0
                 val to = minOf(route.lengthMeters - 1_000.0, along + 45_000.0)
-                val stops = runCatching {
+                val osm = runCatching {
                     RestStops.parse(withContext(Dispatchers.IO) { fetchOverpass(RestStops.buildQuery(route, from, to)) }, route, from, to)
                 }.getOrDefault(emptyList())
+                // Autobahn-Rastplaetze mit bestaetigter Ausstattung (Spielplatz, WC) auf unserer Fahrbahn; sie gehen vor OSM-Treffern
+                val official = AutobahnRestAreas.toRestStops(
+                    autobahnRestAreas(route, along).filter { AutobahnRestAreas.onOurSide(route, it) }, route, from, to,
+                )
+                val stops = RestStops.merge(osm, official)
                 val best = RestStops.pick(stops, targetAlongMeters = along + 20_000.0)
                 if (best == null) {
                     breakPlanner.snooze()
@@ -1643,7 +1648,7 @@ class NavController(private val app: Application) : KidsActions {
             roads.map { r ->
                 async(Dispatchers.IO) {
                     restAreaCache[r]?.takeIf { now - it.first < 12 * 3_600_000L }?.second
-                        ?: runCatching { AutobahnRestAreas.parse(fetchUrl(AutobahnRestAreas.url(r))) }.getOrNull()?.also { restAreaCache[r] = now to it }
+                        ?: runCatching { AutobahnRestAreas.parse(fetchUrl(AutobahnRestAreas.url(r)), requireToilet = false) }.getOrNull()?.also { restAreaCache[r] = now to it }
                         ?: emptyList()
                 }
             }.awaitAll().flatten()
@@ -1651,7 +1656,8 @@ class NavController(private val app: Application) : KidsActions {
     }
 
     private suspend fun findToiletAhead(route: Route, along: Double, pos: LatLon, corridorMeters: Double): ToiletChoice? {
-        val official = autobahnRestAreas(route, along)
+        // nur Plaetze auf unserer Fahrbahn mit Toilette (Gegenrichtung ist nicht erreichbar)
+        val official = autobahnRestAreas(route, along).filter { StopFeature.TOILET in it.features && AutobahnRestAreas.onOurSide(route, it) }
         val tiers = listOf(15_000.0 to corridorMeters, 40_000.0 to corridorMeters * 1.5, 100_000.0 to corridorMeters * 2)
         for ((window, corridor) in tiers) {
             val w = minOf(window, route.lengthMeters - along)
