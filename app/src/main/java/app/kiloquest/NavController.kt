@@ -19,6 +19,8 @@ import app.kiloquest.game.QuestCatalog
 import app.kiloquest.game.QuestGenerator
 import app.kiloquest.game.QuestType
 import app.kiloquest.game.RouteFacts
+import app.kiloquest.game.Story
+import app.kiloquest.game.WikiStories
 import app.kiloquest.game.Sticker
 import app.kiloquest.game.StickerBook
 import app.kiloquest.nav.SpeechArbiter
@@ -530,21 +532,39 @@ class NavController(private val app: Application) {
         _state.update {
             it.copy(quest = q, feedback = null, newSticker = null, currentPlayer = adv?.currentPlayer ?: 0)
         }
-        if (q.type == QuestType.ROUTE_FACT && q.textKey == RouteFacts.PENDING_KEY) {
-            // Streckenfakt: Umgebung per Overpass abfragen, bei Fehler Rueckfall-Aufgabe
-            scope.launch {
+        when {
+            q.textKey == RouteFacts.PENDING_KEY -> resolveQuest(q) {
                 val facts = runCatching {
                     RouteFacts.parse(withContext(Dispatchers.IO) { fetchOverpass(RouteFacts.buildQuery(pos.lat, pos.lon)) })
                 }.getOrDefault(emptyList())
-                val resolved = RouteFacts.resolve(q, RouteFacts.pick(facts, Random.Default))
-                if (adventure?.active?.triggerMeters == q.triggerMeters) {
-                    adventure?.replaceActive(resolved)
-                    _state.update { it.copy(quest = resolved) }
-                    announceQuest(resolved)
-                }
+                RouteFacts.resolve(q, RouteFacts.pick(facts, Random.Default))
             }
-        } else {
-            announceQuest(q)
+            q.textKey == WikiStories.PENDING_KEY -> resolveQuest(q) {
+                val age = _state.value.ageBand
+                val lang = Locale.getDefault().language
+                var story: Story? = null
+                // Erst Geraetesprache, dann Englisch als Rueckfall
+                for (l in listOf(lang, "en").distinct()) {
+                    val list = runCatching { WikiStories.parse(fetchUrl(WikiStories.buildUrl(l, pos.lat, pos.lon, age)), age) }
+                        .getOrDefault(emptyList())
+                    story = WikiStories.pick(list, Random.Default)
+                    if (story != null) break
+                }
+                WikiStories.resolve(q, story)
+            }
+            else -> announceQuest(q)
+        }
+    }
+
+    /** Platzhalter-Quest asynchron durch konkrete Quest ersetzen (bei Fehler: Rueckfall-Aufgabe). */
+    private fun resolveQuest(q: Quest, build: suspend () -> Quest) {
+        scope.launch {
+            val resolved = runCatching { build() }.getOrElse { RouteFacts.resolve(q, null) }
+            if (adventure?.active?.triggerMeters == q.triggerMeters) {
+                adventure?.replaceActive(resolved)
+                _state.update { it.copy(quest = resolved) }
+                announceQuest(resolved)
+            }
         }
     }
 

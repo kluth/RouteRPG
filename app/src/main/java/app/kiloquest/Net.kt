@@ -85,3 +85,6 @@ suspend fun fetchOverpass(query: String): String =
 
 /** Autobahn GmbH Verkehrsmeldungen (frei, ohne Schluessel). */
 suspend fun fetchAutobahn(road: String, service: String): String = http(AutobahnApi.url(road, service))
+
+/** Einfacher GET (z. B. Wikipedia-API). */
+suspend fun fetchUrl(url: String): String = http(url)

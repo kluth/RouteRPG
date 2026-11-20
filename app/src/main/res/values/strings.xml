@@ -113,4 +113,7 @@
     <string name="lane_hint_right">Keep to the right lanes.</string>
     <string name="lane_hint_middle">Take the middle lanes.</string>
     <string name="speed_kmh">%1$d km/h</string>
+    <string name="story_pending">A story is on its way…</string>
+    <string name="story_text">Did you know? %1$s: %2$s</string>
+    <string name="story_source">Source: Wikipedia (CC BY-SA)</string>
 </resources>

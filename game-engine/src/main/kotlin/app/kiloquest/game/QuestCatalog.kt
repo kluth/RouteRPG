@@ -47,5 +47,8 @@ object QuestCatalog {
         // Platzhalter: Text wird unterwegs aus OSM-Daten der aktuellen Umgebung bestimmt (siehe RouteFacts)
         QuestTemplate("route_fact", QuestType.ROUTE_FACT, setOf(MINI, EXPLORER, PRO), RouteFacts.PENDING_KEY),
         QuestTemplate("route_fact_2", QuestType.ROUTE_FACT, setOf(MINI, EXPLORER, PRO), RouteFacts.PENDING_KEY),
+        // Platzhalter: Geschichte zu einem Ort in der Naehe aus Wikipedia (siehe WikiStories)
+        QuestTemplate("story", QuestType.STORY, setOf(MINI, EXPLORER, PRO), WikiStories.PENDING_KEY),
+        QuestTemplate("story_2", QuestType.STORY, setOf(MINI, EXPLORER, PRO), WikiStories.PENDING_KEY),
     )
 }

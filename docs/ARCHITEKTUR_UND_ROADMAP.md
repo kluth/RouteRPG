@@ -316,3 +316,9 @@ Gebaut (Build/Lint/Tests grün; Datenformate gegen die echte Valhalla-API geprü
 - **Auto:** Tempolimit-Schild und Spurpfeile werden auf die Auto-Karte gezeichnet (eigener Canvas). Die offiziellen Spur-Elemente der Car App Library brauchen ein Spurbild (Icon) und sind noch nicht umgesetzt.
 
 Grenzen: OSM-Daten sind lückenhaft (nicht überall Limit/Spuren hinterlegt, variable Anzeigen fehlen), wechselnde Limits (Zeit/Wetter) sind nicht abgedeckt. Die Spuren-Zuordnung setzt voraus, dass beide Anfragen dieselbe Route liefern; bei Abweichung bleiben Spuren leer.
+
+## 19. Stand: Zielsuche im Auto & Wikipedia-Geschichten
+
+Gebaut (Build/Lint/Tests grün; nicht im Auto/auf dem Gerät erprobt):
+- **Zielsuche im Auto:** `SearchTemplate` (Tastatur/Sprache laut Host-Regeln), Ergebnisse als Liste, ohne Eingabe die letzten 5 Ziele (auch in der Handy-Suche). In der Aktionsleiste: „Suchen" und, sobald eine Route berechnet ist, „Start". Fehler (z. B. keine GPS-Position) erscheinen als Auto-Toast.
+- **Wikipedia-Geschichten:** Platzhalter-Quests werden unterwegs per Wikipedia-Geosearch gefüllt: Ort in 8 km Umkreis, Intro-Auszug in der Gerätesprache (Rückfall Englisch), Länge nach Altersstufe (1/2/3 Sätze, max. 170/280/450 Zeichen), Klammern entfernt, Orte bevorzugt, die Kinder sehen können (Burg, Berg, See, Brücke …, mehrsprachige Stichwörter). Quelle „Wikipedia (CC BY-SA)" wird in der Kinderansicht angezeigt. Getestet gegen eine echte Wikipedia-Antwort; Schwedisch (Kiruna) funktioniert.

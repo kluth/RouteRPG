@@ -67,6 +67,10 @@ fun KidsScreen(state: UiState, nav: NavController) {
                         )
                     }
                     Text(ctx.stringByKey(q.textKey, q.args), style = MaterialTheme.typography.headlineMedium)
+                    if (q.textKey == app.kiloquest.game.WikiStories.TEXT_KEY) {
+                        // Lizenzhinweis: Wikipedia-Texte stehen unter CC BY-SA
+                        Text(stringResource(R.string.story_source), style = MaterialTheme.typography.labelMedium)
+                    }
                     if (q.kind == QuestKind.CHOICE) {
                         q.optionKeys.forEachIndexed { i, key ->
                             Button(onClick = { nav.answerQuest(i) }, modifier = Modifier.fillMaxWidth()) {

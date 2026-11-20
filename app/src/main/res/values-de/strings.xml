@@ -113,4 +113,7 @@
     <string name="lane_hint_right">Haltet euch rechts.</string>
     <string name="lane_hint_middle">Nehmt die mittleren Spuren.</string>
     <string name="speed_kmh">%1$d km/h</string>
+    <string name="story_pending">Gleich kommt eine Geschichte …</string>
+    <string name="story_text">Wusstet ihr schon? %1$s: %2$s</string>
+    <string name="story_source">Quelle: Wikipedia (CC BY-SA)</string>
 </resources>
