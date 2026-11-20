@@ -101,6 +101,7 @@ private fun AppScreen(vm: NavController) {
         Column(Modifier.align(Alignment.TopCenter).padding(12.dp)) {
             if (!state.navigating) SearchPanel(state, vm)
             state.proposal?.let { ProposalCard(it, vm) }
+            if (state.proposal == null) BreakCard(state, vm)
             if (state.proposal == null) IncidentBanner(state)
             if (state.navigating) state.lanes?.let { LaneStrip(it) }
             state.error?.let {
@@ -180,6 +181,32 @@ private fun IncidentBanner(state: UiState) {
             Modifier.padding(12.dp),
             color = MaterialTheme.colorScheme.error,
         )
+    }
+}
+
+@Composable
+private fun BreakCard(state: UiState, vm: NavController) {
+    val ctx = LocalContext.current
+    val proposal = state.breakProposal
+    val target = state.breakTarget
+    if (proposal != null) {
+        Surface(tonalElevation = 8.dp, modifier = Modifier.padding(top = 8.dp).fillMaxWidth()) {
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(stringResource(R.string.break_title), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.break_banner, formatDistance(proposal.aheadMeters), vm.stopText(proposal.stop)))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = vm::acceptBreak) { Text(stringResource(R.string.break_accept)) }
+                    androidx.compose.material3.OutlinedButton(onClick = vm::laterBreak) { Text(stringResource(R.string.break_later)) }
+                }
+            }
+        }
+    } else if (target != null) {
+        Surface(tonalElevation = 4.dp, modifier = Modifier.padding(top = 8.dp)) {
+            Text(
+                stringResource(R.string.break_banner, formatDistance(state.breakAheadMeters.coerceAtLeast(0.0)), vm.stopText(target)),
+                Modifier.padding(12.dp),
+            )
+        }
     }
 }
 

@@ -43,3 +43,9 @@ data class Quest(
     /** Platzhalter fuer den Text (z. B. Ortsname), in Reihenfolge %1$s, %2$s ... */
     val args: List<String> = emptyList(),
 )
+
+/** Konkrete Quest aus einer Vorlage. */
+fun QuestTemplate.toQuest(triggerMeters: Double) = Quest(
+    templateId = id, textKey = textKey, type = type, triggerMeters = triggerMeters,
+    kind = kind, optionKeys = optionKeys, correctIndex = correctIndex, points = points,
+)

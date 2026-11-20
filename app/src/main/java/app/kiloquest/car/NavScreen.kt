@@ -54,6 +54,19 @@ class NavScreen(carContext: CarContext, private val nav: NavController) : Screen
                     .setOnClickListener { nav.dismissReroute() }
                     .build(),
             )
+        } else if (s.breakProposal != null) {
+            actions.addAction(
+                Action.Builder()
+                    .setTitle(carContext.getString(R.string.break_accept))
+                    .setOnClickListener { nav.acceptBreak() }
+                    .build(),
+            )
+            actions.addAction(
+                Action.Builder()
+                    .setTitle(carContext.getString(R.string.break_later))
+                    .setOnClickListener { nav.laterBreak() }
+                    .build(),
+            )
         } else if (s.navigating) {
             actions.addAction(
                 Action.Builder()

@@ -12,6 +12,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,6 +52,10 @@ fun KidsScreen(state: UiState, nav: NavController) {
             if (state.players > 1) Scoreboard(state)
 
             if (!state.navigating) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Switch(checked = state.sicknessMode, onCheckedChange = nav::setSicknessMode)
+                    Text(stringResource(R.string.kids_sickness_mode), style = MaterialTheme.typography.titleMedium)
+                }
                 AgePicker(state.ageBand, nav::setAgeBand)
                 PlayerPicker(state.players, nav::setPlayers)
             }
@@ -58,6 +63,14 @@ fun KidsScreen(state: UiState, nav: NavController) {
             val q = state.quest
             val fb = state.feedback
             when {
+                // Reiseuebelkeit-Modus: auf kurvigen Abschnitten kein Bildschirm, stattdessen Blick nach draussen
+                state.navigating && state.curvy -> {
+                    Text(
+                        stringResource(R.string.sickness_look_out),
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
                 q != null -> {
                     if (state.players > 1) {
                         Text(

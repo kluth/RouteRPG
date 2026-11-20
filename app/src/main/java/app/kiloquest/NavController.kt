@@ -27,6 +27,13 @@ import app.kiloquest.nav.SpeechArbiter
 import kotlin.random.Random
 import kotlinx.coroutines.withContext
 import app.kiloquest.nav.AnnouncementPlanner
+import app.kiloquest.nav.BreakPlanner
+import app.kiloquest.nav.CurveProfile
+import app.kiloquest.nav.RestStop
+import app.kiloquest.nav.RestStops
+import app.kiloquest.nav.SicknessCoach
+import app.kiloquest.nav.StopKind
+import app.kiloquest.game.toQuest
 import app.kiloquest.nav.AutobahnApi
 import app.kiloquest.nav.ExclusionZones
 import app.kiloquest.nav.IncidentMatcher
@@ -74,6 +81,9 @@ data class RerouteProposal(
     val incident: RouteIncident,
 )
 
+/** Vorgeschlagene Pause voraus. */
+data class BreakProposal(val stop: RestStop, val aheadMeters: Double)
+
 /** Route samt Spurinformation. */
 private data class LoadedRoute(val route: Route, val lanes: List<LaneGuidance>)
 
@@ -107,6 +117,12 @@ data class UiState(
     val overspeed: Boolean = false,
     val lanes: LaneGuidance? = null,
     val recents: List<Place> = emptyList(),
+    val curvy: Boolean = false,
+    val sicknessMode: Boolean = true,
+    val breakProposal: BreakProposal? = null,
+    /** Angenommene Pause: Ziel, zu dem es noch [breakAheadMeters] sind. */
+    val breakTarget: RestStop? = null,
+    val breakAheadMeters: Double = 0.0,
 )
 
 private const val TRAFFIC_REFRESH_MS = 5 * 60_000L
@@ -114,6 +130,7 @@ private const val MAX_TRAFFIC_ROADS = 10
 private const val ANNOUNCE_AHEAD_METERS = 100_000.0
 private const val MIN_SAVED_MINUTES = 5
 private const val MAX_RECENTS = 5
+private const val BREAK_ARRIVAL_METERS = 400.0
 private const val SPEED_WINDOW_METERS = 25_000.0
 private const val SPEED_PREFETCH_METERS = 5_000.0
 
@@ -132,6 +149,11 @@ class NavController(private val app: Application) {
     private var speedFetching = false
     private var speedRetryAt = 0L
     private var laneAnnouncer: LaneAnnouncer? = null
+    private var curveProfile: CurveProfile? = null
+    private val sicknessCoach = SicknessCoach()
+    private var sicknessPromptIndex = 0
+    private var breakPlanner = BreakPlanner(intervalMs = 75 * 60_000L)
+    private var breakPlanning = false
     /** Meter, die auf frueheren Routen schon gefahren wurden (Quest-Positionen gelten fuer die Gesamtfahrt). */
     private var questOffset = 0.0
     private val book = StickerBook(prefs.getStringSet("album", emptySet()).orEmpty())
@@ -143,6 +165,7 @@ class NavController(private val app: Application) {
             album = book.collected.toSet(),
             totalPoints = prefs.getInt("total_points", 0),
             recents = loadRecents(),
+            sicknessMode = prefs.getBoolean("sickness_mode", true),
         ),
     )
     val state: StateFlow<UiState> = _state
@@ -255,6 +278,7 @@ class NavController(private val app: Application) {
         engine = GuidanceEngine(l.route)
         planner = AnnouncementPlanner(l.route)
         laneAnnouncer = LaneAnnouncer(l.lanes)
+        curveProfile = CurveProfile(l.route)
         speedProfile = SpeedProfile()
         speedFetching = false
         speedRetryAt = 0L
@@ -334,6 +358,8 @@ class NavController(private val app: Application) {
         if (_state.value.route == null) return
         _state.update { it.copy(navigating = true) }
         _state.value.route?.maneuvers?.firstOrNull()?.instruction?.let(::speak)
+        breakPlanner = BreakPlanner(intervalMs = breakIntervalMs(_state.value.ageBand))
+        breakPlanning = false
         trafficJob?.cancel()
         trafficJob = scope.launch {
             while (isActive) {
@@ -349,6 +375,7 @@ class NavController(private val app: Application) {
                 navigating = false, route = null, destination = null, guidance = null, quest = null, feedback = null,
                 kidsScreen = false, incidents = emptyList(), proposal = null,
                 speedKmh = null, speedLimit = null, overspeed = false, lanes = null,
+                curvy = false, breakProposal = null, breakTarget = null,
             )
         }
         trafficJob?.cancel()
@@ -374,7 +401,20 @@ class NavController(private val app: Application) {
         }
         planner?.next(g)?.let(::speak)
         updateDrivingAssist(loc, g.alongMeters)
-        adventure?.onProgress(questOffset + g.alongMeters)?.let { q -> onQuestTriggered(q, pos) }
+        val now0 = System.currentTimeMillis()
+        val curvy = _state.value.sicknessMode && curveProfile?.isCurvy(g.alongMeters) == true
+        if (curvy != _state.value.curvy) _state.update { it.copy(curvy = curvy) }
+        if (sicknessCoach.onTick(curvy, now0)) {
+            val res = when (sicknessPromptIndex++ % 3) {
+                0 -> R.string.sickness_prompt_1
+                1 -> R.string.sickness_prompt_2
+                else -> R.string.sickness_prompt_3
+            }
+            speakQuest(app.getString(res))
+        }
+        updateBreaks(loc, g.alongMeters, now0)
+        // Auf kurvigen Abschnitten keine neue Bildschirm-Aufgabe ausloesen; sie kommt auf gerader Strecke
+        if (!curvy) adventure?.onProgress(questOffset + g.alongMeters)?.let { q -> onQuestTriggered(q, pos) }
         arbiter.poll(System.currentTimeMillis(), tts?.isSpeaking == true)?.let(::speakQuest)
         val now = System.currentTimeMillis()
         if (g.isOffRoute && now - lastReroute > 15_000) {
@@ -382,6 +422,99 @@ class NavController(private val app: Application) {
             speak(app.getString(R.string.rerouting))
             calculateRoute()
         }
+    }
+
+    // ---------------------------------------------------------------- Pausen & Reiseuebelkeit
+
+    fun setSicknessMode(on: Boolean) {
+        prefs.edit().putBoolean("sickness_mode", on).apply()
+        _state.update { it.copy(sicknessMode = on, curvy = if (on) it.curvy else false) }
+    }
+
+    /** Abstand zwischen Pausen nach Altersstufe der juengsten Gruppe. */
+    private fun breakIntervalMs(age: AgeBand): Long = when (age) {
+        AgeBand.MINI -> 60
+        AgeBand.EXPLORER -> 75
+        AgeBand.PRO -> 100
+    } * 60_000L
+
+    private fun updateBreaks(loc: Location, along: Double, nowMs: Long) {
+        val route = _state.value.route ?: return
+        val kmh = if (loc.hasSpeed()) loc.speed * 3.6 else 0.0
+        val due = breakPlanner.onTick(nowMs, kmh)
+        if (due && !breakPlanning && _state.value.breakTarget == null && _state.value.breakProposal == null) planBreak(route, along)
+
+        // Angenommene Pause: Abstand fortschreiben, Ankunft erkennen
+        val target = _state.value.breakTarget ?: return
+        val ahead = target.alongMeters - along
+        _state.update { it.copy(breakAheadMeters = ahead) }
+        if (ahead <= BREAK_ARRIVAL_METERS && kmh < 15.0) {
+            val q = QuestCatalog.default.filter { it.type == QuestType.BREAK }.random().toQuest(questOffset + along)
+            adventure?.forceQuest(q)
+            breakPlanner.reset()
+            _state.update { it.copy(breakTarget = null, quest = q, feedback = null, newSticker = null) }
+            speak(app.getString(R.string.break_arrived))
+            announceQuest(q)
+        } else if (ahead < -800.0) {
+            // vorbeigefahren: spaeter erneut erinnern
+            breakPlanner.snooze()
+            _state.update { it.copy(breakTarget = null) }
+        }
+    }
+
+    private fun planBreak(route: Route, along: Double) {
+        if (route.lengthMeters - along < 8_000.0) { breakPlanner.snooze(); return }
+        breakPlanning = true
+        scope.launch {
+            try {
+                val from = along + 4_000.0
+                val to = minOf(route.lengthMeters - 1_000.0, along + 45_000.0)
+                val stops = runCatching {
+                    RestStops.parse(withContext(Dispatchers.IO) { fetchOverpass(RestStops.buildQuery(route, from, to)) }, route, from, to)
+                }.getOrDefault(emptyList())
+                val best = RestStops.pick(stops, targetAlongMeters = along + 20_000.0)
+                if (best == null) {
+                    breakPlanner.snooze()
+                } else {
+                    val ahead = best.alongMeters - along
+                    _state.update { it.copy(breakProposal = BreakProposal(best, ahead)) }
+                    speakQuest(app.getString(R.string.break_speech, distanceText(ahead), stopText(best)))
+                }
+            } finally {
+                breakPlanning = false
+            }
+        }
+    }
+
+    fun acceptBreak() {
+        val p = _state.value.breakProposal ?: return
+        _state.update { it.copy(breakProposal = null, breakTarget = p.stop, breakAheadMeters = p.aheadMeters) }
+    }
+
+    fun laterBreak() {
+        breakPlanner.snooze()
+        _state.update { it.copy(breakProposal = null) }
+    }
+
+    private fun distanceText(meters: Double): String =
+        if (meters >= 1000) app.getString(R.string.unit_km, meters / 1000.0) else app.getString(R.string.unit_m, meters.toInt().coerceAtLeast(0))
+
+    /** "Rastplatz Name (mit Spielplatz & WC)". */
+    fun stopText(s: RestStop): String {
+        val kind = app.getString(
+            when (s.kind) {
+                StopKind.REST_AREA -> R.string.stop_rest_area
+                StopKind.SERVICES -> R.string.stop_services
+                StopKind.PLAYGROUND -> R.string.stop_playground
+                StopKind.TOILETS -> R.string.stop_toilets
+            },
+        )
+        val features = buildList {
+            if (s.playgroundNearby && s.kind != StopKind.PLAYGROUND) add(app.getString(R.string.break_playground))
+            if (s.toiletsNearby && s.kind != StopKind.TOILETS) add(app.getString(R.string.break_toilets))
+        }
+        return listOfNotNull(kind, s.name).joinToString(" ") +
+            if (features.isNotEmpty()) " (" + app.getString(R.string.break_with, features.joinToString(" & ")) + ")" else ""
     }
 
     // ---------------------------------------------------------------- Tempolimit & Spuren

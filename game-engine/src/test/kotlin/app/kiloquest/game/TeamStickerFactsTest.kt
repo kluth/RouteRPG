@@ -82,4 +82,15 @@ class TeamStickerFactsTest {
         assertTrue(RouteFacts.parse("""{"elements":[]}""").isEmpty())
         assertNull(RouteFacts.pick(emptyList(), Random(1)))
     }
+
+    @Test
+    fun `forceQuest activates a quest outside the plan`() {
+        val s = AdventureSession(listOf(check(1000.0)), playerCount = 2)
+        val q = QuestCatalog.default.first { it.type == QuestType.BREAK }.toQuest(500.0)
+        s.forceQuest(q)
+        assertEquals(q, s.active)
+        s.answer()
+        assertEquals(1, s.completed)
+        assertNotNull(s.onProgress(1000.0)) // geplante Quest kommt trotzdem noch
+    }
 }

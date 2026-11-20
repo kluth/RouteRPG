@@ -116,4 +116,22 @@
     <string name="story_pending">A story is on its way…</string>
     <string name="story_text">Did you know? %1$s: %2$s</string>
     <string name="story_source">Source: Wikipedia (CC BY-SA)</string>
+    <string name="sickness_prompt_1">Winding road. Look out of the window at the horizon now.</string>
+    <string name="sickness_prompt_2">Tip: look far into the distance and breathe deeply.</string>
+    <string name="sickness_prompt_3">It will be straighter soon. Until then: eyes outside.</string>
+    <string name="sickness_look_out">Winding road – look outside at the horizon!</string>
+    <string name="kids_sickness_mode">Travel-sickness mode</string>
+    <string name="break_title">Time for a break</string>
+    <string name="break_accept">Take a break</string>
+    <string name="break_later">Later</string>
+    <string name="break_speech">Time for a break. In %1$s: %2$s.</string>
+    <string name="break_banner">Break in %1$s: %2$s</string>
+    <string name="break_arrived">Break time! Stretch your legs and get some fresh air.</string>
+    <string name="break_with">with %1$s</string>
+    <string name="break_playground">playground</string>
+    <string name="break_toilets">toilets</string>
+    <string name="stop_rest_area">Rest area</string>
+    <string name="stop_services">Services</string>
+    <string name="stop_playground">Playground</string>
+    <string name="stop_toilets">Toilets</string>
 </resources>

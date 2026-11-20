@@ -52,6 +52,14 @@ class AdventureSession(
         return next
     }
 
+    /** Setzt eine Quest ausser der Reihe aktiv (z. B. Bewegungsaufgabe bei der Pause). Die geplante Reihenfolge bleibt. */
+    fun forceQuest(quest: Quest): Quest {
+        if (active != null) skipped++
+        currentPlayer = nextIndex % playerCount
+        active = quest
+        return quest
+    }
+
     /** Ersetzt die aktive Quest (z. B. Streckenfakt-Platzhalter durch konkreten Text). */
     fun replaceActive(quest: Quest) {
         if (active != null) active = quest

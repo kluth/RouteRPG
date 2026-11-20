@@ -337,3 +337,17 @@ Gewünschte Schwerpunkte (Reihenfolge wird in Runde 2 geklärt):
 4. **Reiseübelkeit-Modus:** keine Bildschirm-Aufgaben auf kurvigen Abschnitten, stattdessen Hör-/Blickaufgaben, Pausenhinweis.
 
 Recherche-Fakten (geprüft am 20.11.2026): Autobahn-API liefert zusätzlich Ladestationen, Lkw-Parkplätze, Baustellen, Webcams (frei); GBIF und iNaturalist frei nutzbar; Open-Meteo frei für nicht kommerzielle Nutzung; Open Charge Map braucht Schlüssel; OpenSky (Flugzeuge) nicht geprüft. Android Auto: Spiele nur im Stand erlaubt, daher Spiel auf dem Handy, im Auto nur Audio.
+
+## 22. Erweiterungen: Entscheidungen Runde 2 und Reihenfolge
+
+- **Offline:** „Reise-Paket": Vor der Abfahrt wird ein Korridor um die Route geladen (Karte, Route, Tempolimits, Spuren, Geschichten, Wetter). Kein Routing auf dem Gerät; Neuberechnung bei Abweichung nur mit Netz.
+- **Pausenplaner:** automatisch nach Altersstufe (MINI ca. 60 Min., EXPLORER ca. 75, PRO ca. 100 Min. Fahrzeit), Vorschlag für Rastplatz/Spielplatz/WC voraus, Annahme per Knopfdruck, Bewegungsaufgabe bei Ankunft.
+- **Mehrtagesreise:** Etappenziele setzt der Nutzer selbst; die App plant Strecke, Pausen und Abenteuer je Etappe.
+- **Reihenfolge („klein & schnell zuerst"):** 1. Reiseübelkeit-Modus, 2. Pausenplaner, 3. Wetter & Sonnenzeiten, 4. Natur-Quests, 5. Mehrtagesreise, 6. Länder-Mini-Sprachkurs, 7. Himmel & Flugzeuge, 8. Eltern-Rätsel & Sprachantworten, 9. Reise-Paket (Offline).
+
+## 23. Stand Erweiterungen 1 und 2: Reiseübelkeit-Modus und Pausenplaner
+
+Gebaut (Build/Lint/Tests grün; nicht auf dem Gerät erprobt):
+- **Reiseübelkeit-Modus** (Schalter in der Kinderansicht, Standard an): Die Route wird auf Kurvigkeit analysiert (Richtungsänderung pro km, einzelne Kreuzungsabbiegungen zählen nicht). Auf kurvigen Abschnitten erscheint in der Kinderansicht „Blick nach draußen", neue Bildschirm-Aufgaben werden bis zur nächsten geraden Strecke zurückgestellt, und es gibt höchstens alle 3 Minuten einen gesprochenen Hinweis (3 Varianten).
+- **Pausenplaner:** Zählt Fahrzeit seit der letzten Pause (≥ 5 Min. Stillstand setzt zurück). Intervall nach Altersstufe: 60/75/100 Min. Dann sucht die App per Overpass 4–45 km voraus Rastplätze, Raststätten, Spielplätze, WC (≤ 700 m von der Route) und wählt den besten (Spielplatz/WC in der Nähe zählen, Umweg kostet). Vorschlag per Ansage und Karte im Handy-Display und in der Auto-Aktionsleiste: „Pause einlegen" / „Später" (Erinnerung nach 10 Min.). Bei Ankunft (≤ 400 m, langsam) erscheint eine Bewegungsaufgabe; Zeit-Zähler wird zurückgesetzt.
+- Grenzen: Der Vorschlag führt nicht automatisch dorthin (liegt aber höchstens 700 m neben der Route); OSM-Daten für Rastplätze sind lückenhaft, besonders in Schweden/Lappland. Die Schwellen (150°/km, Intervalle) sind Schätzwerte und gehören auf der Fahrt kalibriert.

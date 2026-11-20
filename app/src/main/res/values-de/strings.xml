@@ -116,4 +116,22 @@
     <string name="story_pending">Gleich kommt eine Geschichte …</string>
     <string name="story_text">Wusstet ihr schon? %1$s: %2$s</string>
     <string name="story_source">Quelle: Wikipedia (CC BY-SA)</string>
+    <string name="sickness_prompt_1">Kurvige Strecke. Schaut jetzt aus dem Fenster zum Horizont.</string>
+    <string name="sickness_prompt_2">Tipp: Schaut weit in die Ferne und atmet tief durch.</string>
+    <string name="sickness_prompt_3">Gleich wird es wieder gerader. Bis dahin: Blick nach draußen.</string>
+    <string name="sickness_look_out">Kurvige Strecke – schaut nach draußen zum Horizont!</string>
+    <string name="kids_sickness_mode">Reiseübelkeit-Modus</string>
+    <string name="break_title">Zeit für eine Pause</string>
+    <string name="break_accept">Pause einlegen</string>
+    <string name="break_later">Später</string>
+    <string name="break_speech">Zeit für eine Pause. In %1$s: %2$s.</string>
+    <string name="break_banner">Pause in %1$s: %2$s</string>
+    <string name="break_arrived">Pausenzeit! Beine vertreten und frische Luft schnappen.</string>
+    <string name="break_with">mit %1$s</string>
+    <string name="break_playground">Spielplatz</string>
+    <string name="break_toilets">WC</string>
+    <string name="stop_rest_area">Rastplatz</string>
+    <string name="stop_services">Raststätte</string>
+    <string name="stop_playground">Spielplatz</string>
+    <string name="stop_toilets">WC</string>
 </resources>
