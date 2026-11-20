@@ -45,6 +45,34 @@ data class PosDto(val lat: Double, val lon: Double, val bearing: Float? = null, 
 @Serializable
 data class ToiletDto(val phase: String, val label: String = "", val seconds: Double? = null, val meters: Double? = null)
 
+/**
+ * Fahrtstatus fuer das Beifahrer-Geraet (eigene, leichte Nachricht, grob gerundet und gedrosselt). Texte kommen vom Hauptgeraet
+ * in dessen Sprache. [remainingSeconds] ist eine Schaetzung aus der Routendauer; die Ankunftszeit rechnet das Geraet selbst.
+ */
+@Serializable
+data class DriveDto(
+    val destination: String = "",
+    val totalMeters: Double = 0.0,
+    val remainingMeters: Double = 0.0,
+    val remainingSeconds: Double = 0.0,
+    val speedKmh: Int? = null,
+    val limitKmh: Int? = null,
+    val country: String? = null,
+    val nextInstruction: String? = null,
+    val nextMeters: Double? = null,
+) {
+    /** Fortschritt 0..1 (0 bei unbekannter Laenge). */
+    val progress: Float get() = if (totalMeters <= 0.0) 0f else (1.0 - remainingMeters / totalMeters).coerceIn(0.0, 1.0).toFloat()
+
+    /** Zum Senden grob runden, damit sich die Nachricht nur bei merkbaren Aenderungen aendert. */
+    fun rounded(): DriveDto = copy(
+        remainingMeters = Math.round(remainingMeters / 100.0) * 100.0,
+        remainingSeconds = Math.round(remainingSeconds / 60.0) * 60.0,
+        speedKmh = speedKmh?.let { Math.round(it / 5.0).toInt() * 5 },
+        nextMeters = nextMeters?.let { Math.round(it / 50.0) * 50.0 },
+    )
+}
+
 /** Alles, was ein gekoppeltes Geraet zum Darstellen braucht. */
 @Serializable
 data class Snapshot(
@@ -89,6 +117,8 @@ sealed interface ClientMsg {
     @Serializable @SerialName("toilet_dismiss") data object ToiletDismiss : ClientMsg
     /** Kind: "Ich muss mal" (loest nichts aus, fragt nur den Beifahrer). */
     @Serializable @SerialName("toilet_request") data object ToiletRequest : ClientMsg
+    /** Beifahrer: jetzt eine Pause vorschlagen lassen (Rastplatz voraus), statt auf den Pausentakt zu warten. */
+    @Serializable @SerialName("break_request") data object BreakRequest : ClientMsg
     @Serializable @SerialName("ping") data object Ping : ClientMsg
 }
 
@@ -100,6 +130,8 @@ sealed interface HostMsg {
     @Serializable @SerialName("snapshot") data class SnapshotMsg(val snapshot: Snapshot) : HostMsg
     @Serializable @SerialName("route") data class RouteMsg(val route: RouteDto?) : HostMsg
     @Serializable @SerialName("pos") data class PositionMsg(val pos: PosDto?) : HostMsg
+    /** Fahrtstatus (nur fuer Beifahrer-Geraete); null = keine Fahrt. */
+    @Serializable @SerialName("drive") data class DriveMsg(val drive: DriveDto?) : HostMsg
     @Serializable @SerialName("bye") data object Bye : HostMsg
 }
 

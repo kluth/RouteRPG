@@ -224,7 +224,7 @@ internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
         if (client.status == app.kiloquest.link.ClientStatus.CONNECTED && !state.parentScreen && !state.settingsScreen) {
             val snap = client.snapshot
             if (client.role == app.kiloquest.link.Role.COPILOT) {
-                app.kiloquest.link.CopilotRemoteScreen(snap) { vm.showParent(true) }
+                app.kiloquest.link.CopilotRemoteScreen(snap, client.drive) { vm.showParent(true) }
             } else if (snap != null) {
                 KidsScreen(snap.toUiStateFor(state.ageBand, state.avatar, state.realMap, client.route, client.pos), app.kiloquest.link.RemoteActions(linkApp.linkClient, vm))
             }

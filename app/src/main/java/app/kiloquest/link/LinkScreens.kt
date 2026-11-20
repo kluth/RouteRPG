@@ -179,11 +179,12 @@ fun LinkClientCard(ageBand: AgeBand) {
 
 /** Beifahrer-Geraet: Umfahrung und Pause entscheiden, sonst nur Status. */
 @Composable
-fun CopilotRemoteScreen(snapshot: Snapshot?, onMenu: () -> Unit) {
+fun CopilotRemoteScreen(snapshot: Snapshot?, drive: DriveDto?, onMenu: () -> Unit) {
     val client = (LocalContext.current.applicationContext as KiloQuestApp).linkClient
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.screenColumn().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.parent_title), style = MaterialTheme.typography.headlineMedium)
+            DriveCard(if (snapshot?.navigating == true) drive else null)
             // Klo-Alarm: Wunsch eines Kindes, laufender Alarm oder der Knopf selbst
             app.kiloquest.ui.ToiletRequestCard(snapshot?.toiletRequest, { client.send(ClientMsg.ToiletAlarm) }, { client.send(ClientMsg.ToiletDismiss) })
             val td = snapshot?.toilet
@@ -226,6 +227,10 @@ fun CopilotRemoteScreen(snapshot: Snapshot?, onMenu: () -> Unit) {
                     }
                 }
             }
+            if (snapshot?.navigating == true && snapshot.breakProposal == null && snapshot.toilet == null) {
+                OutlinedButton(onClick = { client.send(ClientMsg.BreakRequest) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.copilot_break_now)) }
+            }
+            snapshot?.let { KidsStatusCard(it.points, it.stickers, it.questsDone, it.questsTotal, questLine(it.quest)) }
             if (rr == null && bp == null && td == null) Text(stringResource(R.string.link_copilot_idle), style = MaterialTheme.typography.bodyLarge)
             OutlinedButton(onClick = onMenu, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.link_menu)) }
         }

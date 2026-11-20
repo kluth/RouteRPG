@@ -1,6 +1,7 @@
 package app.kiloquest
 
 import androidx.activity.compose.BackHandler
+import app.kiloquest.link.toDriveDto
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +42,7 @@ fun ParentScreen(state: UiState, nav: NavController) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.screenColumn().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.parent_title), style = MaterialTheme.typography.headlineMedium)
+            app.kiloquest.link.DriveCard(if (state.navigating) state.toDriveDto() else null)
 
             // Klo-Alarm ganz oben: ein Tipp, dann sucht die App die naechste Toilette und steuert sie an
             app.kiloquest.ui.ToiletRequestCard(state.toiletRequest, nav::toiletAlarm, nav::dismissToiletRequest)
@@ -57,6 +59,13 @@ fun ParentScreen(state: UiState, nav: NavController) {
                 app.kiloquest.ui.ToiletStatusCard(state.toilet, nav::resumeAfterToilet)
             }
 
+            if (state.navigating && state.breakProposal == null && state.toilet == null) {
+                OutlinedButton(onClick = nav::suggestBreakNow, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.copilot_break_now)) }
+            }
+            app.kiloquest.link.KidsStatusCard(
+                state.points, state.stickers, state.questsDone, state.questsTotal,
+                state.quest?.let { ctx.stringByKey(it.textKey, it.args).take(160) },
+            )
             OutlinedButton(onClick = { nav.showDiary(true) }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
                 Text(stringResource(R.string.diary_open))
             }

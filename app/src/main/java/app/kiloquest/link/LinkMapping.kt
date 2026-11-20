@@ -67,3 +67,18 @@ fun Snapshot.toUiState(ownBand: AgeBand, ownAvatar: String = app.kiloquest.game.
 )
 
 fun parseBand(s: String): AgeBand = runCatching { AgeBand.valueOf(s) }.getOrDefault(AgeBand.EXPLORER)
+
+/** Fahrtstatus fuer das Beifahrer-Geraet; null, wenn keine Route da ist. */
+fun UiState.toDriveDto(): DriveDto? {
+    val r = route ?: return null
+    val g = guidance
+    val total = r.lengthMeters
+    val remaining = g?.remainingMeters ?: total
+    val seconds = if (total > 0.0) r.durationSeconds * (remaining / total) else 0.0
+    val next = g?.let { r.maneuvers.getOrNull(it.nextManeuverIndex) }
+    return DriveDto(
+        destination = destination?.name.orEmpty(), totalMeters = total, remainingMeters = remaining, remainingSeconds = seconds,
+        speedKmh = speedKmh, limitKmh = speedLimit, country = country,
+        nextInstruction = next?.instruction, nextMeters = if (next != null) g.metersToNextManeuver else null,
+    )
+}

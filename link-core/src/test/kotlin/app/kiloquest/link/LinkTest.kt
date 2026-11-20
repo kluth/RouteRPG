@@ -113,4 +113,39 @@ class LinkTest {
         val snap = Snapshot(seq = 1, toilet = ToiletDto("HEADING", "Rastplatz", 240.0, 3200.0), toiletRequest = "Mias Tablet")
         assertEquals(snap, (Wire.decodeHost(Wire.encode(HostMsg.SnapshotMsg(snap))) as HostMsg.SnapshotMsg).snapshot)
     }
+
+    @Test fun driveMessageRoundTripsAndAllowsNoTrip() {
+        val d = DriveDto("Rovaniemi", 3_000_000.0, 1_234_567.0, 41_000.0, 83, 80, "DK", "Biegen Sie rechts ab", 480.0)
+        assertEquals(d, (Wire.decodeHost(Wire.encode(HostMsg.DriveMsg(d))) as HostMsg.DriveMsg).drive)
+        assertEquals(null, (Wire.decodeHost(Wire.encode(HostMsg.DriveMsg(null))) as HostMsg.DriveMsg).drive)
+    }
+
+    @Test fun driveRoundingKeepsMessagesStable() {
+        val a = DriveDto("X", 1000.0, 1234.0, 3_100.0, 83, 80, "DE", "a", 480.0).rounded()
+        val b = DriveDto("X", 1000.0, 1240.0, 3_130.0, 84, 80, "DE", "a", 490.0).rounded()
+        assertEquals(a, b, "kleine Aenderungen duerfen keine neue Nachricht ausloesen")
+        assertEquals(1200.0, a.remainingMeters)
+        assertEquals(85, a.speedKmh)
+        assertEquals(3_120.0, a.remainingSeconds)
+        assertEquals(500.0, a.nextMeters)
+    }
+
+    @Test fun driveProgressIsClamped() {
+        assertEquals(0f, DriveDto(totalMeters = 0.0).progress)
+        assertEquals(0.25f, DriveDto(totalMeters = 1000.0, remainingMeters = 750.0).progress, 1e-6f)
+        assertEquals(0f, DriveDto(totalMeters = 1000.0, remainingMeters = 5000.0).progress)
+        assertEquals(1f, DriveDto(totalMeters = 1000.0, remainingMeters = -5.0).progress)
+    }
+
+    @Test fun oldHostWithoutDriveStillDecodes() {
+        // Ein aelteres Hauptgeraet kennt "drive" nicht; ein neueres Geraet ignoriert unbekannte Nachrichten ohne Absturz
+        assertEquals(null, Wire.decodeHost("""{"t":"unknown_future_msg"}"""))
+    }
+
+    @Test fun breakRequestIsForCopilotsOnly() {
+        val r = DeviceRoster()
+        assertTrue(r.allows(Role.COPILOT, ClientMsg.BreakRequest))
+        assertFalse(r.allows(Role.KID, ClientMsg.BreakRequest))
+        assertEquals(ClientMsg.BreakRequest, Wire.decodeClient(Wire.encode(ClientMsg.BreakRequest)))
+    }
 }

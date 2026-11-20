@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.activity.ComponentActivity
@@ -204,4 +206,26 @@ class LayoutShotsTest {
     @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi") @Test fun toyNorth() = mapOf("new-toy-north", "🛩️", 0f)
     @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi") @Test fun heroEast() = mapOf("new-hero-east", "🦸", 90f)
     @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi") @Test fun ninjaSouth() = mapOf("new-ninja-south", "🥷", 180f)
+
+    // Beifahrer-Geraet (Status-Karten; der Bildschirm selbst braucht die echte App-Klasse)
+    private val driveDto = app.kiloquest.link.DriveDto("Rovaniemi", 3_000_000.0, 1_234_500.0, 41_300.0, 85, 80, "DK", "Rechts abbiegen auf Hauptstraße", 450.0)
+
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun copilotDashboard() = shot("copilot-390x844", 390, 844, state = { UiState() }, custom = { _ ->
+        androidx.compose.foundation.layout.Column(
+            Modifier.fillMaxSize().padding(16.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+        ) {
+            androidx.compose.material3.Text("Beifahrer-Menü", style = androidx.compose.material3.MaterialTheme.typography.headlineMedium)
+            app.kiloquest.link.DriveCard(driveDto)
+            app.kiloquest.link.KidsStatusCard(40, 2, 3, 25, "Welches Tier zieht in Lappland den Schlitten?")
+        }
+    })
+
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun copilotNoTrip() = shot("copilot-notrip-390x844", 390, 844, state = { UiState() }, custom = { _ ->
+        androidx.compose.foundation.layout.Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)) {
+            app.kiloquest.link.DriveCard(null)
+            app.kiloquest.link.KidsStatusCard(0, 0, 0, 0, null)
+        }
+    })
 }

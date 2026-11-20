@@ -73,7 +73,7 @@ class DeviceRoster(private val maxKids: Int = 4, private val maxCopilots: Int = 
         is ClientMsg.Answer, ClientMsg.Skip, ClientMsg.Next -> role == Role.KID
         is ClientMsg.Reroute, is ClientMsg.Break -> role == Role.COPILOT
         is ClientMsg.Age -> role == Role.KID
-        ClientMsg.ToiletAlarm, ClientMsg.ToiletResume, ClientMsg.ToiletDismiss -> role == Role.COPILOT
+        ClientMsg.ToiletAlarm, ClientMsg.ToiletResume, ClientMsg.ToiletDismiss, ClientMsg.BreakRequest -> role == Role.COPILOT
         ClientMsg.ToiletRequest -> role == Role.KID
         ClientMsg.Ping, is ClientMsg.Hello -> true
     }

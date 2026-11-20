@@ -28,3 +28,11 @@ Zeilenweises JSON (UTF-8, eine Nachricht pro Zeile, höchstens 256 KB). Version 
 ## Grenzen (bewusst)
 - Nur Android. Test mit mehreren echten Geräten steht aus (ohne Gerät nicht prüfbar).
 - Altersstufen je Gerät gelten für die Auswahl der Aufgaben bei der nächsten Planung (vor der Fahrt) und sofort für die Darstellung auf dem Gerät.
+
+## Erweiterung: Beifahrer-Dashboard
+- Eigene Nachricht `drive` (Host -> nur Beifahrer-Geräte): Ziel, Rest-Strecke/-Zeit, Fortschritt, Tempo mit Limit, Land, nächste Anweisung.
+  Grob gerundet (100 m, 1 min, 5 km/h, 50 m), höchstens alle 2 s und nur bei Änderung; der schwere Snapshot bleibt unberührt.
+  Die Ankunftszeit rechnet das Beifahrer-Gerät aus der Rest-Zeit. Ältere Geräte ignorieren die unbekannte Nachricht.
+- Neue Beifahrer-Aktion `break_request` („Pause jetzt vorschlagen“); Kinder dürfen sie nicht senden.
+- Beifahrer-Bildschirm: Fahrtstatus-Karte, Klo-Alarm, Entscheidungen (Umfahrung, Pause), Pause-Knopf, Karte „Die Kinder“ (Punkte, Sticker,
+  Fortschritt, aktuelle Aufgabe). Dieselben Karten zeigt das Beifahrer-Menü auf dem Hauptgerät.

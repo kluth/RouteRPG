@@ -1591,6 +1591,15 @@ class NavController(private val app: Application) : KidsActions {
         }
     }
 
+    /** Beifahrer-Wunsch: jetzt eine Pause vorschlagen (nur waehrend der Fahrt und ohne offenen Vorschlag). */
+    fun suggestBreakNow() {
+        val s = _state.value
+        val route = s.route ?: return
+        val along = s.guidance?.alongMeters ?: return
+        if (!s.navigating || breakPlanning || s.breakTarget != null || s.breakProposal != null) return
+        planBreak(route, along)
+    }
+
     private fun planBreak(route: Route, along: Double) {
         if (route.lengthMeters - along < 8_000.0) { breakPlanner.snooze(); return }
         breakPlanning = true

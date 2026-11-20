@@ -628,4 +628,13 @@
     <string name="story_loading">Ich suche eine Geschichte in der Nähe…</string>
     <string name="story_none">Gerade keine Geschichte in der Nähe gefunden.</string>
     <string name="story_close">Fertig</string>
+    <string name="copilot_no_trip">Keine Fahrt aktiv. Starte die Navigation auf dem Hauptgerät, dann erscheint hier der Status.</string>
+    <string name="copilot_arrival">Ankunft: %1$s</string>
+    <string name="copilot_speed">%1$d km/h</string>
+    <string name="copilot_limit">Limit %1$d</string>
+    <string name="copilot_next">Als Nächstes: %1$s %2$s</string>
+    <string name="copilot_kids_title">Die Kinder</string>
+    <string name="copilot_kids_stats">%1$d Punkte · %2$d Sticker</string>
+    <string name="copilot_kids_now">Gerade dran: %1$s</string>
+    <string name="copilot_break_now">Pause jetzt vorschlagen</string>
 </resources>

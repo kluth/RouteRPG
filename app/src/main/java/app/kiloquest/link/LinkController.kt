@@ -46,6 +46,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
     private val lastSent = HashMap<String, String>()
     private val lastRouteSent = HashMap<String, Long>()
     private val lastPosSent = HashMap<String, Pair<Long, PosDto?>>()
+    private val lastDriveSent = HashMap<String, Pair<Long, DriveDto?>>()
 
     init { applyKidBands() }
 
@@ -72,7 +73,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
     fun stopHosting() {
         pushJob?.cancel(); pushJob = null
         host.stop()
-        lastSent.clear(); lastRouteSent.clear(); lastPosSent.clear()
+        lastSent.clear(); lastRouteSent.clear(); lastPosSent.clear(); lastDriveSent.clear()
         _state.update { it.copy(hosting = false, devices = devicesUi()) }
     }
 
@@ -97,7 +98,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
     fun remove(address: String) {
         roster.remove(address); saveDevices(); applyKidBands()
         host.disconnect(address)
-        lastSent.remove(address); lastRouteSent.remove(address); lastPosSent.remove(address)
+        lastSent.remove(address); lastRouteSent.remove(address); lastPosSent.remove(address); lastDriveSent.remove(address)
         refresh()
     }
 
@@ -105,7 +106,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
 
     override fun onConnected(address: String) { scope.launch { refresh() } }
 
-    override fun onDisconnected(address: String) { scope.launch { lastSent.remove(address); lastRouteSent.remove(address); lastPosSent.remove(address); refresh() } }
+    override fun onDisconnected(address: String) { scope.launch { lastSent.remove(address); lastRouteSent.remove(address); lastPosSent.remove(address); lastDriveSent.remove(address); refresh() } }
 
     override fun onMessage(address: String, msg: ClientMsg) {
         scope.launch { handle(address, msg) }
@@ -134,6 +135,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
             ClientMsg.Next -> nav.dismissFeedback()
             is ClientMsg.Reroute -> if (st.proposal != null) { if (msg.accept) nav.acceptReroute() else nav.dismissReroute() }
             is ClientMsg.Break -> if (st.breakProposal != null) { if (msg.accept) nav.acceptBreak() else nav.laterBreak() }
+            ClientMsg.BreakRequest -> nav.suggestBreakNow()
             ClientMsg.ToiletAlarm -> nav.toiletAlarm()
             ClientMsg.ToiletResume -> nav.resumeAfterToilet()
             ClientMsg.ToiletDismiss -> nav.dismissToiletRequest()
@@ -180,6 +182,18 @@ class LinkController(private val app: Application, private val nav: NavControlle
         }
     }
 
+    /** Fahrtstatus nur an Beifahrer-Geraete, grob gerundet, hoechstens alle 2 s und nur bei Aenderung. */
+    private fun sendDrive(d: Device, st: UiState) {
+        if (d.role != Role.COPILOT) return
+        val dto = st.toDriveDto()?.rounded()
+        val now = System.currentTimeMillis()
+        val (at, prev) = lastDriveSent[d.address] ?: (0L to null)
+        if (dto == prev && lastDriveSent.containsKey(d.address)) return
+        if (now - at < 2_000 && lastDriveSent.containsKey(d.address)) return
+        lastDriveSent[d.address] = now to dto
+        host.send(d.address, HostMsg.DriveMsg(dto))
+    }
+
     private fun bearingChanged(a: Float?, b: Float?): Boolean = a != null && b != null && kotlin.math.abs(a - b) > 8f
 
     private fun routeId(r: Route): Long =
@@ -188,6 +202,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
     private fun sendSnapshot(d: Device, st: UiState) {
         if (d.address !in host.connectedAddresses()) return
         sendMap(d, st)
+        sendDrive(d, st)
         val snap = st.toSnapshot(d.role, d.player, ++seq) { nav.stopText(it) }
         // Nur senden, wenn sich etwas geaendert hat (ohne die laufende Nummer verglichen)
         val key = snap.copy(seq = 0).toString()

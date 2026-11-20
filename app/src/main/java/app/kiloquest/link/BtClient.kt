@@ -31,6 +31,7 @@ data class ClientState(
     /** Route und Position fuer die Karte der Kinder (getrennt vom Schnappschuss, damit der klein bleibt). */
     val route: RouteDto? = null,
     val pos: PosDto? = null,
+    val drive: DriveDto? = null,
     val hostName: String? = null,
 )
 
@@ -145,6 +146,7 @@ class BtClient(private val ctx: Context, private val scope: CoroutineScope) {
             is HostMsg.SnapshotMsg -> _state.update { it.copy(snapshot = m.snapshot) }
             is HostMsg.RouteMsg -> _state.update { it.copy(route = m.route) }
             is HostMsg.PositionMsg -> _state.update { it.copy(pos = m.pos) }
+            is HostMsg.DriveMsg -> _state.update { it.copy(drive = m.drive) }
             HostMsg.Bye -> { wanted = false; _state.update { ClientState() } }
         }
     }
