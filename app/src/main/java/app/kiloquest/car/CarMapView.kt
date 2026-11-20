@@ -386,29 +386,11 @@ class CarMapView(private val carContext: CarContext, private val nav: NavControl
     private fun distance(meters: Double): String =
         if (meters >= 1000) carContext.getString(R.string.unit_km, meters / 1000.0) else carContext.getString(R.string.unit_m, meters.toInt().coerceAtLeast(0))
 
-    /** Erste zutreffende Meldung: Verkehr voraus, Wetter-Gefahr, angenommene Pause. */
+    /** Genau ein Hinweis mit "+N" (Prioritaet und Ruhe vor Manoevern: siehe HintQueue). */
     private fun bannerText(st: UiState): String? {
-        if (!st.navigating) return null
-        val ri = st.incidents.firstOrNull { it.aheadMeters >= -1.0 && (it.incident.blocked || (it.incident.delayMinutes ?: 0) >= 5) }
-        if (ri != null) {
-            val type = carContext.getString(
-                when (ri.incident.type) {
-                    IncidentType.JAM -> R.string.incident_jam
-                    IncidentType.ACCIDENT -> R.string.incident_accident
-                    IncidentType.CLOSURE -> R.string.incident_closure
-                    IncidentType.HAZARD -> R.string.incident_hazard
-                },
-            )
-            return carContext.getString(R.string.traffic_banner, type, distance(ri.aheadMeters), ri.incident.road)
-        }
-        val along = st.guidance?.alongMeters ?: 0.0
-        val hazard = st.weather?.hazardsAhead?.firstOrNull { it.second - along in 0.0..150_000.0 }
-        if (hazard != null) {
-            return carContext.getString(R.string.weather_hazard_line, nav.hazardName(hazard.first), distance(hazard.second - along))
-        }
-        val target = st.breakTarget
-        if (target != null) return carContext.getString(R.string.break_banner, distance(max(0.0, st.breakAheadMeters)), nav.stopText(target))
-        return null
+        val hint = app.kiloquest.ui.selectHint(st, nav) ?: return null
+        val base = app.kiloquest.ui.hintText(carContext, hint)
+        return if (hint.more > 0) base + " " + carContext.getString(R.string.hint_more, hint.more) else base
     }
 
     // ------------------------------------------------------------------ Abbau

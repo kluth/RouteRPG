@@ -82,7 +82,7 @@ class MainActivity : ComponentActivity() {
                 if (vm.hasLocationPermission()) vm.startLocationUpdates()
                 else launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             }
-            MaterialTheme { AppScreen(vm) }
+            app.kiloquest.ui.KiloQuestTheme { AppScreen(vm) }
         }
     }
 }
@@ -103,7 +103,7 @@ private fun AppScreen(vm: NavController) {
             state.proposal?.let { ProposalCard(it, vm) }
             if (state.proposal == null) BreakCard(state, vm)
             if (state.route != null && !state.kidsScreen) WeatherCard(state, vm)
-            if (state.proposal == null) IncidentBanner(state)
+            if (state.proposal == null) HintBanner(state, vm)
             if (state.navigating) state.lanes?.let { LaneStrip(it) }
             state.error?.let {
                 Surface(tonalElevation = 4.dp, modifier = Modifier.padding(top = 8.dp)) {
@@ -177,16 +177,28 @@ private fun incidentName(t: IncidentType): String = stringResource(
     },
 )
 
-/** Naechste relevante Verkehrsmeldung voraus (nur Anzeige). */
+/** Genau ein Hinweis (wichtigster zuerst, "+N" fuer weitere); kurz vor Manoevern still. */
 @Composable
-private fun IncidentBanner(state: UiState) {
-    val ri = state.incidents.firstOrNull { it.aheadMeters >= -1.0 && (it.incident.blocked || (it.incident.delayMinutes ?: 0) >= 5) } ?: return
-    Surface(tonalElevation = 4.dp, modifier = Modifier.padding(top = 8.dp)) {
-        Text(
-            stringResource(R.string.traffic_banner, incidentName(ri.incident.type), formatDistance(ri.aheadMeters.coerceAtLeast(0.0)), ri.incident.road),
-            Modifier.padding(12.dp),
-            color = MaterialTheme.colorScheme.error,
-        )
+private fun HintBanner(state: UiState, vm: NavController) {
+    val ctx = LocalContext.current
+    val hint = app.kiloquest.ui.selectHint(state, vm) ?: return
+    val colors = app.kiloquest.ui.KiloTheme.colors
+    Surface(
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp),
+        color = colors.hintContainer,
+        contentColor = colors.onHintContainer,
+        shadowElevation = 4.dp,
+        modifier = Modifier.padding(top = 8.dp),
+    ) {
+        Row(
+            Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_hint_warning), contentDescription = null)
+            Text(app.kiloquest.ui.hintText(ctx, hint), style = MaterialTheme.typography.titleMedium)
+            if (hint.more > 0) Text(stringResource(R.string.hint_more, hint.more), style = MaterialTheme.typography.labelMedium)
+        }
     }
 }
 

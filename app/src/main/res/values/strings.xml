@@ -242,4 +242,10 @@
     <string name="pkg_clear">Delete offline maps</string>
     <string name="car_simple_map">Simple map in the car</string>
     <string name="car_simple_map_hint">Use this if the car display shows a black or broken map. Applies on the next connection.</string>
+    <string name="hint_jam">Traffic jam in %1$s</string>
+    <string name="hint_accident">Accident in %1$s</string>
+    <string name="hint_closure">Road closed in %1$s</string>
+    <string name="hint_hazard">Hazard in %1$s</string>
+    <string name="hint_break">Break in %1$s</string>
+    <string name="hint_more">+%1$d</string>
 </resources>
