@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import app.kiloquest.nav.IncidentType
 import app.kiloquest.nav.LatLon
 import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraPosition
@@ -44,6 +45,7 @@ import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
 import org.maplibre.android.maps.Style
+import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.PropertyFactory
 import org.maplibre.android.style.sources.GeoJsonSource
@@ -55,6 +57,8 @@ import org.maplibre.geojson.Point
 private const val STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
 private const val ROUTE_SOURCE = "route-source"
 private const val ROUTE_LAYER = "route-layer"
+private const val INCIDENT_SOURCE = "incident-source"
+private const val INCIDENT_LAYER = "incident-layer"
 
 class MainActivity : ComponentActivity() {
     private val vm: NavController by lazy { (application as KiloQuestApp).nav }
@@ -83,10 +87,13 @@ private fun AppScreen(vm: NavController) {
             route = state.route?.line?.points,
             position = state.position,
             follow = state.navigating,
+            incidents = state.incidents.map { it.incident.position },
         )
 
         Column(Modifier.align(Alignment.TopCenter).padding(12.dp)) {
             if (!state.navigating) SearchPanel(state, vm)
+            state.proposal?.let { ProposalCard(it, vm) }
+            if (state.proposal == null) IncidentBanner(state)
             state.error?.let {
                 Surface(tonalElevation = 4.dp, modifier = Modifier.padding(top = 8.dp)) {
                     Text(stringResource(it), Modifier.padding(12.dp), color = MaterialTheme.colorScheme.error)
@@ -136,6 +143,49 @@ private fun AppScreen(vm: NavController) {
 }
 
 @Composable
+private fun incidentName(t: IncidentType): String = stringResource(
+    when (t) {
+        IncidentType.JAM -> R.string.incident_jam
+        IncidentType.ACCIDENT -> R.string.incident_accident
+        IncidentType.CLOSURE -> R.string.incident_closure
+        IncidentType.HAZARD -> R.string.incident_hazard
+    },
+)
+
+/** Naechste relevante Verkehrsmeldung voraus (nur Anzeige). */
+@Composable
+private fun IncidentBanner(state: UiState) {
+    val ri = state.incidents.firstOrNull { it.aheadMeters >= -1.0 && (it.incident.blocked || (it.incident.delayMinutes ?: 0) >= 5) } ?: return
+    Surface(tonalElevation = 4.dp, modifier = Modifier.padding(top = 8.dp)) {
+        Text(
+            stringResource(R.string.traffic_banner, incidentName(ri.incident.type), formatDistance(ri.aheadMeters.coerceAtLeast(0.0)), ri.incident.road),
+            Modifier.padding(12.dp),
+            color = MaterialTheme.colorScheme.error,
+        )
+    }
+}
+
+@Composable
+private fun ProposalCard(p: RerouteProposal, vm: NavController) {
+    Surface(tonalElevation = 8.dp, modifier = Modifier.padding(top = 8.dp).fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                stringResource(if (p.blocked) R.string.reroute_blocked else R.string.reroute_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                incidentName(p.incident.incident.type) + " · " + p.incident.incident.road +
+                    if (p.savedMinutes > 0) " · " + stringResource(R.string.reroute_saves, p.savedMinutes) else "",
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = vm::acceptReroute) { Text(stringResource(R.string.reroute_accept)) }
+                androidx.compose.material3.OutlinedButton(onClick = vm::dismissReroute) { Text(stringResource(R.string.reroute_dismiss)) }
+            }
+        }
+    }
+}
+
+@Composable
 private fun SearchPanel(state: UiState, vm: NavController) {
     var query by remember { mutableStateOf("") }
     Surface(tonalElevation = 6.dp) {
@@ -175,7 +225,7 @@ private fun formatDuration(seconds: Double): String {
 }
 
 @Composable
-private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean) {
+private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean, incidents: List<LatLon>) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
@@ -193,6 +243,15 @@ private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean) 
                             PropertyFactory.lineWidth(6f),
                             PropertyFactory.lineCap("round"),
                             PropertyFactory.lineJoin("round"),
+                        ),
+                    )
+                    style.addSource(GeoJsonSource(INCIDENT_SOURCE))
+                    style.addLayer(
+                        CircleLayer(INCIDENT_LAYER, INCIDENT_SOURCE).withProperties(
+                            PropertyFactory.circleColor("#D32F2F"),
+                            PropertyFactory.circleRadius(9f),
+                            PropertyFactory.circleStrokeColor("#FFFFFF"),
+                            PropertyFactory.circleStrokeWidth(2f),
                         ),
                     )
                     styleReady = true
@@ -216,6 +275,20 @@ private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean) 
             } else {
                 src.setGeoJson(Feature.fromGeometry(LineString.fromLngLats(route.map { Point.fromLngLat(it.lon, it.lat) })))
             }
+        }
+    }
+
+    // Verkehrsmeldungen als rote Punkte
+    LaunchedEffect(incidents, styleReady) {
+        val m = map ?: return@LaunchedEffect
+        if (!styleReady) return@LaunchedEffect
+        m.getStyle { style: Style ->
+            val src = style.getSourceAs<GeoJsonSource>(INCIDENT_SOURCE) ?: return@getStyle
+            src.setGeoJson(
+                org.maplibre.geojson.FeatureCollection.fromFeatures(
+                    incidents.map { Feature.fromGeometry(Point.fromLngLat(it.lon, it.lat)) },
+                ),
+            )
         }
     }
 

@@ -1,5 +1,6 @@
 package app.kiloquest
 
+import app.kiloquest.nav.AutobahnApi
 import app.kiloquest.nav.LatLon
 import java.net.HttpURLConnection
 import java.net.URL
@@ -78,3 +79,6 @@ suspend fun fetchOverpass(query: String): String =
         "data=" + URLEncoder.encode(query, "UTF-8"),
         contentType = "application/x-www-form-urlencoded",
     )
+
+/** Autobahn GmbH Verkehrsmeldungen (frei, ohne Schluessel). */
+suspend fun fetchAutobahn(road: String, service: String): String = http(AutobahnApi.url(road, service))

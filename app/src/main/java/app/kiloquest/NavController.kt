@@ -25,6 +25,15 @@ import app.kiloquest.nav.SpeechArbiter
 import kotlin.random.Random
 import kotlinx.coroutines.withContext
 import app.kiloquest.nav.AnnouncementPlanner
+import app.kiloquest.nav.AutobahnApi
+import app.kiloquest.nav.ExclusionZones
+import app.kiloquest.nav.IncidentMatcher
+import app.kiloquest.nav.IncidentType
+import app.kiloquest.nav.RerouteAdvisor
+import app.kiloquest.nav.RouteIncident
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import app.kiloquest.nav.GuidanceEngine
 import app.kiloquest.nav.GuidanceState
 import app.kiloquest.nav.LatLon
@@ -47,6 +56,9 @@ fun Context.stringByKey(key: String, args: List<String> = emptyList()): String {
     val id = resources.getIdentifier(key, "string", packageName)
     return if (id != 0) getString(id, *args.toTypedArray()) else key
 }
+
+/** Vorschlag fuer eine schnellere Route um eine Verkehrsmeldung herum. */
+data class RerouteProposal(val route: Route, val savedMinutes: Int, val blocked: Boolean, val incident: RouteIncident)
 
 data class UiState(
     val results: List<Place> = emptyList(),
@@ -71,7 +83,14 @@ data class UiState(
     val album: Set<String> = emptySet(),
     val newSticker: Sticker? = null,
     val totalPoints: Int = 0,
+    val incidents: List<RouteIncident> = emptyList(),
+    val proposal: RerouteProposal? = null,
 )
+
+private const val TRAFFIC_REFRESH_MS = 5 * 60_000L
+private const val MAX_TRAFFIC_ROADS = 10
+private const val ANNOUNCE_AHEAD_METERS = 100_000.0
+private const val MIN_SAVED_MINUTES = 5
 
 /** Gemeinsamer Navigationszustand fuer Handy-UI und Android-Auto (lebt im Application-Prozess). */
 class NavController(private val app: Application) {
@@ -81,6 +100,11 @@ class NavController(private val app: Application) {
     private var adventure: AdventureSession? = null
 
     private val arbiter = SpeechArbiter()
+    private val advisor = RerouteAdvisor()
+    private val announcedIncidents = HashSet<String>()
+    private var trafficJob: Job? = null
+    /** Meter, die auf frueheren Routen schon gefahren wurden (Quest-Positionen gelten fuer die Gesamtfahrt). */
+    private var questOffset = 0.0
     private val book = StickerBook(prefs.getStringSet("album", emptySet()).orEmpty())
 
     private val _state = MutableStateFlow(
@@ -161,7 +185,9 @@ class NavController(private val app: Application) {
                 planner = AnnouncementPlanner(route)
                 // Abenteuer nur beim ersten Berechnen anlegen, nicht bei Neuberechnung unterwegs
                 if (adventure == null || !_state.value.navigating) newAdventure(route)
-                _state.update { it.copy(route = route, busy = false, guidance = null) }
+                else questOffset += _state.value.guidance?.alongMeters ?: 0.0
+                _state.update { it.copy(route = route, busy = false, guidance = null, incidents = emptyList()) }
+                if (_state.value.navigating) scope.launch { refreshTraffic() }
             }.onFailure {
                 _state.update { it.copy(busy = false, error = R.string.error_route) }
             }
@@ -177,6 +203,7 @@ class NavController(private val app: Application) {
             avoidMeters = route.maneuvers.map { it.atMeters },
         )
         val players = _state.value.players
+        questOffset = 0.0
         adventure = AdventureSession(quests, playerCount = players)
         _state.update {
             it.copy(
@@ -241,12 +268,25 @@ class NavController(private val app: Application) {
         if (_state.value.route == null) return
         _state.update { it.copy(navigating = true) }
         _state.value.route?.maneuvers?.firstOrNull()?.instruction?.let(::speak)
+        trafficJob?.cancel()
+        trafficJob = scope.launch {
+            while (isActive) {
+                refreshTraffic()
+                delay(TRAFFIC_REFRESH_MS)
+            }
+        }
     }
 
     fun stopNavigation() {
         _state.update {
-            it.copy(navigating = false, route = null, destination = null, guidance = null, quest = null, feedback = null, kidsScreen = false)
+            it.copy(
+                navigating = false, route = null, destination = null, guidance = null, quest = null, feedback = null,
+                kidsScreen = false, incidents = emptyList(), proposal = null,
+            )
         }
+        trafficJob?.cancel()
+        trafficJob = null
+        announcedIncidents.clear()
         adventure = null
         engine = null
         planner = null
@@ -266,7 +306,7 @@ class NavController(private val app: Application) {
             return
         }
         planner?.next(g)?.let(::speak)
-        adventure?.onProgress(g.alongMeters)?.let { q -> onQuestTriggered(q, pos) }
+        adventure?.onProgress(questOffset + g.alongMeters)?.let { q -> onQuestTriggered(q, pos) }
         arbiter.poll(System.currentTimeMillis(), tts?.isSpeaking == true)?.let(::speakQuest)
         val now = System.currentTimeMillis()
         if (g.isOffRoute && now - lastReroute > 15_000) {
@@ -275,6 +315,90 @@ class NavController(private val app: Application) {
             calculateRoute()
         }
     }
+
+    // ---------------------------------------------------------------- Verkehr
+
+    /** Holt Meldungen fuer die Autobahnen der Route (DE) und gleicht sie mit der Route ab. */
+    private suspend fun refreshTraffic() {
+        val route = _state.value.route ?: return
+        val roads = AutobahnApi.roadsFromNames(route.maneuvers.flatMap { it.streetNames }).take(MAX_TRAFFIC_ROADS)
+        if (roads.isEmpty()) return
+        val all = withContext(Dispatchers.IO) {
+            roads.flatMap { r ->
+                listOf(AutobahnApi.WARNING, AutobahnApi.CLOSURE).flatMap { svc ->
+                    runCatching { AutobahnApi.parse(fetchAutobahn(r, svc), svc) }.getOrDefault(emptyList())
+                }
+            }
+        }
+        if (_state.value.route !== route) return // Route hat sich inzwischen geaendert
+        val progress = _state.value.guidance?.alongMeters ?: 0.0
+        val onRoute = IncidentMatcher.match(route, all, progress)
+        _state.update { it.copy(incidents = onRoute) }
+
+        for (ri in onRoute) {
+            if (advisor.isSignificant(ri) && ri.aheadMeters in 0.0..ANNOUNCE_AHEAD_METERS && announcedIncidents.add(ri.incident.id)) {
+                speak(trafficAheadText(ri))
+            }
+        }
+        advisor.next(onRoute)?.let { considerReroute(it) }
+    }
+
+    private fun typeName(t: IncidentType): String = app.getString(
+        when (t) {
+            IncidentType.JAM -> R.string.incident_jam
+            IncidentType.ACCIDENT -> R.string.incident_accident
+            IncidentType.CLOSURE -> R.string.incident_closure
+            IncidentType.HAZARD -> R.string.incident_hazard
+        },
+    )
+
+    private fun trafficAheadText(ri: RouteIncident): String {
+        val dist = if (ri.aheadMeters >= 1000) app.getString(R.string.unit_km, ri.aheadMeters / 1000.0)
+        else app.getString(R.string.unit_m, ri.aheadMeters.toInt().coerceAtLeast(0))
+        val i = ri.incident
+        val delay = i.delayMinutes
+        return if (delay != null && delay > 0) {
+            app.getString(R.string.traffic_ahead, dist, typeName(i.type), i.road, delay)
+        } else {
+            app.getString(R.string.traffic_ahead_nodelay, dist, typeName(i.type), i.road)
+        }
+    }
+
+    /** Berechnet eine Route um die Meldung herum und schlaegt sie vor, wenn sie sich lohnt. */
+    private suspend fun considerReroute(ri: RouteIncident) {
+        advisor.markConsidered(ri.incident.id)
+        val s = _state.value
+        val from = s.position ?: return
+        val dest = s.destination ?: return
+        val route = s.route ?: return
+        val alt = runCatching {
+            val req = ValhallaApi.buildRouteRequest(
+                from, dest.position, Locale.getDefault().toLanguageTag(),
+                excludePolygons = ExclusionZones.forIncident(ri.incident),
+            )
+            ValhallaApi.parseRoute(fetchRoute(req))
+        }.getOrNull() ?: return
+
+        val remainingFraction = ((s.guidance?.remainingMeters ?: route.lengthMeters) / route.lengthMeters).coerceIn(0.0, 1.0)
+        val currentSeconds = route.durationSeconds * remainingFraction + (ri.incident.delayMinutes ?: 0) * 60.0
+        val savedMin = ((currentSeconds - alt.durationSeconds) / 60.0).toInt()
+        // Bei Vollsperrung immer anbieten, sonst nur wenn es sich lohnt
+        if (ri.incident.blocked || savedMin >= MIN_SAVED_MINUTES) {
+            _state.update { it.copy(proposal = RerouteProposal(alt, savedMin.coerceAtLeast(0), ri.incident.blocked, ri)) }
+            speak(app.getString(R.string.reroute_speech))
+        }
+    }
+
+    fun acceptReroute() {
+        val p = _state.value.proposal ?: return
+        questOffset += _state.value.guidance?.alongMeters ?: 0.0
+        engine = GuidanceEngine(p.route)
+        planner = AnnouncementPlanner(p.route)
+        _state.update { it.copy(route = p.route, guidance = null, proposal = null, incidents = emptyList()) }
+        scope.launch { refreshTraffic() }
+    }
+
+    fun dismissReroute() = _state.update { it.copy(proposal = null) }
 
     /** Navigationsansage: hat Vorrang und unterbricht Quest-Ansagen. */
     private fun speak(text: String) {

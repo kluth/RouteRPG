@@ -96,4 +96,17 @@
     <string name="kids_album">Sticker-Album: %1$d von %2$d</string>
     <string name="kids_new_sticker">Neuer Sticker!</string>
     <string name="kids_total">Alle Fahrten: %1$d Punkte</string>
+    <string name="incident_jam">Stau</string>
+    <string name="incident_accident">Unfall</string>
+    <string name="incident_closure">Sperrung</string>
+    <string name="incident_hazard">Gefahrenstelle</string>
+    <string name="traffic_ahead">In %1$s: %2$s auf der %3$s, etwa %4$d Minuten Verzögerung.</string>
+    <string name="traffic_ahead_nodelay">In %1$s: %2$s auf der %3$s.</string>
+    <string name="reroute_title">Schnellere Route verfügbar</string>
+    <string name="reroute_blocked">Strecke voraus gesperrt – Umleitung verfügbar</string>
+    <string name="reroute_saves">Spart etwa %1$d Min.</string>
+    <string name="reroute_accept">Umfahren</string>
+    <string name="reroute_dismiss">Auf Route bleiben</string>
+    <string name="reroute_speech">Verkehrsproblem voraus. Eine Umfahrung ist verfügbar. Bitte auf dem Display bestätigen.</string>
+    <string name="traffic_banner">%1$s in %2$s (%3$s)</string>
 </resources>

@@ -2,6 +2,7 @@ package app.kiloquest.nav
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -19,12 +20,21 @@ object ValhallaApi {
         to: LatLon,
         languageTag: String,
         costing: String = "auto",
+        /** Sperrzonen (Ringe aus Punkten), z. B. um einen Stau, siehe [ExclusionZones]. */
+        excludePolygons: List<List<LatLon>> = emptyList(),
     ): String = buildJsonObject {
         put("costing", costing)
         put("locations", buildJsonArray {
             add(buildJsonObject { put("lat", from.lat); put("lon", from.lon) })
             add(buildJsonObject { put("lat", to.lat); put("lon", to.lon) })
         })
+        if (excludePolygons.isNotEmpty()) {
+            put("exclude_polygons", buildJsonArray {
+                for (ring in excludePolygons) add(buildJsonArray {
+                    for (p in ring) add(buildJsonArray { add(JsonPrimitive(p.lon)); add(JsonPrimitive(p.lat)) })
+                })
+            })
+        }
         put("directions_options", buildJsonObject {
             put("language", languageTag)
             put("units", "kilometers")

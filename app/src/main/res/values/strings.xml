@@ -96,4 +96,17 @@
     <string name="kids_album">Sticker album: %1$d of %2$d</string>
     <string name="kids_new_sticker">New sticker!</string>
     <string name="kids_total">All trips: %1$d points</string>
+    <string name="incident_jam">Traffic jam</string>
+    <string name="incident_accident">Accident</string>
+    <string name="incident_closure">Road closed</string>
+    <string name="incident_hazard">Hazard</string>
+    <string name="traffic_ahead">In %1$s: %2$s on %3$s, about %4$d minutes delay.</string>
+    <string name="traffic_ahead_nodelay">In %1$s: %2$s on %3$s.</string>
+    <string name="reroute_title">Faster route available</string>
+    <string name="reroute_blocked">Road blocked ahead – detour available</string>
+    <string name="reroute_saves">Saves about %1$d min</string>
+    <string name="reroute_accept">Take detour</string>
+    <string name="reroute_dismiss">Stay on route</string>
+    <string name="reroute_speech">Traffic ahead. A detour is available. Please confirm on the display.</string>
+    <string name="traffic_banner">%1$s in %2$s (%3$s)</string>
 </resources>

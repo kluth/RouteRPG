@@ -29,7 +29,21 @@ class NavScreen(carContext: CarContext, private val nav: NavController) : Screen
             .setBackgroundColor(androidx.car.app.model.CarColor.SECONDARY)
 
         val actions = ActionStrip.Builder()
-        if (s.navigating) {
+        val proposal = s.proposal
+        if (proposal != null) {
+            actions.addAction(
+                Action.Builder()
+                    .setTitle(carContext.getString(R.string.reroute_accept))
+                    .setOnClickListener { nav.acceptReroute() }
+                    .build(),
+            )
+            actions.addAction(
+                Action.Builder()
+                    .setTitle(carContext.getString(R.string.reroute_dismiss))
+                    .setOnClickListener { nav.dismissReroute() }
+                    .build(),
+            )
+        } else if (s.navigating) {
             actions.addAction(
                 Action.Builder()
                     .setTitle(carContext.getString(R.string.stop_navigation))

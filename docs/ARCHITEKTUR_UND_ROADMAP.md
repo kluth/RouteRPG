@@ -292,3 +292,18 @@ Nachgezogen (Phase 2, zweiter Schritt; Build/Lint/Tests grün, nicht auf dem Ger
 - **Ansagen-Priorität:** Navigationsansagen unterbrechen Quest-Ansagen; Quests werden frühestens 8 s nach einer Navigationsansage gesprochen und verfallen nach 60 s Wartezeit (`SpeechArbiter`).
 
 Offen: Wikipedia-Geschichten zu Orten, eigene Namen für Kinder, Sticker-Motive grafisch statt Emoji, Community-Rätsel.
+
+## 17. Stand Phase 3 (Verkehr, Deutschland)
+
+Gebaut (Build/Lint/Tests grün; **noch nicht im Auto/auf dem Gerät erprobt**):
+- **Quelle DE:** Autobahn GmbH Verkehrs-API (`verkehr.autobahn.de`, frei, ohne Schlüssel). Liefert Warnungen (Stau, Unfall, Gefahr) mit Reisezeitverlust in Minuten und exaktem Streckenverlauf sowie Sperrungen. Parser gegen echte Antworten getestet.
+- **Abgleich mit der Route:** Meldung zählt nur, wenn sie ≤ 40 m von der Route liegt **und** in Fahrtrichtung zeigt (Gegenfahrbahn wird ignoriert). Die Autobahnen werden aus den Straßennamen der Route erkannt (max. 10), Abruf alle 5 Minuten während der Fahrt.
+- **Ansage und Anzeige:** Relevante Meldungen (gesperrt oder ≥ 10 Min. Verzögerung) innerhalb von 100 km werden einmal angesagt, Banner in der App, rote Punkte auf der Karte.
+- **Umfahrung:** Bei relevanter Meldung berechnet die App über Valhalla (`exclude_polygons` um die Meldung) eine Alternativroute und schlägt sie vor, wenn sie ≥ 5 Min. spart oder die Strecke gesperrt ist. Annehmen/Ablehnen auf dem Handy-Display und im Auto (Aktionsleiste). Nie automatisch.
+- **Quests nach Routenwechsel:** Quest-Positionen zählen jetzt über die Gesamtfahrt (`questOffset`), damit Aufgaben nach einer Umfahrung nicht verrutschen.
+
+Grenzen/Offen:
+- **Nur Deutschland.** Dänemark und Schweden fehlen: Schweden (Trafikverket Open API) braucht einen kostenlosen API-Schlüssel, für Dänemark ist noch keine frei nutzbare Quelle bestätigt.
+- Planungsdaten (Baustellen ohne Sperrung) werden bewusst nicht als Problem gewertet, um Fehlalarme zu vermeiden.
+- Keine Crowd-Daten und keine Live-Geschwindigkeiten; die ETA ist nur um die gemeldete Verzögerung angepasst.
+- Meldungstexte kommen im Original (Deutsch) aus der Quelle; Typ und Ansagen sind übersetzt.
