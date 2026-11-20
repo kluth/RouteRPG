@@ -179,12 +179,30 @@ fun LinkClientCard(ageBand: AgeBand) {
 
 /** Beifahrer-Geraet: Umfahrung und Pause entscheiden, sonst nur Status. */
 @Composable
-fun CopilotRemoteScreen(snapshot: Snapshot?, drive: DriveDto?, onMenu: () -> Unit) {
-    val client = (LocalContext.current.applicationContext as KiloQuestApp).linkClient
+fun CopilotRemoteScreen(snapshot: Snapshot?, drive: DriveDto?, photoRequest: HostMsg.PhotoRequest?, pos: PosDto?, onMenu: () -> Unit) {
+    val ctx = LocalContext.current
+    val client = (ctx.applicationContext as KiloQuestApp).linkClient
+    val gallery = (ctx.applicationContext as KiloQuestApp).nav.state.collectAsState().value.settings.photosToGallery
+    // Foto-Moment: laeuft als Vollbild ueber dem Beifahrer-Bildschirm; [id] gesetzt = Antwort auf eine Bitte des Hauptgeraets
+    var shooting by remember { mutableStateOf<Pair<String?, String?>?>(null) }
+    shooting?.let { (id, place) ->
+        app.kiloquest.PhotoMomentScreen(place, pos?.let { app.kiloquest.nav.LatLon(it.lat, it.lon) }, gallery) { taken ->
+            if (id != null) client.answerPhoto(id, taken)
+            shooting = null
+        }
+        return
+    }
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.screenColumn().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.parent_title), style = MaterialTheme.typography.headlineMedium)
             DriveCard(if (snapshot?.navigating == true) drive else null)
+            if (photoRequest != null) {
+                app.kiloquest.PhotoRequestCard(
+                    reasonScenic = photoRequest.reason == "SCENIC", place = photoRequest.place,
+                    onTake = { shooting = photoRequest.id to photoRequest.place },
+                    onLater = { client.answerPhoto(photoRequest.id, false) },
+                )
+            }
             // Klo-Alarm: Wunsch eines Kindes, laufender Alarm oder der Knopf selbst
             app.kiloquest.ui.ToiletRequestCard(snapshot?.toiletRequest, { client.send(ClientMsg.ToiletAlarm) }, { client.send(ClientMsg.ToiletDismiss) })
             val td = snapshot?.toilet
@@ -226,6 +244,9 @@ fun CopilotRemoteScreen(snapshot: Snapshot?, drive: DriveDto?, onMenu: () -> Uni
                         OutlinedButton(onClick = { client.send(ClientMsg.Break(false)) }, modifier = Modifier.weight(1f).heightIn(min = 52.dp)) { Text(stringResource(R.string.break_later)) }
                     }
                 }
+            }
+            if (snapshot?.navigating == true && photoRequest == null) {
+                OutlinedButton(onClick = { shooting = null to null }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.photo_now)) }
             }
             if (snapshot?.navigating == true && snapshot.breakProposal == null && snapshot.toilet == null) {
                 OutlinedButton(onClick = { client.send(ClientMsg.BreakRequest) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.copilot_break_now)) }

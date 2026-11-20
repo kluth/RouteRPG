@@ -61,6 +61,9 @@ dependencies {
     implementation(libs.maplibre)
     implementation(libs.androidx.car.app)
     implementation(libs.androidx.work) // Apache-2.0: Erinnerungen vor Reisebeginn
+    implementation(libs.androidx.camera.core) // Apache-2.0: Roadtrip-Fotostory (beide Kameras)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
     // Layout-Pruefung ohne Geraet: Compose-Screenshots in Robolectric (nur Test, siehe app/src/test)
     testImplementation(libs.junit)
     testImplementation("org.robolectric:robolectric:4.14.1")

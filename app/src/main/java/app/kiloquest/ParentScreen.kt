@@ -1,6 +1,8 @@
 package app.kiloquest
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import app.kiloquest.link.toDriveDto
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,6 +38,11 @@ import androidx.compose.ui.unit.dp
 fun ParentScreen(state: UiState, nav: NavController) {
     val ctx = LocalContext.current
     BackHandler { nav.showParent(false) }
+    var shooting by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    if (shooting) {
+        PhotoMomentScreen(null, state.position, state.settings.photosToGallery) { shooting = false }
+        return
+    }
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) nav.setVoiceMode(true)
     }
@@ -61,6 +68,9 @@ fun ParentScreen(state: UiState, nav: NavController) {
 
             if (state.navigating && state.breakProposal == null && state.toilet == null) {
                 OutlinedButton(onClick = nav::suggestBreakNow, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.copilot_break_now)) }
+            }
+            if (state.navigating) {
+                OutlinedButton(onClick = { shooting = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.photo_now)) }
             }
             app.kiloquest.link.KidsStatusCard(
                 state.points, state.stickers, state.questsDone, state.questsTotal,

@@ -119,6 +119,8 @@ sealed interface ClientMsg {
     @Serializable @SerialName("toilet_request") data object ToiletRequest : ClientMsg
     /** Beifahrer: jetzt eine Pause vorschlagen lassen (Rastplatz voraus), statt auf den Pausentakt zu warten. */
     @Serializable @SerialName("break_request") data object BreakRequest : ClientMsg
+    /** Beifahrer: Antwort auf eine Foto-Bitte ([taken] = Foto gemacht, sonst "Spaeter"); die Bitte hat die Nummer [id]. */
+    @Serializable @SerialName("photo_answer") data class PhotoAnswer(val id: String, val taken: Boolean) : ClientMsg
     @Serializable @SerialName("ping") data object Ping : ClientMsg
 }
 
@@ -132,6 +134,8 @@ sealed interface HostMsg {
     @Serializable @SerialName("pos") data class PositionMsg(val pos: PosDto?) : HostMsg
     /** Fahrtstatus (nur fuer Beifahrer-Geraete); null = keine Fahrt. */
     @Serializable @SerialName("drive") data class DriveMsg(val drive: DriveDto?) : HostMsg
+    /** Roadtrip-Foto-Bitte an den Beifahrer ([reason]: SCENIC, RANDOM; [place] = schoener Ort, falls bekannt). Der Fahrer wird nie gefragt. */
+    @Serializable @SerialName("photo_request") data class PhotoRequest(val id: String, val reason: String, val place: String? = null) : HostMsg
     @Serializable @SerialName("bye") data object Bye : HostMsg
 }
 

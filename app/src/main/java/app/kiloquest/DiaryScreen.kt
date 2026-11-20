@@ -23,6 +23,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.foundation.layout.height
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -47,6 +49,7 @@ internal fun diaryLine(ctx: Context, e: DiaryEntry): String = when (e.kindOrNull
     DiaryKind.STORY -> ctx.getString(R.string.diary_line_story, e.title)
     DiaryKind.QUEST -> ctx.getString(R.string.diary_line_quest, e.title, e.points)
     DiaryKind.STICKER -> ctx.getString(R.string.diary_line_sticker, e.title)
+    DiaryKind.PHOTO -> if (e.title.isBlank()) ctx.getString(R.string.diary_line_photo) else ctx.getString(R.string.diary_line_photo_place, e.title)
     null -> e.title
 }
 
@@ -89,7 +92,20 @@ fun DiaryScreen(state: UiState, nav: NavController) {
                 }
                 TravelDiary.byDay(state.diary).reversed().forEach { (day, list) ->
                     Text(dayText(day), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 6.dp))
+                    if (list.any { it.kindOrNull == DiaryKind.PHOTO }) {
+                        TextButton(onClick = { shareCollage(ctx, day, list) }) { Text(stringResource(R.string.photo_collage_share)) }
+                    }
                     list.forEach { e ->
+                        if (e.kindOrNull == DiaryKind.PHOTO) {
+                            Text(diaryLine(ctx, e), style = MaterialTheme.typography.bodyLarge)
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                e.photoFiles().forEach { n ->
+                                    val bmp = remember(n) { PhotoStore.thumbnail(ctx, n, 360) }
+                                    if (bmp != null) androidx.compose.foundation.Image(bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.weight(1f).height(140.dp))
+                                }
+                            }
+                            return@forEach
+                        }
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Text(diaryLine(ctx, e), Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
                             if (e.kindOrNull == DiaryKind.STORY && e.text.isNotBlank()) {
@@ -137,4 +153,13 @@ fun StoryCardView(card: StoryCard?, nav: KidsActions) {
             OutlinedButton(onClick = nav::dismissStory, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.story_close)) }
         }
     }
+}
+
+/** Collage(n) des Tages bauen und ueber das Teilen-Menue anbieten (bei mehreren Seiten alle zusammen). */
+private fun shareCollage(ctx: Context, day: Int, entries: List<DiaryEntry>) {
+    val files = CollageBuilder.build(ctx, day, entries)
+    if (files.isEmpty()) return
+    val uris = ArrayList(files.map { androidx.core.content.FileProvider.getUriForFile(ctx, ctx.packageName + ".files", it) })
+    val send = Intent(Intent.ACTION_SEND_MULTIPLE).setType("image/jpeg").putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    ctx.startActivity(Intent.createChooser(send, ctx.getString(R.string.photo_collage_title)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }

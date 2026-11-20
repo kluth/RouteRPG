@@ -511,3 +511,8 @@ Einstellung „Bei Tempoüberschreitung warnen“ (Standard an). Das rote Tempol
 Umgesetzt (Spec 006): lokales Reisetagebuch mit automatischen Einträgen, Statistik, Teilen als Text; Hörgeschichten auf Wunsch aus Wikipedia
 (vorgelesen, mit Lizenzhinweis, im Tagebuch zum erneuten Anhören). Offen: Foto-Erinnerungen, Geschichten für gekoppelte Kindergeräte,
 Geschichten im Offline-Paket, schöner Export (PDF/Fotobuch).
+
+## 47. Roadtrip-Fotostory
+Umgesetzt (Spec 007): Foto-Bitten an den Beifahrer (zufällig oder bei schöner Gegend), Aufnahme mit beiden Kameras (gleichzeitig oder schnell
+nacheinander), Tagebuch-Einträge, Tages-Collage zum Teilen, optionale Galerie-Kopie. Offen: Kamera-Vorschau, Übertragung der Fotos an das
+Hauptgerät, Test auf echten Geräten (gleichzeitige Kameras), Video-Story.

@@ -32,6 +32,8 @@ data class ClientState(
     val route: RouteDto? = null,
     val pos: PosDto? = null,
     val drive: DriveDto? = null,
+    /** Offene Foto-Bitte des Hauptgeraets (nur Beifahrer). */
+    val photoRequest: HostMsg.PhotoRequest? = null,
     val hostName: String? = null,
 )
 
@@ -147,8 +149,15 @@ class BtClient(private val ctx: Context, private val scope: CoroutineScope) {
             is HostMsg.RouteMsg -> _state.update { it.copy(route = m.route) }
             is HostMsg.PositionMsg -> _state.update { it.copy(pos = m.pos) }
             is HostMsg.DriveMsg -> _state.update { it.copy(drive = m.drive) }
+            is HostMsg.PhotoRequest -> _state.update { it.copy(photoRequest = m) }
             HostMsg.Bye -> { wanted = false; _state.update { ClientState() } }
         }
+    }
+
+    /** Foto-Bitte erledigt (Foto gemacht oder spaeter): Karte ausblenden und dem Hauptgeraet antworten. */
+    fun answerPhoto(id: String, taken: Boolean) {
+        _state.update { if (it.photoRequest?.id == id) it.copy(photoRequest = null) else it }
+        send(ClientMsg.PhotoAnswer(id, taken))
     }
 
     fun send(msg: ClientMsg) {

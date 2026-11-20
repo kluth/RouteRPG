@@ -11,6 +11,7 @@ carApp = "1.4.0"
 serialization = "1.7.3"
 coroutines = "1.9.0"
 work = "2.9.1"
+camerax = "1.4.1"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -24,6 +25,9 @@ androidx-car-app = { module = "androidx.car.app:app", version.ref = "carApp" }
 maplibre = { module = "org.maplibre.gl:android-sdk", version.ref = "maplibre" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+androidx-camera-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 androidx-work = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }

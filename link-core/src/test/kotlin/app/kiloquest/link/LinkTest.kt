@@ -148,4 +148,15 @@ class LinkTest {
         assertFalse(r.allows(Role.KID, ClientMsg.BreakRequest))
         assertEquals(ClientMsg.BreakRequest, Wire.decodeClient(Wire.encode(ClientMsg.BreakRequest)))
     }
+
+    @Test fun photoMessagesRoundTripAndPermissions() {
+        val req = HostMsg.PhotoRequest("p1", "SCENIC", "Kullaberg")
+        assertEquals(req, Wire.decodeHost(Wire.encode(req)))
+        assertEquals(HostMsg.PhotoRequest("p2", "RANDOM"), Wire.decodeHost(Wire.encode(HostMsg.PhotoRequest("p2", "RANDOM"))))
+        val ans = ClientMsg.PhotoAnswer("p1", true)
+        assertEquals(ans, Wire.decodeClient(Wire.encode(ans)))
+        val r = DeviceRoster()
+        assertTrue(r.allows(Role.COPILOT, ans))
+        assertFalse(r.allows(Role.KID, ans), "nur der Beifahrer beantwortet Foto-Bitten")
+    }
 }

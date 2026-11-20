@@ -436,7 +436,7 @@
     <string name="dlg_recents_msg">Die Liste der zuletzt gesuchten Ziele wird geleert.</string>
     <string name="dlg_memory_msg">KiloQuest vergisst, zu welchen Orten, Tieren und Fakten schon gefragt wurde, sie können also wieder vorkommen.</string>
     <string name="dlg_reset_msg">Alle Einstellungen auf diesem Bildschirm gehen auf Standard zurück. Punkte, Sticker und gekoppelte Geräte bleiben.</string>
-    <string name="privacy_text">KiloQuest hat keine Werbung, kein Tracking und keine Analyse.\n\nDeine Position wird nur für die Navigation auf diesem Gerät genutzt und nie auf einem Server von uns gespeichert. Um Routen zu planen, Orte zu suchen und Verkehr, Wetter und Aufgabeninhalte zu laden, fragt die App freie Dienste (euren eigenen Routenserver, OpenStreetMap-Dienste, Wikipedia, iNaturalist, Open-Meteo, die Autobahn-API) mit den Orten, die für die jeweilige Anfrage nötig sind. Nichts wird einer Person zugeordnet.\n\nGekoppelte Geräte tauschen Spielstand und Position des Autos nur per Bluetooth aus, und nur mit Geräten, die du erlaubt hast. Punkte, Sticker, Einstellungen und Figuren bleiben auf dem Gerät.</string>
+    <string name="privacy_text">KiloQuest hat keine Werbung, kein Tracking und keine Analyse.\n\nDeine Position wird nur für die Navigation auf diesem Gerät genutzt und nie auf einem Server von uns gespeichert. Um Routen zu planen, Orte zu suchen und Verkehr, Wetter und Aufgabeninhalte zu laden, fragt die App freie Dienste (euren eigenen Routenserver, OpenStreetMap-Dienste, Wikipedia, iNaturalist, Open-Meteo, die Autobahn-API) mit den Orten, die für die jeweilige Anfrage nötig sind. Nichts wird einer Person zugeordnet.\n\nGekoppelte Geräte tauschen Spielstand und Position des Autos nur per Bluetooth aus, und nur mit Geräten, die du erlaubt hast. Punkte, Sticker, Einstellungen und Figuren bleiben auf dem Gerät.\n\nDie Roadtrip-Fotostory nutzt die Kamera nur, wenn der Beifahrer auf „Foto machen“ tippt. Fotos bleiben auf dem Gerät (auf Wunsch zusätzlich in deiner Galerie) und werden nie hochgeladen.</string>
     <string name="licenses_text">Karten: © OpenStreetMap-Mitwirkende (ODbL), Kacheln von OpenFreeMap, Darstellung mit MapLibre (BSD).\nRouting: Valhalla (MIT).\nGeschichten: Wikipedia (CC BY-SA). Tiere: iNaturalist. Wetter: Open-Meteo. Verkehr: Autobahn GmbH.\n\n3D-Figuren: Kenney (kenney.nl), CC0: Car Kit, Train Kit, Watercraft Kit, Space Kit, Cube Pets, Mini Characters, Blocky Characters; Flugzeuge von OpenGameArt, CC0.\nKilo und Emoji: Noto Emoji (Google).\nSymbole: Material Symbols (Apache 2.0).\nSchriften: Atkinson Hyperlegible und Nunito (SIL OFL 1.1).</string>
     <string name="set_toilet_corridor">Klo-Alarm: Suchkorridor</string>
     <string name="set_toilet_corridor_hint">Wie weit ein Halt von der Route entfernt sein darf</string>
@@ -637,4 +637,27 @@
     <string name="copilot_kids_stats">%1$d Punkte · %2$d Sticker</string>
     <string name="copilot_kids_now">Gerade dran: %1$s</string>
     <string name="copilot_break_now">Pause jetzt vorschlagen</string>
+    <string name="set_photo_prompts">Roadtrip-Fotostory</string>
+    <string name="set_photo_prompts_hint">Das Beifahrer-Gerät wird ab und zu um ein Foto mit beiden Kameras gebeten</string>
+    <string name="set_photos_gallery">Fotos in die Galerie kopieren</string>
+    <string name="set_photos_gallery_hint">Speichert sie zusätzlich in Pictures/KiloQuest auf diesem Gerät</string>
+    <string name="photo_request_title">Foto-Moment!</string>
+    <string name="photo_request_scenic">Was für eine Aussicht. Ein Foto mit beiden Kameras?</string>
+    <string name="photo_request_scenic_place">Schöner Ort: %1$s. Ein Foto mit beiden Kameras?</string>
+    <string name="photo_request_random">Zeit für ein Roadtrip-Foto mit beiden Kameras?</string>
+    <string name="photo_take">Foto machen</string>
+    <string name="photo_later">Später</string>
+    <string name="photo_now">Foto-Moment jetzt</string>
+    <string name="photo_permission">KiloQuest braucht die Kamera für die Roadtrip-Fotostory. Die Fotos bleiben auf diesem Gerät.</string>
+    <string name="photo_place">%1$s</string>
+    <string name="photo_get_ready">Handy ruhig halten, alle lächeln!</string>
+    <string name="photo_shooting">Die Fotos werden gemacht…</string>
+    <string name="photo_done">Im Reisetagebuch gespeichert!</string>
+    <string name="photo_failed">Das Foto hat nicht geklappt. Prüfe die Kamera-Erlaubnis und versuche es noch einmal.</string>
+    <string name="photo_one_after_another">Dieses Handy hat die zwei Fotos kurz hintereinander gemacht.</string>
+    <string name="photo_close">Fertig</string>
+    <string name="diary_line_photo">📷 Roadtrip-Foto</string>
+    <string name="diary_line_photo_place">📷 Roadtrip-Foto: %1$s</string>
+    <string name="photo_collage_title">Roadtrip-Fotostory</string>
+    <string name="photo_collage_share">Tag als Collage teilen</string>
 </resources>

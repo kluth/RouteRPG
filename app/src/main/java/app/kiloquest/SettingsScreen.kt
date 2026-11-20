@@ -75,6 +75,10 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 SettingDivider()
                 SettingSwitch(stringResource(R.string.set_speed_limit), null, s.showSpeedLimit) { v -> nav.updateSettings { it.copy(showSpeedLimit = v) } }
                 SettingDivider()
+                SettingSwitch(stringResource(R.string.set_photo_prompts), stringResource(R.string.set_photo_prompts_hint), s.photoPrompts) { v -> nav.updateSettings { it.copy(photoPrompts = v) } }
+                SettingDivider()
+                SettingSwitch(stringResource(R.string.set_photos_gallery), stringResource(R.string.set_photos_gallery_hint), s.photosToGallery) { v -> nav.updateSettings { it.copy(photosToGallery = v) } }
+                SettingDivider()
                 SettingSwitch(stringResource(R.string.set_overspeed), stringResource(R.string.set_overspeed_hint), s.overspeedWarning) { v -> nav.updateSettings { it.copy(overspeedWarning = v) } }
                 SettingDivider()
                 SettingSwitch(stringResource(R.string.set_lane_hints), null, s.laneHints) { v -> nav.updateSettings { it.copy(laneHints = v) } }

@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-enum class DiaryKind { TRIP_START, COUNTRY, STORY, QUEST, STICKER, ARRIVAL }
+enum class DiaryKind { TRIP_START, COUNTRY, STORY, QUEST, STICKER, ARRIVAL, PHOTO }
 
 /**
  * Ein Eintrag im Reisetagebuch. Alles bleibt lokal auf dem Geraet. [day] = Epochentag, [kind] = [DiaryKind]-Name.
@@ -24,6 +24,10 @@ enum class DiaryKind { TRIP_START, COUNTRY, STORY, QUEST, STICKER, ARRIVAL }
     val lon: Double? = null,
 ) {
     val kindOrNull: DiaryKind? get() = runCatching { DiaryKind.valueOf(kind) }.getOrNull()
+
+    /** Bei Foto-Eintraegen: Dateinamen "rueck|front" (nur Namen, keine Pfade); sonst leer. */
+    fun photoFiles(): List<String> =
+        if (kind == DiaryKind.PHOTO.name) text.split('|').map { it.trim() }.filter { it.isNotEmpty() && '/' !in it && '\\' !in it && ".." !in it } else emptyList()
 }
 
 data class DiaryStats(
@@ -35,6 +39,7 @@ data class DiaryStats(
     val quests: Int,
     val points: Int,
     val stickers: Int,
+    val photos: Int = 0,
     /** Gefahrene Strecke (Summe der Ankuenfte). */
     val meters: Double,
 )
@@ -82,6 +87,7 @@ object TravelDiary {
             quests = sorted.count { it.kind == DiaryKind.QUEST.name },
             points = sorted.sumOf { it.points },
             stickers = sorted.count { it.kind == DiaryKind.STICKER.name },
+            photos = sorted.count { it.kind == DiaryKind.PHOTO.name },
             meters = sorted.filter { it.kind == DiaryKind.ARRIVAL.name }.sumOf { it.meters },
         )
     }

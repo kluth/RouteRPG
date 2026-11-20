@@ -13,3 +13,4 @@
 ## Sprachaufnahmen (Ergänzung)
 - `app/src/main/assets/kilo_voice/`: vorab erzeugte synthetische Sprache (ElevenLabs, Stimme „Finn Fable – Children's Stories DE/EN“),
   siehe `tools/voice/README.md`. Nutzungsrechte richten sich nach dem ElevenLabs-Tarif des Projektinhabers (vor einer Veröffentlichung prüfen).
+- AndroidX CameraX 1.4.1 (camera-core, camera-camera2, camera-lifecycle): Apache-2.0, für die Roadtrip-Fotostory (beide Kameras); Fotos bleiben lokal.

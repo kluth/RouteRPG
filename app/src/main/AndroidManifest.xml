@@ -16,6 +16,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Roadtrip-Fotostory: Kamera nur auf Wunsch des Beifahrers, Fotos bleiben auf dem Geraet -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.front" android:required="false" />
     <uses-permission android:name="androidx.car.app.NAVIGATION_TEMPLATES" />
     <uses-permission android:name="androidx.car.app.ACCESS_SURFACE" />
 

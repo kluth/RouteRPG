@@ -48,7 +48,18 @@ class LinkController(private val app: Application, private val nav: NavControlle
     private val lastPosSent = HashMap<String, Pair<Long, PosDto?>>()
     private val lastDriveSent = HashMap<String, Pair<Long, DriveDto?>>()
 
-    init { applyKidBands() }
+    init {
+        applyKidBands()
+        // Roadtrip-Fotostory: Bitten nur an verbundene Beifahrer-Geraete
+        nav.photoAudience = object : NavController.PhotoAudience {
+            private fun copilots() = roster.devices().filter { it.role == Role.COPILOT && it.address in host.connectedAddresses() }
+            override fun available() = copilots().isNotEmpty()
+            override fun send(prompt: app.kiloquest.nav.PhotoPrompt) {
+                val id = java.util.UUID.randomUUID().toString()
+                copilots().forEach { host.send(it.address, HostMsg.PhotoRequest(id, prompt.reason.name, prompt.place)) }
+            }
+        }
+    }
 
     fun startHosting(): Boolean {
         if (!host.start()) return false
@@ -136,6 +147,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
             is ClientMsg.Reroute -> if (st.proposal != null) { if (msg.accept) nav.acceptReroute() else nav.dismissReroute() }
             is ClientMsg.Break -> if (st.breakProposal != null) { if (msg.accept) nav.acceptBreak() else nav.laterBreak() }
             ClientMsg.BreakRequest -> nav.suggestBreakNow()
+            is ClientMsg.PhotoAnswer -> nav.photoAnswered(msg.taken)
             ClientMsg.ToiletAlarm -> nav.toiletAlarm()
             ClientMsg.ToiletResume -> nav.resumeAfterToilet()
             ClientMsg.ToiletDismiss -> nav.dismissToiletRequest()

@@ -16,6 +16,10 @@ data class AppSettings(
     val kiloVoice: Boolean = true,
     val keepScreenOn: Boolean = true,
     val showSpeedLimit: Boolean = true,
+    /** Roadtrip-Fotostory: das Beifahrer-Geraet wird gelegentlich um ein Foto mit beiden Kameras gebeten. */
+    val photoPrompts: Boolean = true,
+    /** Fotos zusaetzlich in die Galerie kopieren (Pictures/KiloQuest). */
+    val photosToGallery: Boolean = true,
     /** Sprachansage "Tempolimit N" bei dauerhafter Ueberschreitung (gilt ueberall, betrifft nur das eigene Tempo). */
     val overspeedWarning: Boolean = true,
     val laneHints: Boolean = true,
@@ -43,6 +47,8 @@ internal object SettingsStore {
             kiloVoice = p.getBoolean(P + "kilo_voice", d.kiloVoice),
             keepScreenOn = p.getBoolean(P + "keep_screen_on", d.keepScreenOn),
             showSpeedLimit = p.getBoolean(P + "speed_limit", d.showSpeedLimit),
+            photoPrompts = p.getBoolean(P + "photo_prompts", d.photoPrompts),
+            photosToGallery = p.getBoolean(P + "photos_gallery", d.photosToGallery),
             overspeedWarning = p.getBoolean(P + "overspeed_warning", d.overspeedWarning),
             laneHints = p.getBoolean(P + "lane_hints", d.laneHints),
             detourSuggestions = p.getBoolean(P + "detours", d.detourSuggestions),
@@ -62,6 +68,8 @@ internal object SettingsStore {
             .putBoolean(P + "kilo_voice", s.kiloVoice)
             .putBoolean(P + "keep_screen_on", s.keepScreenOn)
             .putBoolean(P + "speed_limit", s.showSpeedLimit)
+            .putBoolean(P + "photo_prompts", s.photoPrompts)
+            .putBoolean(P + "photos_gallery", s.photosToGallery)
             .putBoolean(P + "overspeed_warning", s.overspeedWarning)
             .putBoolean(P + "lane_hints", s.laneHints)
             .putBoolean(P + "detours", s.detourSuggestions)

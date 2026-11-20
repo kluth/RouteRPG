@@ -436,7 +436,7 @@
     <string name="dlg_recents_msg">The list of recently searched destinations will be emptied.</string>
     <string name="dlg_memory_msg">KiloQuest forgets which places, animals and facts it already asked about, so they can come up again.</string>
     <string name="dlg_reset_msg">All settings in this screen go back to their defaults. Points, stickers and paired devices stay.</string>
-    <string name="privacy_text">KiloQuest has no ads, no tracking and no analytics.\n\nYour position is used only for navigation on this device and is never stored on a server of ours. To plan routes, search places and load traffic, weather and quest content, the app asks free services (your own route server, OpenStreetMap services, Wikipedia, iNaturalist, Open-Meteo, the German Autobahn API) with the places needed for each request. Nothing is linked to a person.\n\nPaired devices exchange the game state and the position of the car only via Bluetooth, and only with devices you allowed. Points, stickers, settings and figures stay on the device.</string>
+    <string name="privacy_text">KiloQuest has no ads, no tracking and no analytics.\n\nYour position is used only for navigation on this device and is never stored on a server of ours. To plan routes, search places and load traffic, weather and quest content, the app asks free services (your own route server, OpenStreetMap services, Wikipedia, iNaturalist, Open-Meteo, the German Autobahn API) with the places needed for each request. Nothing is linked to a person.\n\nPaired devices exchange the game state and the position of the car only via Bluetooth, and only with devices you allowed. Points, stickers, settings and figures stay on the device.\n\nThe roadtrip photo story uses the camera only when the co-driver taps "Take photo". Photos stay on the device (optionally also in your gallery) and are never uploaded.</string>
     <string name="licenses_text">Maps: © OpenStreetMap contributors (ODbL), map tiles from OpenFreeMap, rendering by MapLibre (BSD).\nRouting: Valhalla (MIT).\nStories: Wikipedia (CC BY-SA). Animals: iNaturalist. Weather: Open-Meteo. Traffic: Autobahn GmbH.\n\n3D figures: Kenney (kenney.nl), CC0: Car Kit, Train Kit, Watercraft Kit, Space Kit, Cube Pets, Mini Characters, Blocky Characters; aircraft from OpenGameArt, CC0.\nKilo and emoji: Noto Emoji (Google).\nIcons: Material Symbols (Apache 2.0).\nFonts: Atkinson Hyperlegible and Nunito (SIL OFL 1.1).</string>
     <string name="set_toilet_corridor">Toilet alert: search corridor</string>
     <string name="set_toilet_corridor_hint">How far from the route a stop may be</string>
@@ -637,4 +637,27 @@
     <string name="copilot_kids_stats">%1$d points · %2$d stickers</string>
     <string name="copilot_kids_now">Now: %1$s</string>
     <string name="copilot_break_now">Suggest a break now</string>
+    <string name="set_photo_prompts">Roadtrip photo story</string>
+    <string name="set_photo_prompts_hint">The co-driver device is asked for a photo now and then, with both cameras</string>
+    <string name="set_photos_gallery">Copy photos to the gallery</string>
+    <string name="set_photos_gallery_hint">Also saves them in Pictures/KiloQuest on this device</string>
+    <string name="photo_request_title">Photo moment!</string>
+    <string name="photo_request_scenic">What a view. Take a photo with both cameras?</string>
+    <string name="photo_request_scenic_place">Beautiful spot: %1$s. Take a photo with both cameras?</string>
+    <string name="photo_request_random">Time for a roadtrip photo with both cameras?</string>
+    <string name="photo_take">Take photo</string>
+    <string name="photo_later">Later</string>
+    <string name="photo_now">Photo moment now</string>
+    <string name="photo_permission">KiloQuest needs the camera for the roadtrip photo story. Photos stay on this device.</string>
+    <string name="photo_place">%1$s</string>
+    <string name="photo_get_ready">Hold the phone steady, everyone smile!</string>
+    <string name="photo_shooting">Taking the photos…</string>
+    <string name="photo_done">Saved to the travel diary!</string>
+    <string name="photo_failed">The photo did not work. Check the camera permission and try again.</string>
+    <string name="photo_one_after_another">This phone took the two photos one right after the other.</string>
+    <string name="photo_close">Done</string>
+    <string name="diary_line_photo">📷 Roadtrip photo</string>
+    <string name="diary_line_photo_place">📷 Roadtrip photo: %1$s</string>
+    <string name="photo_collage_title">Roadtrip photo story</string>
+    <string name="photo_collage_share">Share day as collage</string>
 </resources>

@@ -80,6 +80,10 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.currentCoroutineContext
 import app.kiloquest.nav.OfflinePackMeta
 import app.kiloquest.nav.OfflinePackCodec
+import app.kiloquest.nav.ScenicFinder
+import app.kiloquest.nav.Scenic
+import app.kiloquest.nav.PhotoPrompter
+import app.kiloquest.nav.PhotoPrompt
 import app.kiloquest.nav.TravelDiary
 import app.kiloquest.nav.DiaryKind
 import app.kiloquest.nav.DiaryEntry
@@ -321,6 +325,18 @@ class NavController(private val app: Application) : KidsActions {
 
     private val arbiter = SpeechArbiter()
     private val overspeed = OverspeedAlerter()
+
+    /** Roadtrip-Fotostory: Entscheidung auf dem Hauptgeraet, Bitte nur an gekoppelte Beifahrer-Geraete (siehe LinkController). */
+    interface PhotoAudience {
+        fun available(): Boolean
+        fun send(prompt: PhotoPrompt)
+    }
+    var photoAudience: PhotoAudience? = null
+    private val photoPrompter = PhotoPrompter(seed = System.nanoTime())
+    private var scenic: Scenic = Scenic.NONE
+    private var scenicAt = 0L
+    private var scenicJob: Job? = null
+    private var lastPhotoTick = 0L
     private val kiloClips = KiloVoicePlayer(app)
     private var lastPraise = 0
     private var lastRetry = 0
@@ -698,6 +714,8 @@ class NavController(private val app: Application) : KidsActions {
         if (_state.value.route == null) return
         _state.update { it.copy(navigating = true) }
         logDiary(DiaryKind.TRIP_START, _state.value.destination?.name.orEmpty())
+        photoPrompter.start(System.currentTimeMillis())
+        startScenicJob()
         // Navigation laeuft auch im Hintergrund/bei gesperrtem Bildschirm weiter (Vordergrunddienst)
         KeepAliveService.start(app)
         _state.value.route?.maneuvers?.firstOrNull()?.instruction?.let(::speak)
@@ -750,6 +768,8 @@ class NavController(private val app: Application) : KidsActions {
         planner = null
         tts?.stop()
         kiloClips.stop()
+        photoPrompter.stop()
+        scenicJob?.cancel()
     }
 
     private fun onLocation(loc: Location) {
@@ -776,6 +796,7 @@ class NavController(private val app: Application) : KidsActions {
         }
         planner?.next(g)?.let(::speak)
         updateDrivingAssist(loc, g.alongMeters)
+        maybePromptPhoto(g)
         val now0 = System.currentTimeMillis()
         val curvy = _state.value.sicknessMode && curveProfile?.isCurvy(g.alongMeters) == true
         if (curvy != _state.value.curvy) _state.update { it.copy(curvy = curvy) }
@@ -1208,6 +1229,48 @@ class NavController(private val app: Application) : KidsActions {
         }
     }
 
+    // --- Roadtrip-Fotostory
+
+    /** Beifahrer hat auf eine Foto-Bitte geantwortet: bei "Spaeter" gibt es eine Pause. */
+    fun photoAnswered(taken: Boolean) = photoPrompter.onAnswered(System.currentTimeMillis(), taken)
+
+    /** Tagebuch-Eintrag fuer ein Foto-Paar (Dateinamen "rueck|front"); [place] = Ort oder leer. */
+    fun logPhoto(files: List<String>, place: String?, pos: LatLon?) {
+        if (files.isEmpty()) return
+        logDiary(DiaryKind.PHOTO, place.orEmpty(), files.joinToString("|"), pos = pos)
+    }
+
+    private fun maybePromptPhoto(g: GuidanceState) {
+        val s = _state.value
+        if (!s.settings.photoPrompts) return
+        val audience = photoAudience ?: return
+        val now = System.currentTimeMillis()
+        if (now - lastPhotoTick < 5_000) return
+        lastPhotoTick = now
+        if (!audience.available()) return
+        // Nie ablenken: nicht bei Abbiegung, Umleitung, Pause, Klo-Alarm oder Abweichung von der Route
+        val busy = s.toilet != null || s.proposal != null || s.breakProposal != null || s.breakTarget != null ||
+            g.metersToNextManeuver < 1_000.0 || g.isOffRoute
+        val sc = if (now - scenicAt < 5 * 60_000L) scenic else Scenic.NONE
+        val prompt = photoPrompter.onTick(now, java.time.LocalDate.now().toEpochDay().toInt(), sc.score, sc.name, busy) ?: return
+        audience.send(prompt)
+    }
+
+    /** Alle 3 Minuten waehrend der Fahrt: Ist die Gegend schoen (Aussichtspunkt, Berg, See ...)? Nur mit Beifahrer-Geraet und Netz. */
+    private fun startScenicJob() {
+        scenicJob?.cancel()
+        scenicJob = scope.launch {
+            while (isActive) {
+                val pos = _state.value.position
+                if (pos != null && _state.value.settings.photoPrompts && photoAudience?.available() == true) {
+                    runCatching { ScenicFinder.assess(withContext(Dispatchers.IO) { fetchOverpass(ScenicFinder.buildQuery(pos.lat, pos.lon)) }) }
+                        .onSuccess { scenic = it; scenicAt = System.currentTimeMillis() }
+                }
+                delay(180_000)
+            }
+        }
+    }
+
     // --- Reisetagebuch und Hoergeschichten
 
     private fun logDiary(
@@ -1228,6 +1291,7 @@ class NavController(private val app: Application) : KidsActions {
     fun showDiary(show: Boolean) = _state.update { it.copy(diaryScreen = show) }
 
     fun clearDiary() {
+        PhotoStore.deleteAll(app)
         prefs.edit().remove("diary").apply()
         _state.update { it.copy(diary = emptyList()) }
     }
