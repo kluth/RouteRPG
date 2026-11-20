@@ -81,6 +81,15 @@ class LanesSpeedTest {
     }
 
     @Test
+    fun unlimitedTextBecomesUnlimitedLimit() {
+        val route = ValhallaApi.parseRoute(res("valhalla_route_speed.json"))
+        val body = """{"edges":[{"begin_shape_index":0,"end_shape_index":2,"speed_limit":"unlimited"},{"begin_shape_index":2,"end_shape_index":4,"speed_limit":80}]}"""
+        val segs = TraceAttributes.parse(body, route, startIndex = 0)
+        assertEquals(SpeedProfile.UNLIMITED, segs[0].limitKmh)
+        assertEquals(80, segs[1].limitKmh)
+    }
+
+    @Test
     fun `speed profile merges windows and handles unknown`() {
         val p = SpeedProfile()
         p.addWindow(0.0, 1000.0, listOf(SpeedSegment(0.0, 500.0, 50), SpeedSegment(500.0, 1000.0, null)))

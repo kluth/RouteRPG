@@ -81,7 +81,9 @@ object TraceAttributes {
             val o = e.jsonObject
             val b = o["begin_shape_index"]?.jsonPrimitive?.intOrNull ?: return@mapNotNull null
             val en = o["end_shape_index"]?.jsonPrimitive?.intOrNull ?: return@mapNotNull null
-            val limit = o["speed_limit"]?.jsonPrimitive?.intOrNull?.takeIf { it > 0 }
+            val sl = o["speed_limit"]?.jsonPrimitive
+            // Valhalla liefert auf Strecken ohne Limit den Text "unlimited"
+            val limit = if (sl?.content == "unlimited") SpeedProfile.UNLIMITED else sl?.intOrNull?.takeIf { it > 0 }
             val from = route.line.cumulative[(startIndex + b).coerceIn(0, last)]
             val to = route.line.cumulative[(startIndex + en).coerceIn(0, last)]
             if (to < from) null else SpeedSegment(from, to, limit)
