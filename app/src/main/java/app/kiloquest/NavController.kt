@@ -38,6 +38,8 @@ import app.kiloquest.nav.SpeechArbiter
 import kotlin.random.Random
 import kotlinx.coroutines.withContext
 import app.kiloquest.nav.AnnouncementPlanner
+import app.kiloquest.nav.Corridor
+import app.kiloquest.nav.CountryTimeline
 import app.kiloquest.nav.BreakPlanner
 import app.kiloquest.nav.CurveProfile
 import app.kiloquest.nav.RestStop
@@ -112,6 +114,11 @@ data class TripState(
     val loading: Boolean = false,
 )
 
+/** Fortschritt des Offline-Reise-Pakets. */
+enum class PackagePhase { IDLE, MAP, LIMITS, COUNTRIES, READY, ERROR }
+
+data class PackageState(val phase: PackagePhase = PackagePhase.IDLE, val progress: Double = 0.0, val estimatedMb: Int = 0)
+
 /** Vorgeschlagene Pause voraus. */
 data class BreakProposal(val stop: RestStop, val aheadMeters: Double)
 
@@ -164,6 +171,7 @@ data class UiState(
     val voiceMode: Boolean = false,
     val voiceAvailable: Boolean = false,
     val listening: Boolean = false,
+    val pkg: PackageState = PackageState(),
 )
 
 private const val TRAFFIC_REFRESH_MS = 5 * 60_000L
@@ -171,6 +179,8 @@ private const val MAX_TRAFFIC_ROADS = 10
 private const val ANNOUNCE_AHEAD_METERS = 100_000.0
 private const val MIN_SAVED_MINUTES = 5
 private const val MAX_RECENTS = 5
+private const val PACKAGE_MIN_ZOOM = 5
+private const val PACKAGE_MAX_ZOOM = 12
 private const val VOICE_ATTEMPTS = 3
 private const val COUNTRY_CHECK_METERS = 10_000.0
 private const val WEATHER_REFRESH_MS = 30 * 60_000L
@@ -203,6 +213,9 @@ class NavController(private val app: Application) {
     private var countryChecking = false
     private val usedRiddles = HashSet<String>()
     private val voice = VoiceAnswers(app)
+    private val offline by lazy { OfflinePackage(app) }
+    private var countryTimeline: CountryTimeline? = null
+    private var packageJob: Job? = null
     private var voiceJob: Job? = null
     private var lastCountryCheckAlong = -1e9
     private val taughtPhrases = HashSet<Phrase>()
@@ -367,6 +380,9 @@ class NavController(private val app: Application) {
         speedProfile = SpeedProfile()
         speedFetching = false
         speedRetryAt = 0L
+        countryTimeline = null
+        packageJob?.cancel()
+        _state.update { it.copy(pkg = PackageState(estimatedMb = estimateMb(l.route))) }
     }
 
     private fun newAdventure(route: Route) {
@@ -703,6 +719,15 @@ class NavController(private val app: Application) {
 
     /** Alle ca. 10 km das Land pruefen (Photon-Reverse); bei Wechsel in ein Land mit Kurs: Willkommen + Quiz. */
     private fun checkCountry(pos: LatLon, along: Double) {
+        // Vorab ermittelt (Reise-Paket): ohne Netz
+        countryTimeline?.countryAt(along)?.let { code ->
+            val previous = _state.value.country
+            if (code != previous) {
+                _state.update { it.copy(country = code) }
+                if (previous != null) onCountryChanged(code)
+            }
+            return
+        }
         if (countryChecking || along - lastCountryCheckAlong < COUNTRY_CHECK_METERS) return
         countryChecking = true
         lastCountryCheckAlong = along
@@ -997,6 +1022,71 @@ class NavController(private val app: Application) {
         }
         return listOfNotNull(kind, s.name).joinToString(" ") +
             if (features.isNotEmpty()) " (" + app.getString(R.string.break_with, features.joinToString(" & ")) + ")" else ""
+    }
+
+    // ---------------------------------------------------------------- Offline-Reise-Paket
+
+    private fun estimateMb(route: Route): Int {
+        val tiles = Corridor.estimateTiles(Corridor.boxes(route), PACKAGE_MIN_ZOOM, PACKAGE_MAX_ZOOM)
+        return Corridor.estimateMegabytes(tiles).toInt().coerceAtLeast(1)
+    }
+
+    /** Laedt Karte (Korridor), Tempolimits der ganzen Route und Laender entlang der Strecke vorab. */
+    fun downloadPackage() {
+        val route = _state.value.route ?: return
+        packageJob?.cancel()
+        packageJob = scope.launch {
+            val mb = estimateMb(route)
+            fun set(phase: PackagePhase, p: Double) = _state.update { it.copy(pkg = PackageState(phase, p, mb)) }
+            set(PackagePhase.MAP, 0.0)
+            val mapOk = kotlinx.coroutines.suspendCancellableCoroutine<Boolean> { cont ->
+                offline.download(
+                    Corridor.boxes(route), PACKAGE_MIN_ZOOM, PACKAGE_MAX_ZOOM,
+                    onProgress = { set(PackagePhase.MAP, it) },
+                    onFinished = { ok -> if (cont.isActive) cont.resume(ok, null) },
+                )
+            }
+            if (!mapOk) { set(PackagePhase.ERROR, 0.0); return@launch }
+
+            // Tempolimits der ganzen Route in 25-km-Fenstern
+            set(PackagePhase.LIMITS, 0.0)
+            var m = 0.0
+            while (m < route.lengthMeters && isActive) {
+                val end = minOf(route.lengthMeters, m + SPEED_WINDOW_METERS)
+                val ok = runCatching { fetchSpeedWindow(route, m, end) }.isSuccess
+                if (!ok) { set(PackagePhase.ERROR, m / route.lengthMeters); return@launch }
+                m = end
+                set(PackagePhase.LIMITS, m / route.lengthMeters)
+            }
+
+            // Laender entlang der Strecke (Photon, hoefliche Abstaende)
+            set(PackagePhase.COUNTRIES, 0.0)
+            val samples = Corridor.samplePositions(route)
+            val found = ArrayList<Pair<Double, String>>()
+            for ((i, s) in samples.withIndex()) {
+                val code = fetchCountryCode(s.second.lat, s.second.lon)
+                if (code != null) found += s.first to code
+                set(PackagePhase.COUNTRIES, (i + 1.0) / samples.size)
+                delay(400)
+            }
+            if (found.isNotEmpty() && _state.value.route === route) countryTimeline = CountryTimeline(found)
+            set(PackagePhase.READY, 1.0)
+        }
+    }
+
+    fun clearOfflineMaps() {
+        offline.clear { _state.update { it.copy(pkg = PackageState(estimatedMb = it.pkg.estimatedMb)) } }
+    }
+
+    /** Ein Tempolimit-Fenster laden und in den Cache eintragen (wirft bei Fehler). */
+    private suspend fun fetchSpeedWindow(route: Route, startM: Double, endM: Double) {
+        val last = route.line.points.size - 1
+        val i0 = route.line.indexAtMeters(startM)
+        val i1 = minOf(last, route.line.indexAtMeters(endM) + 1)
+        if (i1 <= i0) return
+        val body = fetchValhalla("trace_attributes", TraceAttributes.buildRequest(route, i0, i1))
+        val segs = TraceAttributes.parse(body, route, i0)
+        speedProfile.addWindow(route.line.cumulative[i0], route.line.cumulative[i1], segs)
     }
 
     // ---------------------------------------------------------------- Tempolimit & Spuren

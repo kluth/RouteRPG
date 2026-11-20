@@ -232,4 +232,12 @@
     <string name="voice_listening">Listening… say your answer</string>
     <string name="voice_done_words">found,done,yes,got it,ready</string>
     <string name="voice_ordinals">one,first,1;two,second,2;three,third,3</string>
+    <string name="pkg_button">Offline package (~%1$d MB)</string>
+    <string name="pkg_progress">Offline package: %1$s %2$d%%</string>
+    <string name="pkg_phase_map">map</string>
+    <string name="pkg_phase_limits">speed limits</string>
+    <string name="pkg_phase_countries">countries</string>
+    <string name="pkg_ready">Offline package ready: map, speed limits and countries are saved.</string>
+    <string name="pkg_error">Offline package failed. Please try again with a network connection.</string>
+    <string name="pkg_clear">Delete offline maps</string>
 </resources>

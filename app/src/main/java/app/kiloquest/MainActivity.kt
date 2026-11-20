@@ -62,7 +62,7 @@ import org.maplibre.geojson.LineString
 import org.maplibre.geojson.Point
 
 /** OpenFreeMap: freie Vektorkacheln ohne API-Key (nur fuer Entwicklung/privat; spaeter Offline-PMTiles). */
-private const val STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
+private const val STYLE_URL = MAP_STYLE_URL
 private const val ROUTE_SOURCE = "route-source"
 private const val ROUTE_LAYER = "route-layer"
 private const val INCIDENT_SOURCE = "incident-source"
@@ -143,7 +143,10 @@ private fun AppScreen(vm: NavController) {
                     } else {
                         stringResource(R.string.route_summary, formatDistance(meters), formatDuration(route.durationSeconds))
                     }
-                    Text(summary, style = MaterialTheme.typography.titleMedium)
+                    Column {
+                        Text(summary, style = MaterialTheme.typography.titleMedium)
+                        if (!state.navigating) PackageLine(state.pkg, vm)
+                    }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = { vm.showKids(true) }) { Text(stringResource(R.string.kids_open)) }
                         if (state.navigating) {
@@ -219,6 +222,34 @@ private fun WeatherCard(state: UiState, vm: NavController) {
                 )
             }
             if (w.arrivesInDark == true) Text(stringResource(R.string.weather_dark))
+        }
+    }
+}
+
+/** Offline-Reise-Paket: Knopf mit Groessenschaetzung, Fortschritt, Bereit-Hinweis. */
+@Composable
+private fun PackageLine(pkg: PackageState, vm: NavController) {
+    when (pkg.phase) {
+        PackagePhase.IDLE -> androidx.compose.material3.TextButton(onClick = vm::downloadPackage) {
+            Text(stringResource(R.string.pkg_button, pkg.estimatedMb))
+        }
+        PackagePhase.MAP, PackagePhase.LIMITS, PackagePhase.COUNTRIES -> Text(
+            stringResource(
+                R.string.pkg_progress,
+                stringResource(
+                    when (pkg.phase) {
+                        PackagePhase.MAP -> R.string.pkg_phase_map
+                        PackagePhase.LIMITS -> R.string.pkg_phase_limits
+                        else -> R.string.pkg_phase_countries
+                    },
+                ),
+                (pkg.progress * 100).toInt(),
+            ),
+            style = MaterialTheme.typography.bodySmall,
+        )
+        PackagePhase.READY -> Text(stringResource(R.string.pkg_ready), style = MaterialTheme.typography.bodySmall)
+        PackagePhase.ERROR -> androidx.compose.material3.TextButton(onClick = vm::downloadPackage) {
+            Text(stringResource(R.string.pkg_error), color = MaterialTheme.colorScheme.error)
         }
     }
 }

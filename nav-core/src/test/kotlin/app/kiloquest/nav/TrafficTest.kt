@@ -204,3 +204,56 @@ class RiddleTest {
         assertTrue(!RiddleRules.due(r, 0.0, LatLon(50.05, 8.0), emptySet()))   // ca. 5.5 km
     }
 }
+
+class CorridorTest {
+    // ca. 300 km nach Norden von Duisburg aus
+    private val route: Route = run {
+        val pts = (0..3000).map { LatLon(51.4 + it * 0.0009, 6.76) }
+        val line = Polyline(pts)
+        Route(line, emptyList(), line.lengthMeters, 3 * 3600.0)
+    }
+
+    @Test
+    fun `splits the route into chunk boxes that cover all points`() {
+        val boxes = Corridor.boxes(route, chunkMeters = 60_000.0, padKm = 10.0)
+        assertTrue(boxes.size in 4..7, "boxes=${boxes.size}")
+        for (p in route.line.points.filterIndexed { i, _ -> i % 50 == 0 }) {
+            assertTrue(boxes.any { p.lat in it.south..it.north && p.lon in it.west..it.east }, "uncovered $p")
+        }
+        assertTrue(boxes.all { it.south < it.north && it.west < it.east })
+    }
+
+    @Test
+    fun `padding widens the box`() {
+        val small = Corridor.boxes(route, padKm = 2.0).first()
+        val large = Corridor.boxes(route, padKm = 20.0).first()
+        assertTrue(large.east - large.west > small.east - small.west)
+    }
+
+    @Test
+    fun `tile counts grow with zoom and are one tile at zoom 0`() {
+        val b = Corridor.boxes(route).first()
+        assertEquals(1L, Corridor.tilesAt(b, 0))
+        assertTrue(Corridor.tilesAt(b, 12) > Corridor.tilesAt(b, 8))
+        val total = Corridor.estimateTiles(Corridor.boxes(route), 5, 12)
+        assertTrue(total in 200L..20_000L, "tiles=$total")
+        assertTrue(Corridor.estimateMegabytes(total) > 1.0)
+    }
+
+    @Test
+    fun `sample positions include start and end`() {
+        val s = Corridor.samplePositions(route, 25_000.0)
+        assertEquals(0.0, s.first().first)
+        assertEquals(route.line.lengthMeters, s.last().first, 1.0)
+        assertTrue(s.size in 10..16)
+    }
+
+    @Test
+    fun `country timeline answers by position`() {
+        val t = CountryTimeline(listOf(0.0 to "DE", 100_000.0 to "DK", 300_000.0 to "SE"))
+        assertEquals("DE", t.countryAt(50_000.0))
+        assertEquals("DK", t.countryAt(100_000.0))
+        assertEquals("SE", t.countryAt(900_000.0))
+        assertNull(CountryTimeline(emptyList()).countryAt(1.0))
+    }
+}

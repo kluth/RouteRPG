@@ -111,6 +111,7 @@ fun TripScreen(state: UiState, nav: NavController) {
             if (trip != null) {
                 OutlinedButton(onClick = nav::clearTrip, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.trip_clear)) }
             }
+            OutlinedButton(onClick = nav::clearOfflineMaps, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.pkg_clear)) }
             OutlinedButton(onClick = { nav.showTrip(false); nav.clearResults() }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.kids_back))
             }
