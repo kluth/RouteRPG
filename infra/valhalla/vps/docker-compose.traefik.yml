@@ -1,0 +1,29 @@
+# Variante fuer VPS mit vorhandenem Traefik (Host-Netzwerk, certresolver "letsencrypt").
+# Genau so auf dem Hostinger-VPS deployt (Projekt "kiloquest-valhalla").
+# API_TOKEN kommt aus der Projekt-Umgebung auf dem Server, nie ins Repo.
+services:
+  valhalla:
+    image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
+    container_name: kiloquest-valhalla
+    restart: unless-stopped
+    mem_limit: 4g
+    memswap_limit: 4g
+    cpus: 1.5
+    volumes:
+      - valhalla-data:/custom_files
+    environment:
+      - tile_urls=https://download.geofabrik.de/europe/germany-latest.osm.pbf
+      - use_tiles_ignore_pbf=True
+      - build_elevation=False
+      - build_admins=True
+      - build_time_zones=False
+      - server_threads=2
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.kiloquest-valhalla.rule=Host(`valhalla.kluth.cloud`) && Header(`X-Api-Token`, `${API_TOKEN}`)
+      - traefik.http.routers.kiloquest-valhalla.entrypoints=websecure
+      - traefik.http.routers.kiloquest-valhalla.tls.certresolver=letsencrypt
+      - traefik.http.services.kiloquest-valhalla.loadbalancer.server.port=8002
+
+volumes:
+  valhalla-data:
