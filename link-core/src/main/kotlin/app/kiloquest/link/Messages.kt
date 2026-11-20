@@ -33,6 +33,10 @@ data class RerouteDto(val savedMinutes: Int, val blocked: Boolean, val incidentT
 @Serializable
 data class BreakDto(val aheadMeters: Double, val stopText: String)
 
+/** Klo-Alarm: Stand fuer die gekoppelten Geraete. [phase]: SEARCHING, HEADING, ARRIVED oder NONE. */
+@Serializable
+data class ToiletDto(val phase: String, val label: String = "", val seconds: Double? = null, val meters: Double? = null)
+
 /** Alles, was ein gekoppeltes Geraet zum Darstellen braucht. */
 @Serializable
 data class Snapshot(
@@ -55,6 +59,10 @@ data class Snapshot(
     /** Nur fuer Beifahrer-Geraete gesetzt. */
     val reroute: RerouteDto? = null,
     val breakProposal: BreakDto? = null,
+    /** Klo-Alarm laeuft (fuer alle Rollen sichtbar). */
+    val toilet: ToiletDto? = null,
+    /** Ein Kind hat "Ich muss mal" gedrueckt (Name des Geraets); fuer Beifahrer-Geraete. */
+    val toiletRequest: String? = null,
 )
 
 /** Nachrichten Geraet -> Hauptgeraet. */
@@ -67,6 +75,12 @@ sealed interface ClientMsg {
     @Serializable @SerialName("reroute") data class Reroute(val accept: Boolean) : ClientMsg
     @Serializable @SerialName("break") data class Break(val accept: Boolean) : ClientMsg
     @Serializable @SerialName("age") data class Age(val band: String) : ClientMsg
+    /** Beifahrer: Klo-Alarm ausloesen, weiterfahren/abbrechen, Kinder-Wunsch wegklicken. */
+    @Serializable @SerialName("toilet_alarm") data object ToiletAlarm : ClientMsg
+    @Serializable @SerialName("toilet_resume") data object ToiletResume : ClientMsg
+    @Serializable @SerialName("toilet_dismiss") data object ToiletDismiss : ClientMsg
+    /** Kind: "Ich muss mal" (loest nichts aus, fragt nur den Beifahrer). */
+    @Serializable @SerialName("toilet_request") data object ToiletRequest : ClientMsg
     @Serializable @SerialName("ping") data object Ping : ClientMsg
 }
 

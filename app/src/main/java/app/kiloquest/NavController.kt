@@ -13,6 +13,10 @@ import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import android.content.Context
 import app.kiloquest.game.AdventureSession
+import app.kiloquest.nav.ToiletChoice
+import app.kiloquest.nav.ToiletFinder
+import app.kiloquest.nav.ToiletKind
+import app.kiloquest.nav.ToiletStop
 import app.kiloquest.game.CountryGuess
 import app.kiloquest.game.QuestContext
 import app.kiloquest.game.QuestFit
@@ -123,6 +127,10 @@ enum class PackagePhase { IDLE, MAP, LIMITS, COUNTRIES, READY, ERROR }
 
 data class PackageState(val phase: PackagePhase = PackagePhase.IDLE, val progress: Double = 0.0, val estimatedMb: Int = 0)
 
+enum class ToiletPhase { SEARCHING, HEADING, ARRIVED, NONE }
+
+data class ToiletState(val phase: ToiletPhase, val label: String = "", val seconds: Double? = null, val meters: Double? = null)
+
 /** Vorgeschlagene Pause voraus. */
 data class BreakProposal(val stop: RestStop, val aheadMeters: Double)
 
@@ -148,6 +156,10 @@ data class UiState(
     val plan: List<Quest> = emptyList(),
     /** Gekoppeltes Geraet: Zustand kommt vom Hauptgeraet (keine eigene Route). */
     val remote: Boolean = false,
+    /** Klo-Alarm: laeuft gerade (Suche, Fahrt zum Halt, Angekommen). */
+    val toilet: ToiletState? = null,
+    /** Ein Kind (Geraetename) hat "Ich muss mal" gedrueckt. */
+    val toiletRequest: String? = null,
     val ageBand: AgeBand = AgeBand.EXPLORER,
     val kidsScreen: Boolean = false,
     val players: Int = 1,
@@ -215,6 +227,9 @@ class NavController(private val app: Application) : KidsActions {
     private var preloadJob: kotlinx.coroutines.Job? = null
     private val preloadFailed = HashSet<Double>()
     private val tripStatics = HashMap<String, Int>()
+    /** Ziel, zu dem es nach dem Klo-Halt weitergeht (null, wenn vorher nicht navigiert wurde). */
+    private var toiletResume: Place? = null
+    private var toiletJob: kotlinx.coroutines.Job? = null
     /** Altersstufe je gekoppeltem Kinder-Geraet (Spielernummer = Index). */
     private var kidBands: List<AgeBand> = emptyList()
 
@@ -469,6 +484,8 @@ class NavController(private val app: Application) : KidsActions {
     }
 
     fun showParent(show: Boolean) = _state.update { it.copy(parentScreen = show) }
+    override fun requestToilet() = toiletRequested(null)
+
     override fun showKids(show: Boolean) = _state.update { it.copy(kidsScreen = show) }
 
     override fun answerQuest(choice: Int?) = answerQuestFrom(choice, null)
@@ -543,8 +560,10 @@ class NavController(private val app: Application) : KidsActions {
                 kidsScreen = false, incidents = emptyList(), proposal = null,
                 speedKmh = null, speedLimit = null, overspeed = false, lanes = null,
                 curvy = false, breakProposal = null, breakTarget = null, weather = null, country = null,
+                toilet = null, toiletRequest = null,
             )
         }
+        toiletJob?.cancel(); toiletJob = null; toiletResume = null
         voiceJob?.cancel()
         voice.stop()
         trafficJob?.cancel()
@@ -569,6 +588,14 @@ class NavController(private val app: Application) : KidsActions {
         val g = eng.update(pos)
         _state.update { it.copy(guidance = g) }
         if (g.arrived) {
+            // Klo-Alarm: am Halt bleibt die Navigation offen, bis der Beifahrer "Weiter" tippt (Kinder brauchen Zeit)
+            _state.value.toilet?.let { t ->
+                if (t.phase == ToiletPhase.HEADING) {
+                    _state.update { it.copy(toilet = t.copy(phase = ToiletPhase.ARRIVED)) }
+                    speak(app.getString(R.string.toilet_arrived))
+                }
+                return
+            }
             val stageMessage = onStageArrived()
             speak(stageMessage ?: app.getString(R.string.arrived))
             stopNavigation()
@@ -1473,4 +1500,99 @@ class NavController(private val app: Application) : KidsActions {
         prefs.edit().putString("content_used", org.json.JSONArray(contentUsed.toList()).toString()).apply()
         return chosen
     }
+
+    // ---------------------------------------------------------------- Klo-Alarm
+
+    /** Naechste Toilette in Fahrzeit suchen und sofort ansteuern; danach geht es zum alten Ziel weiter. */
+    fun toiletAlarm() {
+        val pos = _state.value.position
+        if (pos == null) { _state.update { it.copy(error = R.string.error_no_position) }; return }
+        if (BuildConfig.VALHALLA_URL.isBlank()) { _state.update { it.copy(error = R.string.error_no_server) }; return }
+        if (_state.value.toilet?.phase == ToiletPhase.SEARCHING) return
+        toiletJob?.cancel()
+        _state.update { it.copy(toilet = ToiletState(ToiletPhase.SEARCHING), toiletRequest = null, error = null) }
+        speak(app.getString(R.string.toilet_searching))
+        toiletJob = scope.launch {
+            val choice = findToilet(pos)
+            if (choice == null) {
+                speak(app.getString(R.string.toilet_none))
+                _state.update { it.copy(toilet = ToiletState(ToiletPhase.NONE)) }
+                delay(8_000)
+                _state.update { if (it.toilet?.phase == ToiletPhase.NONE) it.copy(toilet = null) else it }
+                return@launch
+            }
+            val label = toiletLabel(choice.stop)
+            val dest = Place(label, choice.stop.position)
+            runCatching { loadRoute(pos, dest.position, emptyList()) }.onSuccess { loaded ->
+                val wasNavigating = _state.value.navigating
+                // Nur zurueck zum alten Ziel, wenn vorher navigiert wurde und es eines gab
+                val oldDest = if (wasNavigating) _state.value.destination else null
+                if (toiletResume == null) toiletResume = oldDest
+                val along = _state.value.guidance?.alongMeters ?: 0.0
+                installRoute(loaded)
+                if (adventure == null || !wasNavigating) newAdventure(loaded.route) else questOffset += along
+                _state.update {
+                    it.copy(
+                        route = loaded.route, destination = dest, guidance = null, incidents = emptyList(), proposal = null,
+                        breakProposal = null, breakTarget = null,
+                        toilet = ToiletState(ToiletPhase.HEADING, label, loaded.route.durationSeconds, loaded.route.lengthMeters),
+                    )
+                }
+                if (!wasNavigating) startNavigation()
+                val minutes = (loaded.route.durationSeconds / 60).toInt().coerceAtLeast(1)
+                speak(app.getString(R.string.toilet_found, label, app.getString(R.string.unit_min, minutes)))
+                scope.launch { refreshTraffic() }
+            }.onFailure {
+                speak(app.getString(R.string.toilet_none))
+                _state.update { it.copy(toilet = null) }
+            }
+        }
+    }
+
+    private suspend fun findToilet(pos: LatLon): ToiletChoice? {
+        for (radius in listOf(6_000, 20_000)) {
+            val cands = runCatching { ToiletFinder.parse(fetchOverpass(ToiletFinder.buildQuery(pos, radius))) }.getOrDefault(emptyList())
+            val near = ToiletFinder.nearest(cands, pos, 8)
+            if (near.isEmpty()) continue
+            val seconds = runCatching {
+                ToiletFinder.parseMatrix(fetchValhalla("sources_to_targets", ToiletFinder.matrixRequest(pos, near)), near.size)
+            }.getOrNull()
+            ToiletFinder.choose(pos, near, seconds)?.let { return it }
+        }
+        return null
+    }
+
+    private fun toiletLabel(s: ToiletStop): String {
+        val kind = app.getString(
+            when (s.kind) {
+                ToiletKind.TOILETS -> R.string.toilet_kind_toilets
+                ToiletKind.REST_AREA -> R.string.toilet_kind_rest_area
+                ToiletKind.SERVICES -> R.string.toilet_kind_services
+                ToiletKind.FUEL -> R.string.toilet_kind_fuel
+            },
+        )
+        return if (s.name.isNullOrBlank()) kind else "$kind ${s.name}"
+    }
+
+    /** "Weiter": zurueck zum alten Ziel (oder Navigation beenden, wenn es keines gab). Gilt auch als Abbrechen. */
+    fun resumeAfterToilet() {
+        val t = _state.value.toilet ?: return
+        if (t.phase == ToiletPhase.SEARCHING) { toiletJob?.cancel(); _state.update { it.copy(toilet = null) }; return }
+        val resume = toiletResume
+        toiletResume = null
+        if (t.phase == ToiletPhase.NONE || resume == null) { stopNavigation(); return }
+        _state.update { it.copy(destination = resume, toilet = null) }
+        speak(app.getString(R.string.toilet_resume))
+        calculateRoute()
+    }
+
+    /** Ein Kind (Geraet [from], null = dieses Geraet) moechte zur Toilette: nur melden, der Beifahrer entscheidet. */
+    fun toiletRequested(from: String?) {
+        if (_state.value.toilet != null) return
+        val name = from ?: app.getString(R.string.toilet_request_local)
+        _state.update { it.copy(toiletRequest = name) }
+        speakQuest(app.getString(R.string.toilet_request_spoken, name))
+    }
+
+    fun dismissToiletRequest() = _state.update { it.copy(toiletRequest = null) }
 }

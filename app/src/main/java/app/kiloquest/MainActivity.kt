@@ -144,12 +144,22 @@ internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
     val overlays = !state.kidsScreen && !state.tripScreen && !state.riddleScreen && !state.parentScreen
     // Obere Spalte: Suche/Vorschlaege (vor der Fahrt) bzw. Hinweise unter der Abbiege-Karte (waehrend der Fahrt).
     // Auf breiten Fenstern bleibt sie schmal und links, statt ueber die ganze Breite zu laufen.
+    // Querformat waehrend der Fahrt: neben der Abbiege-Karte statt darunter (sonst bleibt zu wenig Platz)
+    val sideBySide = state.navigating && win.landscape
     Column(
         Modifier
             .align(Alignment.TopStart)
-            .then(if (win.wide) Modifier.widthIn(max = if (state.navigating) 380.dp else 560.dp) else Modifier.fillMaxWidth())
-            .padding(top = if (state.navigating) 100.dp else 12.dp, start = 12.dp, end = 12.dp, bottom = 12.dp),
+            .then(
+                when {
+                    sideBySide -> Modifier.fillMaxWidth().padding(start = 308.dp, end = 176.dp)
+                    win.wide -> Modifier.widthIn(max = if (state.navigating) 380.dp else 560.dp)
+                    else -> Modifier.fillMaxWidth()
+                },
+            )
+            .padding(top = if (state.navigating && !sideBySide) 100.dp else 12.dp, start = 12.dp, end = 12.dp, bottom = 12.dp),
     ) {
+        app.kiloquest.ui.ToiletRequestCard(state.toiletRequest, vm::toiletAlarm, vm::dismissToiletRequest, Modifier.padding(bottom = 8.dp))
+        app.kiloquest.ui.ToiletStatusCard(state.toilet, vm::resumeAfterToilet, Modifier.padding(bottom = 8.dp))
         if (!state.navigating) SearchPanel(state, vm)
         state.proposal?.let { ProposalCard(it, vm) }
         if (state.proposal == null) BreakCard(state, vm)
@@ -172,19 +182,22 @@ internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
                 Modifier.align(Alignment.TopStart).padding(12.dp).then(if (win.wide) Modifier.widthIn(max = 380.dp) else Modifier.fillMaxWidth()),
             )
         }
-        // Quests-Knopf: schmal und hoch in der Mitte rechts, sonst oben rechts
-        QuestsPill(
-            { vm.showKids(true) },
+        // Quests-Knopf und Klo-Alarm: schmal und hoch in der Mitte rechts, sonst oben rechts
+        androidx.compose.foundation.layout.Column(
             Modifier.align(if (!win.wide && !win.landscape) Alignment.CenterEnd else Alignment.TopEnd).padding(12.dp),
-            onLongClick = { vm.showParent(true) },
-        )
+            horizontalAlignment = Alignment.End,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            QuestsPill({ vm.showKids(true) }, onLongClick = { vm.showParent(true) })
+            if (state.toilet == null) app.kiloquest.ui.ToiletAlarmButton(vm::toiletAlarm)
+        }
         state.lanes?.let { LaneStrip(it, Modifier.align(Alignment.BottomCenter).padding(bottom = if (win.shortHeight) 76.dp else 100.dp)) }
         SpeedSign(
             limit = state.speedLimit,
             speedKmh = state.speedKmh,
             overspeed = state.overspeed,
-            modifier = if (win.shortHeight) Modifier.align(Alignment.BottomStart).padding(start = 12.dp, bottom = 76.dp)
-            else Modifier.align(Alignment.CenterStart).padding(start = 12.dp),
+            // Unten links ueber der Fahrleiste: kollidiert weder mit den Karten oben noch mit den Spuren in der Mitte
+            modifier = Modifier.align(Alignment.BottomStart).padding(start = 12.dp, bottom = if (win.shortHeight) 76.dp else 100.dp),
         )
     }
 

@@ -96,3 +96,29 @@ fun KiloSays(text: String, modifier: Modifier = Modifier) {
         }
     }
 }
+
+/** Grosses Bild-Symbol fuer eine Aufgabe (fuer Kinder, die noch nicht lesen). */
+fun questEmoji(q: app.kiloquest.game.Quest): String = when (q.templateId.removePrefix("bonus_")) {
+    "windmill" -> "\uD83C\uDF2C\uFE0F"
+    "cow" -> "\uD83D\uDC04"
+    "bridge" -> "\uD83C\uDF09"
+    "church" -> "\u26EA"
+    "ship" -> "\uD83D\uDEA2"
+    "red_cars" -> "\uD83D\uDE97"
+    "trucks" -> "\uD83D\uDE9A"
+    "night_stars" -> "\u2B50"
+    "day_clouds" -> "\u2601\uFE0F"
+    "flag_dk" -> "\uD83C\uDDE9\uD83C\uDDF0"
+    "moose_sign" -> "\uD83E\uDECE"
+    else -> when (q.type) {
+        app.kiloquest.game.QuestType.SPOTTING -> "\uD83D\uDC40"
+        app.kiloquest.game.QuestType.ROUTE_FACT -> "\uD83D\uDCCD"
+        app.kiloquest.game.QuestType.ALPHABET -> "\uD83D\uDD24"
+        app.kiloquest.game.QuestType.STORY -> "\uD83D\uDCD6"
+        app.kiloquest.game.QuestType.BREAK -> "\uD83E\uDD38"
+        app.kiloquest.game.QuestType.QUIZ -> "\u2753"
+        app.kiloquest.game.QuestType.NATURE -> "\uD83E\uDD8C"
+        app.kiloquest.game.QuestType.LANGUAGE -> "\uD83D\uDDE3\uFE0F"
+        app.kiloquest.game.QuestType.SKY -> "\u2708\uFE0F"
+    }
+}

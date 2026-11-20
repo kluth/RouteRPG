@@ -35,8 +35,11 @@ import app.kiloquest.game.StickerBook
 @Composable
 fun KidsScreen(state: UiState, nav: KidsActions) {
     val ctx = LocalContext.current
+    // Die Kleinsten (4-6) bekommen eine eigene, riesige Ansicht
+    if (state.ageBand == AgeBand.MINI) { app.kiloquest.ui.MiniKids(state, nav); return }
     val win = app.kiloquest.ui.rememberWindowInfo()
     val questPane: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
+        app.kiloquest.ui.ToiletStatusCard(state.toilet, {}, showActions = false)
             app.kiloquest.ui.KiloSays(stringResource(if (state.quest != null) R.string.kilo_intro else R.string.kids_title))
 
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
@@ -127,6 +130,9 @@ fun KidsScreen(state: UiState, nav: KidsActions) {
 
     }
     val backButton: @Composable () -> Unit = {
+        val asked = androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+        if (asked.value) Text(stringResource(R.string.toilet_kid_sent), style = MaterialTheme.typography.titleSmall)
+        else app.kiloquest.ui.ToiletKidButton({ asked.value = true; nav.requestToilet() }, Modifier.fillMaxWidth())
             OutlinedButton(onClick = { nav.showKids(false) }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.kids_back))
             }

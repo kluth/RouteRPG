@@ -43,6 +43,7 @@ class RemoteActions(private val client: BtClient, private val nav: NavController
     override fun answerQuest(choice: Int?) = client.send(ClientMsg.Answer(choice))
     override fun skipQuest() = client.send(ClientMsg.Skip)
     override fun dismissFeedback() = client.send(ClientMsg.Next)
+    override fun requestToilet() = client.send(ClientMsg.ToiletRequest)
     /** "Zurueck" fuehrt ins Beifahrer-Menue dieses Geraets (dort Trennen/Alter). */
     override fun showKids(show: Boolean) { if (!show) nav.showParent(true) }
 }
@@ -180,6 +181,24 @@ fun CopilotRemoteScreen(snapshot: Snapshot?, onMenu: () -> Unit) {
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(Modifier.screenColumn().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.parent_title), style = MaterialTheme.typography.headlineMedium)
+            // Klo-Alarm: Wunsch eines Kindes, laufender Alarm oder der Knopf selbst
+            app.kiloquest.ui.ToiletRequestCard(snapshot?.toiletRequest, { client.send(ClientMsg.ToiletAlarm) }, { client.send(ClientMsg.ToiletDismiss) })
+            val td = snapshot?.toilet
+            if (td != null) {
+                app.kiloquest.ui.ToiletStatusCard(
+                    app.kiloquest.ToiletState(runCatching { app.kiloquest.ToiletPhase.valueOf(td.phase) }.getOrDefault(app.kiloquest.ToiletPhase.HEADING), td.label, td.seconds, td.meters),
+                    { client.send(ClientMsg.ToiletResume) },
+                )
+            } else {
+                Button(
+                    onClick = { client.send(ClientMsg.ToiletAlarm) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError),
+                ) {
+                    androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_wc), contentDescription = null)
+                    Text(stringResource(R.string.toilet_alarm), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.titleMedium)
+                }
+            }
             val rr = snapshot?.reroute
             val bp = snapshot?.breakProposal
             if (rr != null) {
@@ -204,7 +223,7 @@ fun CopilotRemoteScreen(snapshot: Snapshot?, onMenu: () -> Unit) {
                     }
                 }
             }
-            if (rr == null && bp == null) Text(stringResource(R.string.link_copilot_idle), style = MaterialTheme.typography.bodyLarge)
+            if (rr == null && bp == null && td == null) Text(stringResource(R.string.link_copilot_idle), style = MaterialTheme.typography.bodyLarge)
             OutlinedButton(onClick = onMenu, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.link_menu)) }
         }
     }

@@ -54,6 +54,16 @@ class LayoutShotsTest {
     private val preview = UiState(route = route, navigating = false)
     private val kids = UiState(quest = quest, route = route, kidsScreen = true, ageBand = AgeBand.EXPLORER, points = 40, stickers = 1, questsDone = 3, questsTotal = 25, album = setOf("fox", "owl"), plan = listOf(quest, quest.copy(textKey = "quest_windmill", kind = QuestKind.CHECK, optionKeys = emptyList())))
 
+    private val mini = UiState(
+        quest = Quest("windmill", "quest_windmill", QuestType.SPOTTING, 0.0), route = route, kidsScreen = true, ageBand = AgeBand.MINI,
+        questsDone = 3, questsTotal = 5, album = setOf("fox", "owl", "moose"),
+    )
+    private val miniChoice = mini.copy(quest = quest)
+    private val toiletDrive = driving.copy(
+        toilet = ToiletState(ToiletPhase.HEADING, "Raststätte Hünxe", 240.0, 3200.0),
+        toiletRequest = "Mias Tablet",
+    )
+
     private fun shot(name: String, w: Int, h: Int, dark: Boolean = false, state: () -> UiState, screen: Boolean = false) {
         val app = ApplicationProvider.getApplicationContext<Application>()
         val fake = object : KidsActions {
@@ -61,6 +71,7 @@ class LayoutShotsTest {
             override fun skipQuest() {}
             override fun dismissFeedback() {}
             override fun showKids(show: Boolean) {}
+            override fun requestToilet() {}
         }
         val vm by lazy { NavController(app) }
         rule.setContent {
@@ -100,4 +111,15 @@ class LayoutShotsTest {
     @Test fun kidsPortrait() = shot("kids-390x844", 390, 844, state = { kids }, screen = true)
     @Config(qualifiers = "w1000dp-h640dp-land-notnight-xxhdpi")
     @Test fun kidsTablet() = shot("kids-1000x640", 1000, 640, state = { kids }, screen = true)
+
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun miniYes() = shot("mini-yes-390x844", 390, 844, state = { mini }, screen = true)
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun miniChoiceShot() = shot("mini-choice-390x844", 390, 844, state = { miniChoice }, screen = true)
+    @Config(qualifiers = "w1000dp-h640dp-land-notnight-xxhdpi")
+    @Test fun miniTablet() = shot("mini-1000x640", 1000, 640, state = { mini }, screen = true)
+    @Config(qualifiers = "w360dp-h780dp-port-notnight-xxhdpi")
+    @Test fun toiletPortrait() = shot("toilet-360x780", 360, 780, state = { toiletDrive })
+    @Config(qualifiers = "w780dp-h360dp-land-notnight-xxhdpi")
+    @Test fun toiletLandscape() = shot("toilet-780x360", 780, 360, state = { toiletDrive })
 }

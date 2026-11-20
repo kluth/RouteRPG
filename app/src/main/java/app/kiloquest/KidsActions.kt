@@ -6,4 +6,6 @@ interface KidsActions {
     fun skipQuest()
     fun dismissFeedback()
     fun showKids(show: Boolean)
+    /** "Ich muss mal!": fragt den Beifahrer, loest den Klo-Alarm nicht selbst aus. */
+    fun requestToilet()
 }

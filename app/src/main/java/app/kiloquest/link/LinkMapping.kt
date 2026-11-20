@@ -35,6 +35,8 @@ fun UiState.toSnapshot(role: Role, yourPlayer: Int, seq: Long, stopText: (app.ki
         RerouteDto(it.savedMinutes, it.blocked, it.incident.incident.type.name, it.incident.incident.road)
     } else null,
     breakProposal = if (role == Role.COPILOT) breakProposal?.let { BreakDto(it.aheadMeters, stopText(it.stop)) } else null,
+    toilet = toilet?.let { ToiletDto(it.phase.name, it.label, it.seconds, it.meters) },
+    toiletRequest = if (role == Role.COPILOT) toiletRequest else null,
 )
 
 /** Auf dem gekoppelten Geraet: Zustand fuer die vorhandene Kinderansicht; [ownBand] ist das eigene Alter. */
@@ -51,6 +53,7 @@ fun Snapshot.toUiState(ownBand: AgeBand): UiState = UiState(
     plan = plan.map { it.toQuest() },
     ageBand = ownBand,
     kidsScreen = true,
+    toilet = toilet?.let { t -> app.kiloquest.ToiletState(runCatching { app.kiloquest.ToiletPhase.valueOf(t.phase) }.getOrDefault(app.kiloquest.ToiletPhase.HEADING), t.label, t.seconds, t.meters) },
 )
 
 fun parseBand(s: String): AgeBand = runCatching { AgeBand.valueOf(s) }.getOrDefault(AgeBand.EXPLORER)

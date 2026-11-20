@@ -128,6 +128,10 @@ class LinkController(private val app: Application, private val nav: NavControlle
             ClientMsg.Next -> nav.dismissFeedback()
             is ClientMsg.Reroute -> if (st.proposal != null) { if (msg.accept) nav.acceptReroute() else nav.dismissReroute() }
             is ClientMsg.Break -> if (st.breakProposal != null) { if (msg.accept) nav.acceptBreak() else nav.laterBreak() }
+            ClientMsg.ToiletAlarm -> nav.toiletAlarm()
+            ClientMsg.ToiletResume -> nav.resumeAfterToilet()
+            ClientMsg.ToiletDismiss -> nav.dismissToiletRequest()
+            ClientMsg.ToiletRequest -> nav.toiletRequested(dev.name)
             is ClientMsg.Age -> { roster.setAge(address, msg.band); saveDevices(); applyKidBands(); refresh() }
             else -> Unit
         }

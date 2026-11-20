@@ -82,7 +82,7 @@ fun QuestPreview(plan: List<Quest>, questOffsetMeters: Double = 0.0, modifier: M
             val dynamic = live || QuestCatalog.default.firstOrNull { it.id == q.templateId }?.textKey in PENDING
             Surface(shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) {
-                    Text(emoji(q.type), style = MaterialTheme.typography.titleLarge)
+                    Text(questEmoji(q), style = MaterialTheme.typography.titleLarge)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(typeName(q.type), style = MaterialTheme.typography.labelMedium)

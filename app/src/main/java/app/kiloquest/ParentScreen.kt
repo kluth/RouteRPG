@@ -42,6 +42,21 @@ fun ParentScreen(state: UiState, nav: NavController) {
         Column(Modifier.screenColumn().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.parent_title), style = MaterialTheme.typography.headlineMedium)
 
+            // Klo-Alarm ganz oben: ein Tipp, dann sucht die App die naechste Toilette und steuert sie an
+            app.kiloquest.ui.ToiletRequestCard(state.toiletRequest, nav::toiletAlarm, nav::dismissToiletRequest)
+            if (state.toilet == null) {
+                Button(
+                    onClick = { nav.toiletAlarm(); nav.showParent(false) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp),
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError),
+                ) {
+                    androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_wc), contentDescription = null)
+                    Text(stringResource(R.string.toilet_alarm), Modifier.padding(start = 8.dp), style = MaterialTheme.typography.titleMedium)
+                }
+            } else {
+                app.kiloquest.ui.ToiletStatusCard(state.toilet, nav::resumeAfterToilet)
+            }
+
             val p = state.proposal
             if (p != null) {
                 Card(MaterialTheme.colorScheme.primaryContainer) {

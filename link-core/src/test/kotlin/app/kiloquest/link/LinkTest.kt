@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 
 class LinkTest {
     @Test fun clientMessagesRoundTrip() {
-        for (m in listOf<ClientMsg>(ClientMsg.Hello("Mias Tablet", "EXPLORER"), ClientMsg.Answer(2), ClientMsg.Answer(null), ClientMsg.Skip, ClientMsg.Next, ClientMsg.Reroute(true), ClientMsg.Break(false), ClientMsg.Age("MINI"), ClientMsg.Ping)) {
+        for (m in listOf<ClientMsg>(ClientMsg.Hello("Mias Tablet", "EXPLORER"), ClientMsg.Answer(2), ClientMsg.Answer(null), ClientMsg.Skip, ClientMsg.Next, ClientMsg.Reroute(true), ClientMsg.Break(false), ClientMsg.Age("MINI"), ClientMsg.ToiletAlarm, ClientMsg.ToiletResume, ClientMsg.ToiletDismiss, ClientMsg.ToiletRequest, ClientMsg.Ping)) {
             val line = Wire.encode(m)
             assertTrue(line.endsWith("\n") && line.count { it == '\n' } == 1, line)
             assertEquals(m, Wire.decodeClient(line))
@@ -98,5 +98,19 @@ class LinkTest {
         assertEquals(DeviceRoster.HelloResult.Rejected(DenyReason.FULL), r.onHello("C", hello()))
         assertEquals(DeviceRoster.HelloResult.Pending, r.onHello("A", hello("A2"))) // bekannte Anfrage darf aktualisieren
         assertEquals(2, r.pendingRequests().size)
+    }
+
+    @Test fun toiletPermissions() {
+        val r = DeviceRoster()
+        assertTrue(r.allows(Role.COPILOT, ClientMsg.ToiletAlarm))
+        assertTrue(r.allows(Role.COPILOT, ClientMsg.ToiletResume))
+        assertFalse(r.allows(Role.KID, ClientMsg.ToiletAlarm), "kids only ask, the co-driver decides")
+        assertTrue(r.allows(Role.KID, ClientMsg.ToiletRequest))
+        assertFalse(r.allows(Role.COPILOT, ClientMsg.ToiletRequest))
+    }
+
+    @Test fun snapshotCarriesToiletState() {
+        val snap = Snapshot(seq = 1, toilet = ToiletDto("HEADING", "Rastplatz", 240.0, 3200.0), toiletRequest = "Mias Tablet")
+        assertEquals(snap, (Wire.decodeHost(Wire.encode(HostMsg.SnapshotMsg(snap))) as HostMsg.SnapshotMsg).snapshot)
     }
 }
