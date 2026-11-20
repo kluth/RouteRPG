@@ -142,101 +142,101 @@ private fun AppScreen(vm: NavController) {
 internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
     val win = app.kiloquest.ui.rememberWindowInfo()
     val overlays = !state.kidsScreen && !state.tripScreen && !state.riddleScreen && !state.parentScreen
-        // Obere Spalte: Suche/Vorschlaege (vor der Fahrt) bzw. Hinweise unter der Abbiege-Karte (waehrend der Fahrt).
-        // Auf breiten Fenstern bleibt sie schmal und links, statt ueber die ganze Breite zu laufen.
-        Column(
-            Modifier
-                .align(Alignment.TopStart)
-                .then(if (win.wide) Modifier.widthIn(max = if (state.navigating) 380.dp else 560.dp) else Modifier.fillMaxWidth())
-                .padding(top = if (state.navigating) 100.dp else 12.dp, start = 12.dp, end = 12.dp, bottom = 12.dp),
-        ) {
-            if (!state.navigating) SearchPanel(state, vm)
-            state.proposal?.let { ProposalCard(it, vm) }
-            if (state.proposal == null) BreakCard(state, vm)
-            if (state.route != null && !state.kidsScreen) WeatherCard(state, vm)
-            if (state.proposal == null) HintBanner(state, vm)
-            state.error?.let {
-                app.kiloquest.ui.KiloCard(Modifier.padding(top = 8.dp), color = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer) {
-                    Text(stringResource(it))
-                }
+    // Obere Spalte: Suche/Vorschlaege (vor der Fahrt) bzw. Hinweise unter der Abbiege-Karte (waehrend der Fahrt).
+    // Auf breiten Fenstern bleibt sie schmal und links, statt ueber die ganze Breite zu laufen.
+    Column(
+        Modifier
+            .align(Alignment.TopStart)
+            .then(if (win.wide) Modifier.widthIn(max = if (state.navigating) 380.dp else 560.dp) else Modifier.fillMaxWidth())
+            .padding(top = if (state.navigating) 100.dp else 12.dp, start = 12.dp, end = 12.dp, bottom = 12.dp),
+    ) {
+        if (!state.navigating) SearchPanel(state, vm)
+        state.proposal?.let { ProposalCard(it, vm) }
+        if (state.proposal == null) BreakCard(state, vm)
+        if (state.route != null && !state.kidsScreen) WeatherCard(state, vm)
+        if (state.proposal == null) HintBanner(state, vm)
+        state.error?.let {
+            app.kiloquest.ui.KiloCard(Modifier.padding(top = 8.dp), color = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer) {
+                Text(stringResource(it))
             }
         }
+    }
 
-        if (state.navigating && overlays) {
-            val g = state.guidance
-            val route = state.route
-            if (g != null && route != null) {
-                ManeuverCard(
-                    route.maneuvers.getOrNull(g.nextManeuverIndex),
-                    g.metersToNextManeuver,
-                    Modifier.align(Alignment.TopStart).padding(12.dp).then(if (win.wide) Modifier.widthIn(max = 380.dp) else Modifier.fillMaxWidth()),
-                )
-            }
-            // Quests-Knopf: schmal und hoch in der Mitte rechts, sonst oben rechts
-            QuestsPill(
-                { vm.showKids(true) },
-                Modifier.align(if (!win.wide && !win.landscape) Alignment.CenterEnd else Alignment.TopEnd).padding(12.dp),
-                onLongClick = { vm.showParent(true) },
-            )
-            state.lanes?.let { LaneStrip(it, Modifier.align(Alignment.BottomCenter).padding(bottom = if (win.shortHeight) 76.dp else 100.dp)) }
-            SpeedSign(
-                limit = state.speedLimit,
-                speedKmh = state.speedKmh,
-                overspeed = state.overspeed,
-                modifier = if (win.shortHeight) Modifier.align(Alignment.BottomStart).padding(start = 12.dp, bottom = 76.dp)
-                else Modifier.align(Alignment.CenterStart).padding(start = 12.dp),
-            )
-        }
-
-        if (state.kidsScreen) KidsScreen(state, vm)
-        if (state.tripScreen) TripScreen(state, vm)
-        if (state.riddleScreen) RiddleScreen(state, vm)
-        if (state.parentScreen) ParentScreen(state, vm)
-        // Gekoppeltes Geraet: Zustand vom Hauptgeraet
-        val linkApp = LocalContext.current.applicationContext as? KiloQuestApp
-        if (linkApp != null) {
-            val client by linkApp.linkClient.state.collectAsState()
-            if (client.status == app.kiloquest.link.ClientStatus.CONNECTED && !state.parentScreen) {
-                val snap = client.snapshot
-                if (client.role == app.kiloquest.link.Role.COPILOT) {
-                    app.kiloquest.link.CopilotRemoteScreen(snap) { vm.showParent(true) }
-                } else if (snap != null) {
-                    KidsScreen(snap.toUiStateFor(state.ageBand), app.kiloquest.link.RemoteActions(linkApp.linkClient, vm))
-                }
-            }
-        }
-
+    if (state.navigating && overlays) {
+        val g = state.guidance
         val route = state.route
-        if (route != null && overlays) {
-            if (state.navigating) {
-                val g = state.guidance
-                val remaining = g?.remainingMeters ?: route.lengthMeters
-                val seconds = route.durationSeconds * (remaining / route.lengthMeters.coerceAtLeast(1.0))
-                EtaBar(
-                    remaining, seconds, vm::stopNavigation,
-                    Modifier.align(Alignment.BottomCenter).widthIn(max = 560.dp).fillMaxWidth().padding(bottom = if (win.shortHeight) 8.dp else 24.dp, start = 12.dp, end = 12.dp),
-                )
-            } else {
-                app.kiloquest.ui.RoutePreviewSheet(
-                    distanceMeters = route.lengthMeters,
-                    durationSeconds = route.durationSeconds,
-                    onStart = vm::startNavigation,
-                    onQuests = { vm.showKids(true) },
-                    onQuestsLong = { vm.showParent(true) },
-                    floating = win.wide,
-                    modifier = if (win.wide) Modifier.align(Alignment.BottomStart).widthIn(max = 460.dp).fillMaxWidth().padding(12.dp)
-                    else Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-                    extra = { PackageLine(state.pkg, vm) },
-                )
-            }
-        } else if (overlays) {
-            Text(
-                text = stringResource(R.string.map_attribution),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
+        if (g != null && route != null) {
+            ManeuverCard(
+                route.maneuvers.getOrNull(g.nextManeuverIndex),
+                g.metersToNextManeuver,
+                Modifier.align(Alignment.TopStart).padding(12.dp).then(if (win.wide) Modifier.widthIn(max = 380.dp) else Modifier.fillMaxWidth()),
             )
         }
+        // Quests-Knopf: schmal und hoch in der Mitte rechts, sonst oben rechts
+        QuestsPill(
+            { vm.showKids(true) },
+            Modifier.align(if (!win.wide && !win.landscape) Alignment.CenterEnd else Alignment.TopEnd).padding(12.dp),
+            onLongClick = { vm.showParent(true) },
+        )
+        state.lanes?.let { LaneStrip(it, Modifier.align(Alignment.BottomCenter).padding(bottom = if (win.shortHeight) 76.dp else 100.dp)) }
+        SpeedSign(
+            limit = state.speedLimit,
+            speedKmh = state.speedKmh,
+            overspeed = state.overspeed,
+            modifier = if (win.shortHeight) Modifier.align(Alignment.BottomStart).padding(start = 12.dp, bottom = 76.dp)
+            else Modifier.align(Alignment.CenterStart).padding(start = 12.dp),
+        )
+    }
+
+    if (state.kidsScreen) KidsScreen(state, vm)
+    if (state.tripScreen) TripScreen(state, vm)
+    if (state.riddleScreen) RiddleScreen(state, vm)
+    if (state.parentScreen) ParentScreen(state, vm)
+    // Gekoppeltes Geraet: Zustand vom Hauptgeraet
+    val linkApp = LocalContext.current.applicationContext as? KiloQuestApp
+    if (linkApp != null) {
+        val client by linkApp.linkClient.state.collectAsState()
+        if (client.status == app.kiloquest.link.ClientStatus.CONNECTED && !state.parentScreen) {
+            val snap = client.snapshot
+            if (client.role == app.kiloquest.link.Role.COPILOT) {
+                app.kiloquest.link.CopilotRemoteScreen(snap) { vm.showParent(true) }
+            } else if (snap != null) {
+                KidsScreen(snap.toUiStateFor(state.ageBand), app.kiloquest.link.RemoteActions(linkApp.linkClient, vm))
+            }
+        }
+    }
+
+    val route = state.route
+    if (route != null && overlays) {
+        if (state.navigating) {
+            val g = state.guidance
+            val remaining = g?.remainingMeters ?: route.lengthMeters
+            val seconds = route.durationSeconds * (remaining / route.lengthMeters.coerceAtLeast(1.0))
+            EtaBar(
+                remaining, seconds, vm::stopNavigation,
+                Modifier.align(Alignment.BottomCenter).widthIn(max = 560.dp).fillMaxWidth().padding(bottom = if (win.shortHeight) 8.dp else 24.dp, start = 12.dp, end = 12.dp),
+            )
+        } else {
+            app.kiloquest.ui.RoutePreviewSheet(
+                distanceMeters = route.lengthMeters,
+                durationSeconds = route.durationSeconds,
+                onStart = vm::startNavigation,
+                onQuests = { vm.showKids(true) },
+                onQuestsLong = { vm.showParent(true) },
+                floating = win.wide,
+                modifier = if (win.wide) Modifier.align(Alignment.BottomStart).widthIn(max = 460.dp).fillMaxWidth().padding(12.dp)
+                else Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+                extra = { PackageLine(state.pkg, vm) },
+            )
+        }
+    } else if (overlays) {
+        Text(
+            text = stringResource(R.string.map_attribution),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
+        )
+    }
 }
 
 @Composable
