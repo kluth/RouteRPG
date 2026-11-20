@@ -327,3 +327,13 @@ Gebaut (Build/Lint/Tests grün; nicht im Auto/auf dem Gerät erprobt):
 
 - **Dänemark:** Keine frei nutzbare, dokumentierte Schnittstelle ohne Anmeldung gefunden. Der offizielle Weg ist der nationale Zugangspunkt von Vejdirektoratet (`nap.vd.dk`, „The data exchanger", DATEX II); Zugang und Lizenz dort sind nicht ohne Anmeldung einsehbar. Die Karte `trafikkort.vejdirektoratet.dk` nutzt ein internes Backend (`trafikkort-prod.appspot.com`), das **nicht** als offene API veröffentlicht ist und deshalb nicht verwendet wird (keine dokumentierten Nutzungsbedingungen, kann sich jederzeit ändern). Nächster Schritt: Konto bei nap.vd.dk anlegen, Beispielantwort sichern, dann Parser bauen.
 - **Schweden:** Trafikverket Open API / DATEX II, kostenloser Schlüssel nötig (CC0-Lizenz laut Trafikverket). Ohne Schlüssel kein Test der Antwortstruktur möglich.
+
+## 21. Erweiterungen: Interview Runde 1 (20.11.2026)
+
+Gewünschte Schwerpunkte (Reihenfolge wird in Runde 2 geklärt):
+1. **Offline in Funklöchern** (Lappland): Karte und Routing ohne Netz.
+2. **Reiseplanung & Pausen:** Pausenplaner, Mehrtagesreise mit Etappen, Wetter & Sonnenzeiten (kein E-Auto-Laden).
+3. **Mehr Spielspaß:** Natur-Quests (GBIF/iNaturalist), Länder-Mini-Sprachkurs, Himmel & Flugzeuge, eigene Rätsel von Eltern & Sprachantworten.
+4. **Reiseübelkeit-Modus:** keine Bildschirm-Aufgaben auf kurvigen Abschnitten, stattdessen Hör-/Blickaufgaben, Pausenhinweis.
+
+Recherche-Fakten (geprüft am 20.11.2026): Autobahn-API liefert zusätzlich Ladestationen, Lkw-Parkplätze, Baustellen, Webcams (frei); GBIF und iNaturalist frei nutzbar; Open-Meteo frei für nicht kommerzielle Nutzung; Open Charge Map braucht Schlüssel; OpenSky (Flugzeuge) nicht geprüft. Android Auto: Spiele nur im Stand erlaubt, daher Spiel auf dem Handy, im Auto nur Audio.
