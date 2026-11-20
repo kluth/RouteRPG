@@ -85,6 +85,8 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 SettingDivider()
                 SettingRow(stringResource(R.string.set_toilet_corridor), stringResource(R.string.set_toilet_corridor_hint), value = stringResource(R.string.corridor_km, s.toiletCorridorKm)) { dialog = Dlg.CORRIDOR }
                 SettingDivider()
+                SettingSwitch(stringResource(R.string.set_trip_reminders), stringResource(R.string.set_trip_reminders_hint), s.tripReminders) { v -> nav.updateSettings { it.copy(tripReminders = v) } }
+                SettingDivider()
                 SettingRow(stringResource(R.string.set_daily_hours), stringResource(R.string.set_daily_hours_hint), value = stringResource(R.string.daily_hours_value, s.dailyDriveHours)) { dialog = Dlg.DAILY }
                 SettingDivider()
                 SettingSwitch(stringResource(R.string.set_keep_screen), null, s.keepScreenOn) { v -> nav.updateSettings { it.copy(keepScreenOn = v) } }

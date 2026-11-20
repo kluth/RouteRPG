@@ -60,6 +60,7 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.maplibre)
     implementation(libs.androidx.car.app)
+    implementation(libs.androidx.work) // Apache-2.0: Erinnerungen vor Reisebeginn
     // Layout-Pruefung ohne Geraet: Compose-Screenshots in Robolectric (nur Test, siehe app/src/test)
     testImplementation(libs.junit)
     testImplementation("org.robolectric:robolectric:4.14.1")

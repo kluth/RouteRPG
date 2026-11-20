@@ -16,5 +16,6 @@ class KiloQuestApp : Application() {
         super.onCreate()
         // Die Karte im Auto laeuft auch, wenn die Handy-Activity nie gestartet wurde
         MapLibre.getInstance(this)
+        ReminderScheduler.sync(this, SettingsStore.load(getSharedPreferences("kq", MODE_PRIVATE)).tripReminders)
     }
 }

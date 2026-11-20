@@ -169,7 +169,7 @@ internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
     ) {
         app.kiloquest.ui.ToiletRequestCard(state.toiletRequest, vm::toiletAlarm, vm::dismissToiletRequest, Modifier.padding(bottom = 8.dp))
         app.kiloquest.ui.ToiletStatusCard(state.toilet, vm::resumeAfterToilet, Modifier.padding(bottom = 8.dp))
-        if (!state.navigating) SearchPanel(state, vm)
+        if (!state.navigating) { UpcomingTripCard(state, vm, Modifier.padding(bottom = 8.dp)); SearchPanel(state, vm) }
         state.proposal?.let { ProposalCard(it, vm) }
         if (state.proposal == null) BreakCard(state, vm)
         if (state.route != null && !state.kidsScreen) WeatherCard(state, vm)

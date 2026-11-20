@@ -20,3 +20,10 @@ dass man für die Unterkünfte nicht abweichen muss.
 ## Nutzung
 - Die Reise lässt sich jederzeit als aktuelle Reise (Etappen) übernehmen.
 - Keine Erinnerungen/Benachrichtigungen in dieser Version; die Liste zeigt „in N Tagen“.
+
+## Erweiterung: Erinnerungen und Reise-Extras
+- Erinnerungen (WorkManager, alle 6 h und beim App-Start, abschaltbar in den Einstellungen): 30/14/7/3 Tage, Vorabend, Abreisetag
+  sowie Check-in morgen/heute. Jede Erinnerung genau einmal; nach längerer Pause nur der nächstliegende Meilenstein.
+- Hinweiskarte auf dem Startbildschirm (ab 30 Tagen vorher) und Countdown für Kinder (ab 60 Tagen).
+- Notiz je Buchung, Packliste (Jahreszeit, Ziel, Dauer, Kinderalter, Camping) mit gespeicherten Haken, Kalenderexport (.ics),
+  Rückreise und Kopie fürs nächste Jahr.

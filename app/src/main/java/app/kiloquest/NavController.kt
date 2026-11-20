@@ -73,7 +73,9 @@ import app.kiloquest.nav.LodgingFinder
 import app.kiloquest.nav.LodgingOption
 import app.kiloquest.nav.Itinerary
 import app.kiloquest.nav.ItineraryPlanner
+import app.kiloquest.nav.PackItem
 import app.kiloquest.nav.PlanPlace
+import app.kiloquest.nav.TripOps
 import app.kiloquest.nav.PlanStay
 import app.kiloquest.nav.PlanStore
 import app.kiloquest.nav.PlannedTrip
@@ -536,6 +538,7 @@ class NavController(private val app: Application) : KidsActions {
     fun updateSettings(transform: (AppSettings) -> AppSettings) {
         val next = transform(_state.value.settings)
         SettingsStore.save(prefs, next)
+        ReminderScheduler.sync(app, next.tripReminders)
         _state.update { it.copy(settings = next) }
     }
 
@@ -1168,6 +1171,37 @@ class NavController(private val app: Application) : KidsActions {
         val id = _state.value.planOpenId ?: return
         savePlans(_state.value.plans.map { if (it.id == id) transform(it) else it })
         _state.update { it.copy(planResult = null) }
+    }
+
+    /** Wie [updatePlan], aber das berechnete Ergebnis bleibt (z. B. beim Abhaken der Packliste). */
+    private fun updatePlanKeepingResult(transform: (PlannedTrip) -> PlannedTrip) {
+        val id = _state.value.planOpenId ?: return
+        savePlans(_state.value.plans.map { if (it.id == id) transform(it) else it })
+    }
+
+    fun togglePacked(item: PackItem) = updatePlanKeepingResult { p ->
+        p.copy(packed = if (item.name in p.packed) p.packed - item.name else p.packed + item.name)
+    }
+
+    fun setPlanCamping(on: Boolean) = updatePlanKeepingResult { it.copy(camping = on) }
+
+    /** Rueckreise anlegen und oeffnen: Start/Ziel getauscht, Abreise eine Woche nach der berechneten Ankunft. */
+    fun createReturnTrip(namePrefix: String) {
+        val s = _state.value
+        val t = s.plans.firstOrNull { it.id == s.planOpenId } ?: return
+        val start = (s.planResult?.itinerary?.arrivalDay ?: (t.startDay + 7)) + 7
+        val r = TripOps.returnTrip(t, java.util.UUID.randomUUID().toString(), start, namePrefix)
+        savePlans(s.plans + r)
+        openPlan(r.id)
+    }
+
+    /** Kopie der Reise ein Jahr (364 Tage, gleicher Wochentag) spaeter. */
+    fun duplicatePlan(nameSuffix: String) {
+        val s = _state.value
+        val t = s.plans.firstOrNull { it.id == s.planOpenId } ?: return
+        val c = TripOps.duplicate(t, java.util.UUID.randomUUID().toString(), t.startDay + 364, nameSuffix)
+        savePlans(s.plans + c)
+        openPlan(c.id)
     }
 
     fun setPlanPlace(place: Place, asOrigin: Boolean) = updatePlan {

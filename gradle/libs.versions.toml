@@ -10,6 +10,7 @@ junit = "4.13.2"
 carApp = "1.4.0"
 serialization = "1.7.3"
 coroutines = "1.9.0"
+work = "2.9.1"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -23,6 +24,7 @@ androidx-car-app = { module = "androidx.car.app:app", version.ref = "carApp" }
 maplibre = { module = "org.maplibre.gl:android-sdk", version.ref = "maplibre" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+androidx-work = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 junit = { module = "junit:junit", version.ref = "junit" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 

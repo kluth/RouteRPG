@@ -56,6 +56,7 @@ private fun KidsContent(state: UiState, nav: KidsActions, onOpenMap: () -> Unit,
         app.kiloquest.ui.ToiletStatusCard(state.toilet, {}, showActions = false)
             app.kiloquest.ui.KidMapCard(state, onOpenMap, onPickAvatar)
             app.kiloquest.ui.KiloSays(stringResource(if (state.quest != null) R.string.kilo_intro else R.string.kids_title))
+            KidsCountdown(state.plans)
 
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 Text(stringResource(R.string.kids_points, state.points), style = MaterialTheme.typography.titleLarge)

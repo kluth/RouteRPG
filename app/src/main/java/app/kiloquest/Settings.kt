@@ -26,6 +26,8 @@ data class AppSettings(
     val toiletCorridorKm: Int = 2,
     /** Mehrtagesreise: so viele Stunden Fahrzeit pro Tag. */
     val dailyDriveHours: Int = 8,
+    /** Benachrichtigungen vor Reisebeginn und vor Check-ins. */
+    val tripReminders: Boolean = true,
 )
 
 internal object SettingsStore {
@@ -46,6 +48,7 @@ internal object SettingsStore {
             liveQuests = p.getBoolean(P + "live_quests", d.liveQuests),
             toiletCorridorKm = p.getInt(P + "toilet_corridor", d.toiletCorridorKm).takeIf { it in setOf(1, 2, 4) } ?: d.toiletCorridorKm,
             dailyDriveHours = p.getInt(P + "daily_hours", d.dailyDriveHours).takeIf { it in setOf(4, 6, 8, 10) } ?: d.dailyDriveHours,
+            tripReminders = p.getBoolean(P + "trip_reminders", d.tripReminders),
         )
     }
 
@@ -63,6 +66,7 @@ internal object SettingsStore {
             .putBoolean(P + "live_quests", s.liveQuests)
             .putInt(P + "toilet_corridor", s.toiletCorridorKm)
             .putInt(P + "daily_hours", s.dailyDriveHours)
+            .putBoolean(P + "trip_reminders", s.tripReminders)
             .apply()
     }
 }
