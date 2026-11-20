@@ -210,3 +210,34 @@ class RouteMergeTest {
         assertTrue(r.waypointsAlong[0] < r.waypointsAlong[1])
     }
 }
+
+class PowerPolicyTest {
+    @Test fun autoSavesOnLowBatteryUnlessChargingOrSystemSaver() {
+        assertTrue(PowerPolicy.saving(PowerSaverMode.AUTO, 15, false, false))
+        assertTrue(!PowerPolicy.saving(PowerSaverMode.AUTO, 15, true, false))
+        assertTrue(!PowerPolicy.saving(PowerSaverMode.AUTO, 20, false, false))
+        assertTrue(PowerPolicy.saving(PowerSaverMode.AUTO, 80, false, true))
+        assertTrue(!PowerPolicy.saving(PowerSaverMode.AUTO, null, false, false))
+    }
+
+    @Test fun manualModesWin() {
+        assertTrue(PowerPolicy.saving(PowerSaverMode.ON, 100, true, false))
+        assertTrue(!PowerPolicy.saving(PowerSaverMode.OFF, 3, false, true))
+    }
+
+    @Test fun effects() {
+        assertEquals(3, PowerPolicy.effects(true).pollFactor)
+        assertTrue(!PowerPolicy.effects(true).allowWakeListening && !PowerPolicy.effects(true).allowPhotoPrompts)
+        assertEquals(PowerEffects(false, 1, true, true), PowerPolicy.effects(false))
+    }
+
+    @Test fun storageFormatAndWarning() {
+        assertEquals("512 KB", StorageUsage.format(512L * 1024))
+        assertEquals("1.5 MB", StorageUsage.format(1_572_864))
+        assertEquals("250 MB", StorageUsage.format(250L * 1048576))
+        assertEquals("2.0 GB", StorageUsage.format(2L * 1073741824))
+        assertTrue(!StorageUsage(10, 10, 10).warn)
+        assertTrue(StorageUsage(StorageUsage.WARN_PHOTOS_BYTES + 1, 0, 0).warn)
+        assertEquals(60, StorageUsage(10, 20, 30).totalBytes)
+    }
+}

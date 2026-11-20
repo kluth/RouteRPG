@@ -12,6 +12,13 @@ ROOT = Path(__file__).resolve().parents[2]
 RES = ROOT / "app/src/main/res"
 CATALOG = ROOT / "game-engine/src/main/kotlin/app/kiloquest/game/QuestCatalog.kt"
 FIXED = ["kilo_intro", "kids_new_sticker", "mini_great", "kids_waiting"] + [f"kilo_praise_{i}" for i in range(1, 7)] + [f"kilo_retry_{i}" for i in range(1, 5)]
+# Hoerspiele, Teamziel, Anpassung, Hoerserie (nur Saetze ohne Platzhalter; die Folgen mit Zielort bleiben bei der Sprachausgabe)
+FIXED += [
+    "game_menu", "game_stopped", "game_giveup", "game_nothing", "game_end", "game_chain_intro", "game_chain_concede", "game_letter_intro",
+    "game_letter_used", "game_rhyme_intro", "game_rhyme_again", "game_story_intro", "game_story_prompt", "audio_story_end",
+    "team_goal_25", "team_goal_50", "team_goal_75", "team_goal_100", "kilo_adapt_easier", "kilo_adapt_harder", "kilo_adapt_calm",
+    "series_wait", "series_done", "stopover_resume", "toll_check",
+] + [f"audio_story_start_{i}" for i in range(1, 5)] + [f"audio_story_next_{i}" for i in range(1, 5)]
 LANGS = {"en": RES / "values/strings.xml", "de": RES / "values-de/strings.xml"}
 
 

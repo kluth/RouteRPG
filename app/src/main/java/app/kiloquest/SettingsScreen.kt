@@ -15,6 +15,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -34,7 +35,7 @@ import app.kiloquest.ui.SettingSwitch
 import app.kiloquest.ui.SettingsSection
 import app.kiloquest.ui.screenColumn
 
-private enum class Dlg { NONE, CAMERAS, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES, SERVER }
+private enum class Dlg { NONE, CAMERAS, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES, SERVER, POWER, STORAGE }
 
 /** Einstellungen: alles, was sich dauerhaft einstellen laesst, mit Abfragen vor dem Loeschen. */
 @Composable
@@ -140,6 +141,12 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 SettingSwitch(stringResource(R.string.car_simple_map), stringResource(R.string.car_simple_map_hint), state.carSimpleMap, onChange = nav::setCarSimpleMap)
             }
 
+            SettingsSection(stringResource(R.string.sec_power)) {
+                SettingRow(stringResource(R.string.set_power), stringResource(R.string.set_power_hint), value = stringResource(powerLabel(s.powerSaver))) { dialog = Dlg.POWER }
+                SettingDivider()
+                SettingRow(stringResource(R.string.set_storage), stringResource(R.string.set_storage_hint)) { dialog = Dlg.STORAGE }
+            }
+
             SettingsSection(stringResource(R.string.sec_server)) {
                 SettingRow(stringResource(R.string.set_server), stringResource(if (ServerConfig.token.isBlank()) R.string.set_server_hint_missing else R.string.set_server_hint_ok)) { dialog = Dlg.SERVER }
             }
@@ -231,6 +238,30 @@ fun SettingsScreen(state: UiState, nav: NavController) {
             }
             InfoDialog(stringResource(R.string.set_cameras), stringResource(R.string.cameras_info) + "\n\n" + rules, close) { dialog = Dlg.NONE }
         }
+        Dlg.POWER -> ChoiceDialog(
+            stringResource(R.string.set_power),
+            app.kiloquest.nav.PowerSaverMode.entries.map { Triple(it, stringResource(powerLabel(it)), stringResource(powerHint(it))) },
+            s.powerSaver, { v -> nav.updateSettings { it.copy(powerSaver = v) } }, { dialog = Dlg.NONE }, close,
+        )
+        Dlg.STORAGE -> {
+            var usage by rememberSaveable { mutableStateOf(0) }
+            val u = remember(usage) { StorageScanner.measure(ctx) }
+            val fmt = app.kiloquest.nav.StorageUsage.Companion::format
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { dialog = Dlg.NONE },
+                title = { Text(stringResource(R.string.set_storage)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(stringResource(R.string.storage_photos, fmt(u.photosBytes)))
+                        Text(stringResource(R.string.storage_offline, fmt(u.offlineBytes)))
+                        Text(stringResource(R.string.storage_cache, fmt(u.cacheBytes)))
+                        if (u.warn) Text(stringResource(R.string.storage_warn), color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                confirmButton = { androidx.compose.material3.TextButton(onClick = { StorageScanner.clearCache(ctx); usage++ }) { Text(stringResource(R.string.storage_clear_cache)) } },
+                dismissButton = { androidx.compose.material3.TextButton(onClick = { dialog = Dlg.NONE }) { Text(close) } },
+            )
+        }
         Dlg.SERVER -> {
             val prefs = ctx.getSharedPreferences("kq", android.content.Context.MODE_PRIVATE)
             var url by rememberSaveable { mutableStateOf(ServerConfig.url) }
@@ -262,6 +293,18 @@ fun SettingsScreen(state: UiState, nav: NavController) {
         Dlg.PRIVACY -> InfoDialog(stringResource(R.string.set_privacy), stringResource(R.string.privacy_text), close) { dialog = Dlg.NONE }
         Dlg.LICENSES -> InfoDialog(stringResource(R.string.set_licenses), stringResource(R.string.licenses_text), close) { dialog = Dlg.NONE }
     }
+}
+
+private fun powerLabel(m: app.kiloquest.nav.PowerSaverMode) = when (m) {
+    app.kiloquest.nav.PowerSaverMode.AUTO -> R.string.power_auto
+    app.kiloquest.nav.PowerSaverMode.ON -> R.string.power_on
+    app.kiloquest.nav.PowerSaverMode.OFF -> R.string.power_off
+}
+
+private fun powerHint(m: app.kiloquest.nav.PowerSaverMode) = when (m) {
+    app.kiloquest.nav.PowerSaverMode.AUTO -> R.string.power_auto_hint
+    app.kiloquest.nav.PowerSaverMode.ON -> R.string.power_on_hint
+    app.kiloquest.nav.PowerSaverMode.OFF -> R.string.power_off_hint
 }
 
 private fun themeLabel(t: ThemeMode) = when (t) {

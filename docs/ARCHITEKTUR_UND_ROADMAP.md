@@ -533,3 +533,6 @@ Pflege der Maut-Tabelle, echte Abdeckungsdaten (falls eine freie Quelle auftauch
 ## 51. Stopps, Reisebuch, Fahrtkarte
 Umgesetzt (Spec 012): Zwischenstopps für Kinder (Fahrt hin, „Weiter zum Ziel“), Reisebuch-PDF, Benachrichtigung mit Fortschritt und Teamziel, Dashboard mit nächster Pause und Zielwetter.
 Nachgezogen: echter Zwischenstopp in einer Mehrpunkt-Route, Wikipedia-Auszug am Stopp, Android-16-Live-Update (AGP 8.11.1, compileSdk 36), Zielwetter für Kinder, Satelliten-SOS-Hinweis. Offen: Gerätetests (PDF, Live-Update, Spuranzeige im Auto).
+
+## 52. Nachträge zu Block 1–4
+Akku-Sparmodus und Speicheranzeige, Sprachkurs für FR/IT/ES/HR/CZ, Notfallsätze für Eltern, aufgenommene Kilo-Stimme für Spiele und Teamziel (Spec 013). Offen: Prüfung der Notfallsätze durch Muttersprachler, Gerätetests.

@@ -1,6 +1,7 @@
 package app.kiloquest
 
 import android.content.SharedPreferences
+import app.kiloquest.nav.PowerSaverMode
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
@@ -40,6 +41,8 @@ data class AppSettings(
     val dailyDriveHours: Int = 8,
     /** Benachrichtigungen vor Reisebeginn und vor Check-ins. */
     val tripReminders: Boolean = true,
+    /** Akku-Sparmodus: automatisch bei wenig Akku oder Energiesparmodus, immer oder nie. */
+    val powerSaver: PowerSaverMode = PowerSaverMode.AUTO,
 )
 
 internal object SettingsStore {
@@ -68,6 +71,7 @@ internal object SettingsStore {
             toiletCorridorKm = p.getInt(P + "toilet_corridor", d.toiletCorridorKm).takeIf { it in setOf(1, 2, 4) } ?: d.toiletCorridorKm,
             dailyDriveHours = p.getInt(P + "daily_hours", d.dailyDriveHours).takeIf { it in setOf(4, 6, 8, 10) } ?: d.dailyDriveHours,
             tripReminders = p.getBoolean(P + "trip_reminders", d.tripReminders),
+            powerSaver = runCatching { PowerSaverMode.valueOf(p.getString(P + "power_saver", null) ?: "") }.getOrDefault(d.powerSaver),
         )
     }
 
@@ -93,6 +97,7 @@ internal object SettingsStore {
             .putInt(P + "toilet_corridor", s.toiletCorridorKm)
             .putInt(P + "daily_hours", s.dailyDriveHours)
             .putBoolean(P + "trip_reminders", s.tripReminders)
+            .putString(P + "power_saver", s.powerSaver.name)
             .apply()
     }
 }

@@ -26,4 +26,4 @@ Fahrer: nur Audio, keine Bedienung. Spracherkennung nur auf dem Gerät (wie Spec
 
 ## Offen / ungetestet
 - Erkennung von Kinderstimmen im Auto (Lärm) ist unsicher; echte Geräte-Tests fehlen. Wortlisten sind klein (je ~100 Wörter).
-- Kilo spricht die Spiele mit der Geräte-Sprachausgabe (keine aufgenommenen Clips).
+- Feste Spielsätze, Teamziel-Meilensteine, Anpassungs-Ansagen, Serien-Hinweise und die Geschichten-Bausteine sind mit der Kilo-Stimme aufgenommen (`tools/voice`, 66 Aufnahmen DE/EN). Zeilen mit Wörtern/Platzhaltern („Mein Wort ist …“) und die Serienfolgen mit Zielort nutzen die Geräte-Sprachausgabe.

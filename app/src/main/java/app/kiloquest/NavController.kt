@@ -14,6 +14,8 @@ import androidx.core.content.ContextCompat
 import android.content.Context
 import app.kiloquest.game.AdventureSession
 import app.kiloquest.game.AudioGameType
+import app.kiloquest.game.ParentPhrase
+import app.kiloquest.game.ParentPhrases
 import app.kiloquest.game.FrustrationGuard
 import app.kiloquest.game.KiloSeries
 import app.kiloquest.game.TeamGoal
@@ -88,6 +90,7 @@ import app.kiloquest.nav.OfflinePackMeta
 import app.kiloquest.nav.OfflinePackCodec
 import app.kiloquest.nav.VoiceCommands
 import app.kiloquest.nav.Emergency
+import app.kiloquest.nav.PowerPolicy
 import app.kiloquest.nav.KidSpot
 import app.kiloquest.nav.KidSpots
 import app.kiloquest.nav.SpotKind
@@ -177,7 +180,11 @@ enum class StopoverPhase { HEADING, ARRIVED }
 data class StopoverState(val label: String, val phase: StopoverPhase, /** Kurzer Wikipedia-Auszug zum Ort (CC BY-SA), falls gefunden. */ val story: Story? = null)
 
 /** Notfall-Karte: Notrufnummer, Standort als Text, naechste Krankenhaeuser (Suche laeuft ggf. noch). */
-data class EmergencyUi(val number: String, val location: String, val hospitals: List<Hospital> = emptyList(), val loading: Boolean = false, val searched: Boolean = false)
+data class EmergencyUi(
+    val number: String, val location: String, val hospitals: List<Hospital> = emptyList(), val loading: Boolean = false, val searched: Boolean = false,
+    /** Saetze fuer Eltern in der Landessprache (leer, wenn das Land nicht in der Liste ist). */
+    val phrases: List<Pair<ParentPhrase, String>> = emptyList(),
+)
 
 /** Vorschlag fuer eine schnellere Route um eine Verkehrsmeldung herum. */
 data class RerouteProposal(
@@ -319,6 +326,8 @@ data class UiState(
     val spotsSearched: Boolean = false,
     val stopover: StopoverState? = null,
     val nextBreakMin: Int? = null,
+    /** Akku-Sparmodus aktiv (weniger Netzabfragen, kein Dauerzuhoeren, keine Foto-Bitten). */
+    val powerSaving: Boolean = false,
     /** Notfall-Karte (null = geschlossen). */
     val emergency: EmergencyUi? = null,
     val teamGoal: TeamGoal? = null,
@@ -396,6 +405,8 @@ class NavController(private val app: Application) : KidsActions {
     private val photoPrompter = PhotoPrompter(seed = System.nanoTime())
     private var scenic: Scenic = Scenic.NONE
     private var scenicAt = 0L
+    private val power = PowerMonitor(app)
+    private fun effects() = PowerPolicy.effects(power.saving(_state.value.settings.powerSaver))
     private var scenicJob: Job? = null
     private var lastPhotoTick = 0L
     private val kiloClips = KiloVoicePlayer(app)
@@ -811,14 +822,14 @@ class NavController(private val app: Application) : KidsActions {
             while (isActive) {
                 refreshWeather(announce = true, speakSummary = first)
                 first = false
-                delay(WEATHER_REFRESH_MS)
+                delay(WEATHER_REFRESH_MS * effects().pollFactor)
             }
         }
         trafficJob?.cancel()
         trafficJob = scope.launch {
             while (isActive) {
                 refreshTraffic()
-                delay(TRAFFIC_REFRESH_MS)
+                delay(TRAFFIC_REFRESH_MS * effects().pollFactor)
             }
         }
     }
@@ -1501,6 +1512,7 @@ class NavController(private val app: Application) : KidsActions {
         commandJob = scope.launch {
             var quiet = 0
             while (isActive && _state.value.navigating && _state.value.settings.voiceCommands) {
+                if (!effects().allowWakeListening) { delay(10_000); continue } // Sparmodus: Mikrofon aus
                 if (gameActive || tts?.isSpeaking == true || kiloClips.isPlaying || (_state.value.voiceMode && _state.value.quest != null)) { delay(1000); continue }
                 val heard = listenOnce()
                 val cmd = VoiceCommands.parseAny(heard, requireWake = true)
@@ -1781,7 +1793,7 @@ class NavController(private val app: Application) : KidsActions {
         val pos = _state.value.position
         val number = Emergency.numberFor(_state.value.country)
         val loc = if (pos != null) Emergency.locationText(pos, currentRoadName()) else app.getString(R.string.emergency_no_position)
-        _state.update { it.copy(emergency = EmergencyUi(number, loc, loading = pos != null)) }
+        _state.update { it.copy(emergency = EmergencyUi(number, loc, loading = pos != null, phrases = ParentPhrases.forCountry(_state.value.country)?.toList().orEmpty())) }
         say(app.getString(R.string.emergency_spoken, number))
         if (pos == null) return
         scope.launch {
@@ -1916,7 +1928,7 @@ class NavController(private val app: Application) : KidsActions {
 
     private fun maybePromptPhoto(g: GuidanceState) {
         val s = _state.value
-        if (!s.settings.photoPrompts) return
+        if (!s.settings.photoPrompts || !effects().allowPhotoPrompts) return
         val audience = photoAudience ?: return
         val now = System.currentTimeMillis()
         if (now - lastPhotoTick < 5_000) return
@@ -1940,7 +1952,7 @@ class NavController(private val app: Application) : KidsActions {
                     runCatching { ScenicFinder.assess(withContext(Dispatchers.IO) { fetchOverpass(ScenicFinder.buildQuery(pos.lat, pos.lon)) }) }
                         .onSuccess { scenic = it; scenicAt = System.currentTimeMillis() }
                 }
-                delay(180_000)
+                delay(180_000L * effects().pollFactor)
             }
         }
     }
@@ -2304,6 +2316,8 @@ class NavController(private val app: Application) : KidsActions {
         if (!_state.value.settings.breakSuggestions) return
         val route = _state.value.route ?: return
         val kmh = if (loc.hasSpeed()) loc.speed * 3.6 else 0.0
+        val saving = effects().saving
+        if (_state.value.powerSaving != saving) _state.update { it.copy(powerSaving = saving) }
         val due = breakPlanner.onTick(nowMs, kmh)
         val left = ((breakIntervalMs(_state.value.ageBand) - breakPlanner.drivingMs) / 60_000L).toInt().coerceAtLeast(0)
         if (_state.value.nextBreakMin != left) _state.update { it.copy(nextBreakMin = left) }

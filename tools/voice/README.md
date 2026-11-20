@@ -10,7 +10,8 @@ keine Daten und braucht kein Netz.
 - alle festen Quest-Texte aus dem `QuestCatalog` (`quest_<id>`), bei Quizfragen zusätzlich die Variante für die Kleinsten mit
   Antworten (`quest_<id>.opts`: „Blauer Kreis: … Oranges Quadrat: … Grünes Dreieck: …“),
 - feste Kilo-Sätze (`kilo_intro`, `kids_new_sticker`, `mini_great`, `kids_waiting`),
-- Lob und Trost (`kilo_praise_1..6`, `kilo_retry_1..4`), die Kilo nach einer Antwort wechselnd sagt.
+- Lob und Trost (`kilo_praise_1..6`, `kilo_retry_1..4`), die Kilo nach einer Antwort wechselnd sagt,
+- Sätze der Hörspiele, Teamziel-Meilensteine, Anpassungs-Ansagen, Hörserien-Hinweise und die Geschichten-Anfänge/-Übergänge (alle Texte ohne Platzhalter, siehe `FIXED` in `build_lines.py`). Die Hörserien-Folgen mit Zielort und Zeilen mit Platzhaltern (z. B. „Mein Wort ist %1$s“) bleiben bei der Sprachausgabe.
 
 Dynamische Aufgaben (Routenfakten, Wikipedia-Geschichten, Natur, Ortsnamen), Navigationsansagen und Zahlen bleiben bei der
 Geräte-Sprachausgabe. Navigation hat immer Vorrang: eine Navigationsansage stoppt jede Aufnahme sofort.
@@ -31,4 +32,4 @@ Aufnahme.
 ## Lizenz und Kosten
 Die Aufnahmen sind synthetische Sprache, erzeugt mit dem ElevenLabs-Konto des Projektinhabers. Die zulässige Nutzung (insbesondere
 kommerziell oder bei einer Veröffentlichung im Play Store) richtet sich nach den Bedingungen des jeweiligen ElevenLabs-Tarifs zum
-Zeitpunkt der Erzeugung; vor einer Veröffentlichung prüfen. Verbrauch für 53 Zeilen je Sprache: rund 2.700 Zeichen pro Sprache, zusammen etwa 5.400 Credits (Deutsch und Englisch).
+Zeitpunkt der Erzeugung; vor einer Veröffentlichung prüfen. Verbrauch für 53 Zeilen je Sprache: rund 2.700 Zeichen pro Sprache, zusammen etwa 5.400 Credits (Deutsch und Englisch). Die 33 weiteren Zeilen je Sprache (Hörspiele u. a.) brauchten rund 3.900 Zeichen, zusammen etwa 3.900 Credits.

@@ -48,4 +48,18 @@ class LanguageCoursesTest {
         val c = LanguageCourses.forCountry("FI")!!
         assertEquals(LanguageCourses.quiz(c, emptySet(), Random(9)), LanguageCourses.quiz(c, emptySet(), Random(9)))
     }
+
+    @Test
+    fun `course countries cover the new travel countries and parent phrases`() {
+        for (cc in listOf("FR", "IT", "ES", "HR", "CZ")) assertNotNull(LanguageCourses.forCountry(cc), cc)
+        for (c in LanguageCourses.all) {
+            val phrases = ParentPhrases.forCountry(c.country)
+            assertNotNull(phrases, c.country)
+            assertEquals(ParentPhrase.entries.toSet(), phrases.keys, c.country)
+            assertTrue(phrases.values.all { it.length > 5 }, c.country)
+        }
+        assertNull(ParentPhrases.forCountry("DE")); assertNull(ParentPhrases.forCountry(null))
+        assertEquals("ParentPhrase", ParentPhrase.DOCTOR::class.simpleName)
+        assertEquals("parentphrase_child_ill", ParentPhrase.CHILD_ILL.textKey)
+    }
 }

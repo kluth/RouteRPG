@@ -36,6 +36,11 @@ object LanguageCourses {
         c("NO", "no", "Hei", "Takk", "Vær så snill", "Ha det", "Ja", "Nei", "Vann", "Is"),
         c("NL", "nl", "Hallo", "Dank je", "Alstublieft", "Tot ziens", "Ja", "Nee", "Water", "IJs"),
         c("PL", "pl", "Cześć", "Dziękuję", "Proszę", "Do widzenia", "Tak", "Nie", "Woda", "Lody"),
+        c("FR", "fr", "Bonjour", "Merci", "S'il vous plaît", "Au revoir", "Oui", "Non", "Eau", "Glace"),
+        c("IT", "it", "Ciao", "Grazie", "Per favore", "Arrivederci", "Sì", "No", "Acqua", "Gelato"),
+        c("ES", "es", "Hola", "Gracias", "Por favor", "Adiós", "Sí", "No", "Agua", "Helado"),
+        c("HR", "hr", "Bok", "Hvala", "Molim", "Doviđenja", "Da", "Ne", "Voda", "Sladoled"),
+        c("CZ", "cs", "Ahoj", "Děkuji", "Prosím", "Na shledanou", "Ano", "Ne", "Voda", "Zmrzlina"),
     )
 
     fun forCountry(code: String?): LanguageCourse? = all.firstOrNull { it.country.equals(code, ignoreCase = true) }

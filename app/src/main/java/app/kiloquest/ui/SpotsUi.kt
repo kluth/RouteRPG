@@ -77,6 +77,7 @@ fun SpotsCard(state: UiState, nav: NavController) {
 @Composable
 fun DashExtras(state: UiState, nav: NavController) {
     val lines = buildList {
+        if (state.powerSaving) add(stringResource(R.string.dash_power_saving))
         state.nextBreakMin?.takeIf { state.navigating }?.let { add(stringResource(R.string.dash_next_break, it)) }
         state.weather?.destination?.let { d ->
             val t = d.tempC?.let { Math.round(it).toInt().toString() + " °C, " }.orEmpty()

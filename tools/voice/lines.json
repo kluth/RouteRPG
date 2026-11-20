@@ -634,5 +634,401 @@
       "en": "51acbfc6d6f1",
       "de": "3cefe89ae2cd"
     }
+  },
+  {
+    "id": "game_menu",
+    "group": "fixed",
+    "text": {
+      "en": "Which game would you like? Word chain, letter game, rhymes, or a story?",
+      "de": "Welches Spiel möchtet ihr? Wortkette, Buchstabenspiel, Reimen oder eine Geschichte?"
+    },
+    "hash": {
+      "en": "a516abb81b92",
+      "de": "f6e84bfa2511"
+    }
+  },
+  {
+    "id": "game_stopped",
+    "group": "fixed",
+    "text": {
+      "en": "Okay, game over. That was fun!",
+      "de": "Okay, das Spiel ist zu Ende. Das hat Spaß gemacht!"
+    },
+    "hash": {
+      "en": "b9b9f2216a89",
+      "de": "4a2ef9d485d8"
+    }
+  },
+  {
+    "id": "game_giveup",
+    "group": "fixed",
+    "text": {
+      "en": "I will be quiet for now. Say Kilo, play a game, when you want to play again!",
+      "de": "Ich bin erst mal still. Sag Kilo, lass uns spielen, wenn ihr wieder Lust habt!"
+    },
+    "hash": {
+      "en": "3c1b6d9bc475",
+      "de": "584ddab7cf35"
+    }
+  },
+  {
+    "id": "game_nothing",
+    "group": "fixed",
+    "text": {
+      "en": "I did not hear you. Say it a bit louder!",
+      "de": "Ich habe dich nicht gehört. Sag es etwas lauter!"
+    },
+    "hash": {
+      "en": "47996a01c63a",
+      "de": "bc0dc2478156"
+    }
+  },
+  {
+    "id": "game_end",
+    "group": "fixed",
+    "text": {
+      "en": "That was great fun! Good playing, everyone!",
+      "de": "Das hat riesigen Spaß gemacht! Toll gespielt, ihr alle!"
+    },
+    "hash": {
+      "en": "0dd113f0a7b7",
+      "de": "8d1e0c6de5c3"
+    }
+  },
+  {
+    "id": "game_chain_intro",
+    "group": "fixed",
+    "text": {
+      "en": "Word chain! I say a word. You say a word that starts with the last letter of my word.",
+      "de": "Wortkette! Ich sage ein Wort. Du sagst ein Wort, das mit dem letzten Buchstaben von meinem Wort anfängt."
+    },
+    "hash": {
+      "en": "9d67427c575c",
+      "de": "d955d163eddf"
+    }
+  },
+  {
+    "id": "game_chain_concede",
+    "group": "fixed",
+    "text": {
+      "en": "Oh! I cannot think of a word. You win! Great job!",
+      "de": "Oh! Mir fällt kein Wort mehr ein. Du hast gewonnen! Super gemacht!"
+    },
+    "hash": {
+      "en": "685fc1842b70",
+      "de": "c6db8e11f667"
+    }
+  },
+  {
+    "id": "game_letter_intro",
+    "group": "fixed",
+    "text": {
+      "en": "Letter game! I name a kind of thing and a letter. You find a word.",
+      "de": "Buchstabenspiel! Ich sage, was gesucht ist, und einen Buchstaben. Du findest ein Wort."
+    },
+    "hash": {
+      "en": "a461b5a09579",
+      "de": "df306e50712e"
+    }
+  },
+  {
+    "id": "game_letter_used",
+    "group": "fixed",
+    "text": {
+      "en": "We already had that one. Another word?",
+      "de": "Das hatten wir schon. Noch ein anderes Wort?"
+    },
+    "hash": {
+      "en": "a226fea3fedc",
+      "de": "4dd74c437d46"
+    }
+  },
+  {
+    "id": "game_rhyme_intro",
+    "group": "fixed",
+    "text": {
+      "en": "Rhyme game! I say a word. You find a word that rhymes.",
+      "de": "Reimspiel! Ich sage ein Wort. Du findest ein Wort, das sich reimt."
+    },
+    "hash": {
+      "en": "3874bc9f68c9",
+      "de": "40fcf8e89cc9"
+    }
+  },
+  {
+    "id": "game_rhyme_again",
+    "group": "fixed",
+    "text": {
+      "en": "Hmm, that does not rhyme. Try again!",
+      "de": "Hm, das reimt sich nicht. Versuch es noch mal!"
+    },
+    "hash": {
+      "en": "c8df16e6c850",
+      "de": "5dcfe26ca97e"
+    }
+  },
+  {
+    "id": "game_story_intro",
+    "group": "fixed",
+    "text": {
+      "en": "Let us invent a story together! I start, then everyone adds a sentence.",
+      "de": "Wir erfinden zusammen eine Geschichte! Ich fange an, dann fügt jeder einen Satz dazu."
+    },
+    "hash": {
+      "en": "eb4a48c3dca2",
+      "de": "f6b43c7fbfb1"
+    }
+  },
+  {
+    "id": "game_story_prompt",
+    "group": "fixed",
+    "text": {
+      "en": "And then? Who continues?",
+      "de": "Und dann? Wer macht weiter?"
+    },
+    "hash": {
+      "en": "21c3c19f26e5",
+      "de": "e00146725929"
+    }
+  },
+  {
+    "id": "audio_story_end",
+    "group": "fixed",
+    "text": {
+      "en": "And so the story ended well. What a wonderful adventure you invented together!",
+      "de": "Und so ging die Geschichte gut aus. Was für ein wunderbares Abenteuer ihr zusammen erfunden habt!"
+    },
+    "hash": {
+      "en": "31bd5a02cec2",
+      "de": "5d777da4cef5"
+    }
+  },
+  {
+    "id": "team_goal_25",
+    "group": "fixed",
+    "text": {
+      "en": "A quarter of the team goal! Kilo has put up the tent.",
+      "de": "Ein Viertel vom Teamziel! Kilo hat das Zelt aufgebaut."
+    },
+    "hash": {
+      "en": "ae6aa996fb7e",
+      "de": "af81be21fe08"
+    }
+  },
+  {
+    "id": "team_goal_50",
+    "group": "fixed",
+    "text": {
+      "en": "Halfway there! Kilo lights the campfire.",
+      "de": "Halbzeit! Kilo zündet das Lagerfeuer an."
+    },
+    "hash": {
+      "en": "4c2605441026",
+      "de": "a75e505d96c9"
+    }
+  },
+  {
+    "id": "team_goal_75",
+    "group": "fixed",
+    "text": {
+      "en": "Three quarters! Kilo is cooking dinner for everyone.",
+      "de": "Drei Viertel! Kilo kocht Abendessen für alle."
+    },
+    "hash": {
+      "en": "2e121ee64d6c",
+      "de": "e220bfbaa843"
+    }
+  },
+  {
+    "id": "team_goal_100",
+    "group": "fixed",
+    "text": {
+      "en": "Team goal reached! Kilo throws a party for the whole family. Super teamwork!",
+      "de": "Teamziel geschafft! Kilo feiert ein Fest für die ganze Familie. Tolle Zusammenarbeit!"
+    },
+    "hash": {
+      "en": "9d23464c613a",
+      "de": "a0cf0b4dd834"
+    }
+  },
+  {
+    "id": "kilo_adapt_easier",
+    "group": "fixed",
+    "text": {
+      "en": "Let us try something easier!",
+      "de": "Lass uns etwas Leichteres probieren!"
+    },
+    "hash": {
+      "en": "8118307730c0",
+      "de": "5f91446f6179"
+    }
+  },
+  {
+    "id": "kilo_adapt_harder",
+    "group": "fixed",
+    "text": {
+      "en": "You are on fire! Here comes a tougher one.",
+      "de": "Du bist richtig gut! Jetzt kommt eine knifflige Aufgabe."
+    },
+    "hash": {
+      "en": "2fcd7a12c934",
+      "de": "90a1036d689a"
+    }
+  },
+  {
+    "id": "kilo_adapt_calm",
+    "group": "fixed",
+    "text": {
+      "en": "Let us take a deep breath. Look out of the window and watch the world go by.",
+      "de": "Lass uns tief durchatmen. Schau aus dem Fenster und sieh zu, wie die Welt vorbeizieht."
+    },
+    "hash": {
+      "en": "52ab062ecae6",
+      "de": "d9760c5beb6b"
+    }
+  },
+  {
+    "id": "series_wait",
+    "group": "fixed",
+    "text": {
+      "en": "That was all for today. A new episode is waiting tomorrow!",
+      "de": "Das war alles für heute. Morgen wartet eine neue Folge!"
+    },
+    "hash": {
+      "en": "db816b0db0c5",
+      "de": "eb3066fe624d"
+    }
+  },
+  {
+    "id": "series_done",
+    "group": "fixed",
+    "text": {
+      "en": "You have heard the whole series. What an adventure!",
+      "de": "Ihr habt die ganze Serie gehört. Was für ein Abenteuer!"
+    },
+    "hash": {
+      "en": "f1491b3d09f6",
+      "de": "b25198be3371"
+    }
+  },
+  {
+    "id": "stopover_resume",
+    "group": "fixed",
+    "text": {
+      "en": "Off we go! Continuing to the destination.",
+      "de": "Weiter geht es! Wir fahren zum Ziel."
+    },
+    "hash": {
+      "en": "c047d0f559c9",
+      "de": "d9e30f618a96"
+    }
+  },
+  {
+    "id": "toll_check",
+    "group": "fixed",
+    "text": {
+      "en": "Please check the official websites before you go.",
+      "de": "Bitte vor der Fahrt die offiziellen Webseiten prüfen."
+    },
+    "hash": {
+      "en": "e7e6b832e828",
+      "de": "1b79c361def2"
+    }
+  },
+  {
+    "id": "audio_story_start_1",
+    "group": "fixed",
+    "text": {
+      "en": "Once upon a time, a little car drove through a snowy forest, and suddenly its headlights began to sing.",
+      "de": "Es war einmal ein kleines Auto, das fuhr durch einen verschneiten Wald, und plötzlich fingen seine Scheinwerfer an zu singen."
+    },
+    "hash": {
+      "en": "2eb52e5ef318",
+      "de": "647d1237e80c"
+    }
+  },
+  {
+    "id": "audio_story_start_2",
+    "group": "fixed",
+    "text": {
+      "en": "Once upon a time, a brave explorer found a map that was drawn on a leaf.",
+      "de": "Es war einmal ein mutiger Entdecker, der fand eine Karte, die auf ein Blatt gemalt war."
+    },
+    "hash": {
+      "en": "b3f67d1fa85c",
+      "de": "4c1645c063d4"
+    }
+  },
+  {
+    "id": "audio_story_start_3",
+    "group": "fixed",
+    "text": {
+      "en": "Once upon a time, a friendly dragon moved into an old gas station.",
+      "de": "Es war einmal ein freundlicher Drache, der zog in eine alte Tankstelle ein."
+    },
+    "hash": {
+      "en": "ac73af1d4512",
+      "de": "788996cdbc09"
+    }
+  },
+  {
+    "id": "audio_story_start_4",
+    "group": "fixed",
+    "text": {
+      "en": "Once upon a time, a seagull stole a sandwich and flew far, far away.",
+      "de": "Es war einmal eine Möwe, die klaute ein Brötchen und flog weit, weit weg."
+    },
+    "hash": {
+      "en": "b84b32c21550",
+      "de": "9bcb85572bf7"
+    }
+  },
+  {
+    "id": "audio_story_next_1",
+    "group": "fixed",
+    "text": {
+      "en": "And suddenly, something very strange happened.",
+      "de": "Und plötzlich passierte etwas ganz Seltsames."
+    },
+    "hash": {
+      "en": "ba01884da57f",
+      "de": "fbc188f626c8"
+    }
+  },
+  {
+    "id": "audio_story_next_2",
+    "group": "fixed",
+    "text": {
+      "en": "Then a new friend came around the corner.",
+      "de": "Da kam ein neuer Freund um die Ecke."
+    },
+    "hash": {
+      "en": "02294dfbfb30",
+      "de": "4538e15ff35c"
+    }
+  },
+  {
+    "id": "audio_story_next_3",
+    "group": "fixed",
+    "text": {
+      "en": "But what was that sound in the dark?",
+      "de": "Aber was war das für ein Geräusch im Dunkeln?"
+    },
+    "hash": {
+      "en": "32bb37ee9d64",
+      "de": "51bdecfef76a"
+    }
+  },
+  {
+    "id": "audio_story_next_4",
+    "group": "fixed",
+    "text": {
+      "en": "And at the end of the road, they found a surprise.",
+      "de": "Und am Ende der Straße wartete eine Überraschung."
+    },
+    "hash": {
+      "en": "38ee7dda6d80",
+      "de": "53dd17d716c9"
+    }
   }
 ]
