@@ -16,7 +16,17 @@ import java.util.Locale
 class VoiceAnswers(private val context: Context) {
     private var recognizer: SpeechRecognizer? = null
 
+    /** Warum Sprachbefehle/Sprachantworten (nicht) gehen: fuer eine verstaendliche Rueckmeldung in den Einstellungen. */
+    enum class Status { OK, OLD_ANDROID, NO_ON_DEVICE, NO_MIC }
+
     companion object {
+        fun status(context: Context): Status = when {
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.S -> Status.OLD_ANDROID
+            !SpeechRecognizer.isOnDeviceRecognitionAvailable(context) -> Status.NO_ON_DEVICE
+            androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED -> Status.NO_MIC
+            else -> Status.OK
+        }
+
         fun isAvailable(context: Context): Boolean =
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && SpeechRecognizer.isOnDeviceRecognitionAvailable(context)
     }

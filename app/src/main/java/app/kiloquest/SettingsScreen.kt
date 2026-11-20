@@ -35,7 +35,7 @@ import app.kiloquest.ui.SettingSwitch
 import app.kiloquest.ui.SettingsSection
 import app.kiloquest.ui.screenColumn
 
-private enum class Dlg { NONE, CAMERAS, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES, SERVER, POWER, STORAGE }
+private enum class Dlg { NONE, CAMERAS, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES, SERVER, POWER, STORAGE, VOICE_HELP }
 
 /** Einstellungen: alles, was sich dauerhaft einstellen laesst, mit Abfragen vor dem Loeschen. */
 @Composable
@@ -47,7 +47,13 @@ fun SettingsScreen(state: UiState, nav: NavController) {
     BackHandler { if (picker) picker = false else nav.showSettings(false) }
 
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> if (granted) nav.setVoiceMode(true) }
-    val micForCommands = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> if (granted) nav.setVoiceCommands(true) }
+    var voiceStatus by rememberSaveable { mutableStateOf(VoiceAnswers.Status.OK) }
+    val micForCommands = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            voiceStatus = VoiceAnswers.status(ctx)
+            if (voiceStatus == VoiceAnswers.Status.OK) nav.setVoiceCommands(true) else dialog = Dlg.VOICE_HELP
+        } else { voiceStatus = VoiceAnswers.Status.NO_MIC; dialog = Dlg.VOICE_HELP }
+    }
     val ctxForMic = androidx.compose.ui.platform.LocalContext.current
 
     if (picker) {
@@ -86,8 +92,15 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 SettingDivider()
                 SettingSwitch(stringResource(R.string.set_voice_commands), stringResource(R.string.set_voice_commands_hint), s.voiceCommands) { v ->
                     if (!v) nav.setVoiceCommands(false)
-                    else if (ctxForMic.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) nav.setVoiceCommands(true)
-                    else micForCommands.launch(android.Manifest.permission.RECORD_AUDIO)
+                    else {
+                        // Erst pruefen, warum es nicht gehen koennte, und das erklaeren (statt den Schalter stumm zurueckspringen zu lassen)
+                        voiceStatus = VoiceAnswers.status(ctxForMic)
+                        when (voiceStatus) {
+                            VoiceAnswers.Status.OK -> nav.setVoiceCommands(true)
+                            VoiceAnswers.Status.NO_MIC -> micForCommands.launch(android.Manifest.permission.RECORD_AUDIO)
+                            else -> dialog = Dlg.VOICE_HELP
+                        }
+                    }
                 }
                 SettingDivider()
                 SettingSwitch(stringResource(R.string.set_photo_prompts), stringResource(R.string.set_photo_prompts_hint), s.photoPrompts) { v -> nav.updateSettings { it.copy(photoPrompts = v) } }
@@ -237,6 +250,31 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 }
             }
             InfoDialog(stringResource(R.string.set_cameras), stringResource(R.string.cameras_info) + "\n\n" + rules, close) { dialog = Dlg.NONE }
+        }
+        Dlg.VOICE_HELP -> {
+            val st = voiceStatus
+            val msg = when (st) {
+                VoiceAnswers.Status.OLD_ANDROID -> R.string.voice_help_old
+                VoiceAnswers.Status.NO_ON_DEVICE -> R.string.voice_help_pack
+                VoiceAnswers.Status.NO_MIC -> R.string.voice_help_mic
+                VoiceAnswers.Status.OK -> R.string.voice_help_ok
+            }
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { dialog = Dlg.NONE },
+                title = { Text(stringResource(R.string.set_voice_commands)) },
+                text = { Text(stringResource(msg), style = MaterialTheme.typography.bodyMedium) },
+                confirmButton = {
+                    if (st == VoiceAnswers.Status.NO_ON_DEVICE || st == VoiceAnswers.Status.NO_MIC) {
+                        androidx.compose.material3.TextButton(onClick = {
+                            dialog = Dlg.NONE
+                            val i = if (st == VoiceAnswers.Status.NO_MIC) android.content.Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.fromParts("package", ctx.packageName, null))
+                            else android.content.Intent(android.provider.Settings.ACTION_VOICE_INPUT_SETTINGS)
+                            runCatching { ctx.startActivity(i.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                        }) { Text(stringResource(if (st == VoiceAnswers.Status.NO_MIC) R.string.voice_help_open_app else R.string.voice_help_open_voice)) }
+                    }
+                },
+                dismissButton = { androidx.compose.material3.TextButton(onClick = { dialog = Dlg.NONE }) { Text(close) } },
+            )
         }
         Dlg.POWER -> ChoiceDialog(
             stringResource(R.string.set_power),

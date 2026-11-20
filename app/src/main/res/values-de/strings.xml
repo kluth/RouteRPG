@@ -885,4 +885,10 @@
     <string name="storage_clear_cache">Temporäres löschen</string>
     <string name="dash_power_saving">Akku-Sparmodus ist an</string>
     <string name="toll_speak">Vorlesen</string>
+    <string name="voice_help_old">Sprachbefehle brauchen Android 12 oder neuer, weil die Sprache nur auf dem Gerät erkannt wird.</string>
+    <string name="voice_help_pack">Dieses Handy hat keine Offline-Spracherkennung bereit. KiloQuest erkennt Sprache nur auf dem Gerät, es wird also nichts versendet. Öffne die Spracheingabe-Einstellungen, wähle deinen Sprachdienst (zum Beispiel Google) und lade das Offline-Sprachpaket für deine Sprache herunter. Schalte die Option danach noch einmal ein.</string>
+    <string name="voice_help_mic">Dafür braucht KiloQuest das Mikrofon. Bitte erlaube es in den App-Einstellungen und schalte die Option danach noch einmal ein.</string>
+    <string name="voice_help_ok">Alles ist bereit. Schalte die Option noch einmal ein.</string>
+    <string name="voice_help_open_voice">Spracheingabe-Einstellungen öffnen</string>
+    <string name="voice_help_open_app">App-Einstellungen öffnen</string>
 </resources>

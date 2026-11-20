@@ -885,4 +885,10 @@
     <string name="storage_clear_cache">Clear temporary files</string>
     <string name="dash_power_saving">Battery saver is on</string>
     <string name="toll_speak">Read aloud</string>
+    <string name="voice_help_old">Voice commands need Android 12 or newer, because the speech is recognised on the device only.</string>
+    <string name="voice_help_pack">This phone has no offline speech recognition ready. KiloQuest recognises speech only on the device, so nothing is sent anywhere. Open the voice input settings, choose your speech service (for example Google) and download the offline language pack for your language. Then switch this on again.</string>
+    <string name="voice_help_mic">KiloQuest needs the microphone for this. Please allow it in the app settings, then switch this on again.</string>
+    <string name="voice_help_ok">Everything is ready. Switch the option on again.</string>
+    <string name="voice_help_open_voice">Open voice input settings</string>
+    <string name="voice_help_open_app">Open app settings</string>
 </resources>
