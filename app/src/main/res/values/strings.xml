@@ -76,7 +76,7 @@
     <string name="kids_next">Continue</string>
     <string name="kids_waiting">No quest right now – enjoy the ride!</string>
     <string name="kids_correct">Correct! +%1$d points</string>
-    <string name="kids_wrong">Not quite – the answer was: %1$s</string>
+    <string name="kids_wrong">Good idea! It was: %1$s</string>
     <string name="kids_done">Well done! +%1$d points</string>
     <string name="kids_age">Age group</string>
     <string name="age_mini">4–6 years</string>
@@ -250,4 +250,6 @@
     <string name="hint_more">+%1$d</string>
     <string name="speed_unlimited">No speed limit</string>
     <string name="speed_limit_desc">Speed limit %1$d</string>
+    <string name="route_arrival">arrival %1$s</string>
+    <string name="kilo_intro">Look outside!</string>
 </resources>

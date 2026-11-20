@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -141,6 +142,40 @@ fun QuestsPill(onClick: () -> Unit, modifier: Modifier = Modifier) {
         Row(Modifier.padding(start = 8.dp, end = 18.dp).size(width = 132.dp, height = 56.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             androidx.compose.foundation.Image(painterResource(R.drawable.kilo_fox), contentDescription = null, modifier = Modifier.size(40.dp))
             Text(stringResource(R.string.kids_open), style = MaterialTheme.typography.titleSmall)
+        }
+    }
+}
+
+/** Routenvorschau als untere Karte: Dauer gross, Strecke, Offline-Zeile, "Los" und Quests. */
+@Composable
+fun RoutePreviewSheet(
+    distanceMeters: Double,
+    durationSeconds: Double,
+    onStart: () -> Unit,
+    onQuests: () -> Unit,
+    modifier: Modifier = Modifier,
+    extra: @Composable () -> Unit = {},
+) {
+    val minutes = (durationSeconds / 60).toInt()
+    val duration = if (minutes >= 60) stringResource(R.string.unit_h_min, minutes / 60, minutes % 60) else stringResource(R.string.unit_min, minutes)
+    val km = if (distanceMeters >= 1000) stringResource(R.string.unit_km, distanceMeters / 1000.0) else stringResource(R.string.unit_m, distanceMeters.toInt())
+    val arrival = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(System.currentTimeMillis() + (durationSeconds * 1000).toLong()))
+    Surface(modifier, shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 12.dp) {
+        Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(duration, style = MaterialTheme.typography.displayMedium)
+                Text(km, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.route_arrival, arrival), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            extra()
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.material3.Button(
+                    onClick = onStart,
+                    modifier = Modifier.weight(1f).height(56.dp),
+                    shape = RoundedCornerShape(18.dp),
+                ) { Text(stringResource(R.string.start_navigation), style = MaterialTheme.typography.titleMedium) }
+                QuestsPill(onQuests)
+            }
         }
     }
 }

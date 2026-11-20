@@ -76,7 +76,7 @@
     <string name="kids_next">Weiter</string>
     <string name="kids_waiting">Gerade keine Aufgabe – genießt die Fahrt!</string>
     <string name="kids_correct">Richtig! +%1$d Punkte</string>
-    <string name="kids_wrong">Nicht ganz – die Antwort war: %1$s</string>
+    <string name="kids_wrong">Gute Idee! Es war: %1$s</string>
     <string name="kids_done">Gut gemacht! +%1$d Punkte</string>
     <string name="kids_age">Altersgruppe</string>
     <string name="age_mini">4–6 Jahre</string>
@@ -250,4 +250,6 @@
     <string name="hint_more">+%1$d</string>
     <string name="speed_unlimited">Kein Tempolimit</string>
     <string name="speed_limit_desc">Tempolimit %1$d</string>
+    <string name="route_arrival">Ankunft %1$s</string>
+    <string name="kilo_intro">Schaut mal raus!</string>
 </resources>

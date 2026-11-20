@@ -36,12 +36,12 @@ fun KidsScreen(state: UiState, nav: NavController) {
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) nav.setVoiceMode(true)
     }
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
+    Surface(Modifier.fillMaxSize(), color = app.kiloquest.ui.kidsBackground(state.ageBand)) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(stringResource(R.string.kids_title), style = MaterialTheme.typography.headlineLarge)
+            app.kiloquest.ui.KiloSays(stringResource(if (state.quest != null) R.string.kilo_intro else R.string.kids_title))
 
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 Text(stringResource(R.string.kids_points, state.points), style = MaterialTheme.typography.titleLarge)
@@ -104,7 +104,7 @@ fun KidsScreen(state: UiState, nav: NavController) {
                             color = MaterialTheme.colorScheme.primary,
                         )
                     }
-                    Text(ctx.stringByKey(q.textKey, q.args), style = MaterialTheme.typography.headlineMedium)
+                    Text(ctx.stringByKey(q.textKey, q.args), style = app.kiloquest.ui.questTextStyle(state.ageBand))
                     if (state.listening) Text(stringResource(R.string.voice_listening), color = MaterialTheme.colorScheme.primary)
                     if (q.type == app.kiloquest.game.QuestType.SKY && q.args.isNotEmpty() && q.textKey != app.kiloquest.game.PlaneSpotting.MOON_KEY) {
                         Text(stringResource(R.string.sky_source), style = MaterialTheme.typography.labelMedium)
@@ -139,11 +139,10 @@ fun KidsScreen(state: UiState, nav: NavController) {
                     }
                     Text(msg, style = MaterialTheme.typography.headlineMedium)
                     state.newSticker?.let {
-                        Text(
-                            stringResource(R.string.kids_new_sticker) + " " + it.emoji,
-                            style = MaterialTheme.typography.headlineLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
+                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            app.kiloquest.ui.StickerImage(it, collected = true, size = 72.dp)
+                            Text(stringResource(R.string.kids_new_sticker), style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
+                        }
                     }
                     Button(onClick = nav::dismissFeedback, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.kids_next))
@@ -222,9 +221,5 @@ private fun Album(collected: Set<String>) {
         stringResource(R.string.kids_album, collected.size, StickerBook.ALL.size),
         style = MaterialTheme.typography.titleMedium,
     )
-    // Gesammelte Sticker als Emoji, fehlende als graue Punkte
-    Text(
-        StickerBook.ALL.joinToString(" ") { if (it.id in collected) it.emoji else "·" },
-        style = MaterialTheme.typography.headlineSmall,
-    )
+    app.kiloquest.ui.StickerGrid(StickerBook.ALL, collected)
 }

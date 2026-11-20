@@ -145,35 +145,15 @@ private fun AppScreen(vm: NavController) {
                 val remaining = g?.remainingMeters ?: route.lengthMeters
                 val seconds = route.durationSeconds * (remaining / route.lengthMeters.coerceAtLeast(1.0))
                 EtaBar(remaining, seconds, vm::stopNavigation, Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = 24.dp, start = 12.dp, end = 12.dp))
-            } else Surface(
-                tonalElevation = 6.dp,
-                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = 24.dp, start = 12.dp, end = 12.dp),
-            ) {
-                Row(
-                    Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    val g = state.guidance
-                    val meters = g?.remainingMeters ?: route.lengthMeters
-                    val summary = if (g != null) {
-                        stringResource(R.string.remaining_summary, formatDistance(meters))
-                    } else {
-                        stringResource(R.string.route_summary, formatDistance(meters), formatDuration(route.durationSeconds))
-                    }
-                    Column {
-                        Text(summary, style = MaterialTheme.typography.titleMedium)
-                        if (!state.navigating) PackageLine(state.pkg, vm)
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { vm.showKids(true) }) { Text(stringResource(R.string.kids_open)) }
-                        if (state.navigating) {
-                            Button(onClick = vm::stopNavigation) { Text(stringResource(R.string.stop_navigation)) }
-                        } else {
-                            Button(onClick = vm::startNavigation) { Text(stringResource(R.string.start_navigation)) }
-                        }
-                    }
-                }
+            } else {
+                app.kiloquest.ui.RoutePreviewSheet(
+                    distanceMeters = route.lengthMeters,
+                    durationSeconds = route.durationSeconds,
+                    onStart = vm::startNavigation,
+                    onQuests = { vm.showKids(true) },
+                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+                    extra = { PackageLine(state.pkg, vm) },
+                )
             }
         } else if (!state.kidsScreen && !state.tripScreen && !state.riddleScreen) {
             Text(
