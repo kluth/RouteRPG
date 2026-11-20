@@ -84,18 +84,8 @@ private const val INCIDENT_LAYER = "incident-layer"
 private const val AVATAR_SOURCE = "avatar-source"
 private const val AVATAR_LAYER = "avatar-layer"
 private const val AVATAR_IMAGE = "avatar-image"
+private const val AVATAR_IMAGE_FLIP = "avatar-image-flip"
 
-/** Emoji als Bild (fuer die Karten-Ebene); die Emoji-Schrift des Geraets zeichnet es. */
-private fun emojiBitmap(emoji: String, px: Int): android.graphics.Bitmap {
-    val bmp = android.graphics.Bitmap.createBitmap(px, px, android.graphics.Bitmap.Config.ARGB_8888)
-    val c = android.graphics.Canvas(bmp)
-    // heller Kreis dahinter, damit die Figur auf jeder Karte zu sehen ist
-    c.drawCircle(px / 2f, px / 2f, px / 2f - 2f, android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = 0xE6FFFFFF.toInt() })
-    val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { textSize = px * 0.62f; textAlign = android.graphics.Paint.Align.CENTER }
-    val fm = p.fontMetrics
-    c.drawText(emoji, px / 2f, px / 2f - (fm.ascent + fm.descent) / 2, p)
-    return bmp
-}
 
 class MainActivity : ComponentActivity() {
     private val vm: NavController by lazy { (application as KiloQuestApp).nav }
@@ -148,6 +138,7 @@ private fun AppScreen(vm: NavController) {
             follow = state.navigating,
             incidents = state.incidents.map { it.incident.position },
             avatar = state.avatar,
+            bearing = state.bearing,
         )
         AppOverlays(state, vm)
     }
@@ -230,7 +221,7 @@ internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
             if (client.role == app.kiloquest.link.Role.COPILOT) {
                 app.kiloquest.link.CopilotRemoteScreen(snap) { vm.showParent(true) }
             } else if (snap != null) {
-                KidsScreen(snap.toUiStateFor(state.ageBand, state.avatar, client.route, client.pos), app.kiloquest.link.RemoteActions(linkApp.linkClient, vm))
+                KidsScreen(snap.toUiStateFor(state.ageBand, state.avatar, state.realMap, client.route, client.pos), app.kiloquest.link.RemoteActions(linkApp.linkClient, vm))
             }
         }
     }
@@ -466,7 +457,7 @@ private fun formatDuration(seconds: Double): String {
 }
 
 @Composable
-private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean, incidents: List<LatLon>, avatar: String) {
+private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean, incidents: List<LatLon>, avatar: String, bearing: Float?) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
@@ -552,8 +543,22 @@ private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean, 
         val m = map ?: return@LaunchedEffect
         if (!styleReady) return@LaunchedEffect
         m.getStyle { style: Style ->
-            runCatching { style.removeImage(AVATAR_IMAGE) }
-            style.addImage(AVATAR_IMAGE, emojiBitmap(avatar, 128))
+            runCatching { style.removeImage(AVATAR_IMAGE); style.removeImage(AVATAR_IMAGE_FLIP) }
+            style.addImage(AVATAR_IMAGE, app.kiloquest.ui.emojiBitmap(avatar, 128))
+            style.addImage(AVATAR_IMAGE_FLIP, app.kiloquest.ui.emojiBitmap(avatar, 128, mirrored = true))
+        }
+    }
+    // Die Figur dreht sich mit der Fahrtrichtung (Flugzeug/Rakete) bzw. schaut in Fahrtrichtung (Fahrzeuge in Seitenansicht)
+    LaunchedEffect(avatar, bearing, styleReady) {
+        val m = map ?: return@LaunchedEffect
+        if (!styleReady) return@LaunchedEffect
+        val pose = app.kiloquest.game.Avatars.pose(avatar, bearing)
+        m.getStyle { style: Style ->
+            style.getLayerAs<org.maplibre.android.style.layers.SymbolLayer>(AVATAR_LAYER)?.setProperties(
+                PropertyFactory.iconImage(if (pose.mirrored) AVATAR_IMAGE_FLIP else AVATAR_IMAGE),
+                PropertyFactory.iconRotate(pose.rotationDegrees),
+                PropertyFactory.iconRotationAlignment(org.maplibre.android.style.layers.Property.ICON_ROTATION_ALIGNMENT_MAP),
+            )
         }
     }
     LaunchedEffect(position, styleReady) {

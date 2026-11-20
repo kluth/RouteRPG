@@ -2,6 +2,16 @@ package app.kiloquest.game
 
 enum class AvatarCategory { VEHICLES, AIR_SEA_SPACE, ANIMALS, HEROES, FUN }
 
+/**
+ * Wie eine Figur zur Fahrtrichtung passt: [POINTER] zeigt schraeg nach oben rechts (Flugzeug, Rakete) und dreht sich auf die
+ * Richtung; [SIDE_LEFT] ist ein Fahrzeug in Seitenansicht, das nach links schaut und bei Fahrt nach Osten gespiegelt wird
+ * (nie kopfueber); [UPRIGHT] bleibt aufrecht (Tiere, Personen, Symbole).
+ */
+enum class Orient { UPRIGHT, SIDE_LEFT, POINTER }
+
+/** Darstellung einer Figur auf der Karte: [rotationDegrees] im Uhrzeigersinn, [mirrored] = links/rechts gespiegelt. */
+data class MarkerPose(val rotationDegrees: Float, val mirrored: Boolean)
+
 data class Avatar(val emoji: String, val category: AvatarCategory)
 
 /**
@@ -31,6 +41,29 @@ object Avatars {
             AvatarCategory.FUN,
             "⭐", "🌈", "🔥", "⚡", "🍕", "🍦", "🍩", "⚽", "🏆", "🎸", "🎯", "👑", "💎", "🌟",
         )
+
+    private val pointers = setOf("✈️", "🛩️", "🚀")
+    private val sideLeft = setOf("🚗", "🚕", "🚙", "🏎️", "🚓", "🚑", "🚒", "🚌", "🚎", "🚐", "🛻", "🚚", "🚛", "🚜", "🏍️", "🛵", "🚲", "🛴", "🚂", "🚋", "🛺")
+
+    fun orientOf(emoji: String): Orient = when (emoji) {
+        in pointers -> Orient.POINTER
+        in sideLeft -> Orient.SIDE_LEFT
+        else -> Orient.UPRIGHT
+    }
+
+    /**
+     * Pose fuer die Fahrtrichtung [headingDegrees] (0 = Norden, im Uhrzeigersinn). Ohne bekannte Richtung (null) bleibt die Figur
+     * unveraendert. Zeigt die Fahrt nach Osten (0 bis 180 Grad), schaut ein Seitenansicht-Fahrzeug nach rechts.
+     */
+    fun pose(emoji: String, headingDegrees: Float?): MarkerPose {
+        if (headingDegrees == null) return MarkerPose(0f, false)
+        val h = ((headingDegrees % 360f) + 360f) % 360f
+        return when (orientOf(emoji)) {
+            Orient.POINTER -> MarkerPose(((h - 45f) + 360f) % 360f, false)
+            Orient.SIDE_LEFT -> MarkerPose(0f, h in 1f..179f)
+            Orient.UPRIGHT -> MarkerPose(0f, false)
+        }
+    }
 
     fun byCategory(c: AvatarCategory): List<Avatar> = all.filter { it.category == c }
 

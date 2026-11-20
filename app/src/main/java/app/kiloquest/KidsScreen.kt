@@ -41,7 +41,7 @@ fun KidsScreen(state: UiState, nav: KidsActions) {
     var picker by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
     androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
         KidsContent(state, nav, { mapFull = true }, { picker = true })
-        if (mapFull) app.kiloquest.ui.KidMapFull(state, { mapFull = false }, { picker = true })
+        if (mapFull) app.kiloquest.ui.KidMapFull(state, { mapFull = false }, { picker = true }, nav::setRealMap)
         if (picker) app.kiloquest.ui.AvatarPicker(state.avatar, nav::setAvatar, { picker = false })
     }
 }

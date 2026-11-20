@@ -46,6 +46,7 @@ class RemoteActions(private val client: BtClient, private val nav: NavController
     override fun requestToilet() = client.send(ClientMsg.ToiletRequest)
     /** Die Figur ist eine Einstellung dieses Geraets: bleibt lokal, geht nicht zum Hauptgeraet. */
     override fun setAvatar(emoji: String) = nav.setAvatar(emoji)
+    override fun setRealMap(on: Boolean) = nav.setRealMap(on)
     /** "Zurueck" fuehrt ins Beifahrer-Menue dieses Geraets (dort Trennen/Alter). */
     override fun showKids(show: Boolean) { if (!show) nav.showParent(true) }
 }

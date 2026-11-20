@@ -377,4 +377,6 @@
     <string name="avatar_apply">Nehmen</string>
     <string name="avatar_done">Fertig</string>
     <string name="avatar_invalid">Das ist kein Emoji</string>
+    <string name="map_style_real">Echte Karte</string>
+    <string name="map_style_sketch">Skizze</string>
 </resources>

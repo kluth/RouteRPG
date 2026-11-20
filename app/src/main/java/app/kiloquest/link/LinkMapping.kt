@@ -40,8 +40,9 @@ fun UiState.toSnapshot(role: Role, yourPlayer: Int, seq: Long, stopText: (app.ki
 )
 
 /** Auf dem gekoppelten Geraet: Zustand fuer die vorhandene Kinderansicht; [ownBand] ist das eigene Alter. */
-fun Snapshot.toUiState(ownBand: AgeBand, ownAvatar: String = app.kiloquest.game.Avatars.DEFAULT, routeDto: RouteDto? = null, posDto: PosDto? = null): UiState = UiState(
+fun Snapshot.toUiState(ownBand: AgeBand, ownAvatar: String = app.kiloquest.game.Avatars.DEFAULT, ownRealMap: Boolean = true, routeDto: RouteDto? = null, posDto: PosDto? = null): UiState = UiState(
     avatar = ownAvatar,
+    realMap = ownRealMap,
     // Karte der Kinder: Route nur als Linie (keine Manoever), Position und Fortschritt vom Hauptgeraet
     route = routeDto?.takeIf { posDto == null || posDto.routeId == 0L || posDto.routeId == it.id }?.let { r ->
         app.kiloquest.nav.Route(app.kiloquest.nav.Polyline(app.kiloquest.nav.PolylineCodec.decode(r.encoded)), emptyList(), r.lengthMeters, 0.0)

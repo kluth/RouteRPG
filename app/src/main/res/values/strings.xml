@@ -377,4 +377,6 @@
     <string name="avatar_apply">Use</string>
     <string name="avatar_done">Done</string>
     <string name="avatar_invalid">That is not an emoji</string>
+    <string name="map_style_real">Real map</string>
+    <string name="map_style_sketch">Sketch</string>
 </resources>

@@ -74,7 +74,7 @@ class LayoutShotsTest {
     }
     private val mapRoute = Route(Polyline(curvy), emptyList(), lengthMeters = Polyline(curvy).lengthMeters, durationSeconds = 900.0)
     private val withMap = kids.copy(
-        route = mapRoute, position = curvy[24], bearing = 50f, avatar = "🚀",
+        route = mapRoute, position = curvy[24], bearing = 50f, avatar = "🚀", realMap = false,
         guidance = GuidanceState(Polyline(curvy).cumulative[24], 0.0, false, 0, 0.0, mapRoute.lengthMeters - Polyline(curvy).cumulative[24], false),
         destination = Place("Ziel", curvy.last()),
     )
@@ -88,6 +88,7 @@ class LayoutShotsTest {
             override fun showKids(show: Boolean) {}
             override fun requestToilet() {}
             override fun setAvatar(emoji: String) {}
+            override fun setRealMap(on: Boolean) {}
         }
         val vm by lazy { NavController(app) }
         rule.setContent {
@@ -152,4 +153,13 @@ class LayoutShotsTest {
     @Test fun mapFullTablet() = shot("map-full-1000x640", 1000, 640, state = { withMap }, custom = { s -> app.kiloquest.ui.KidMapFull(s, {}, {}) })
     @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
     @Test fun avatarPickerShot() = shot("avatar-390x844", 390, 844, state = { withMap }, custom = { s -> app.kiloquest.ui.AvatarPicker(s.avatar, {}, {}) })
+
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi")
+    @Test fun poseCarEast() = shot("pose-car-east", 390, 500, state = { withMap.copy(avatar = "🚗", bearing = 90f) }, custom = { s -> app.kiloquest.ui.KidMap(s, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize()) })
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi")
+    @Test fun poseCarWest() = shot("pose-car-west", 390, 500, state = { withMap.copy(avatar = "🚗", bearing = 270f) }, custom = { s -> app.kiloquest.ui.KidMap(s, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize()) })
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi")
+    @Test fun poseRocketNorth() = shot("pose-rocket-north", 390, 500, state = { withMap.copy(avatar = "🚀", bearing = 0f) }, custom = { s -> app.kiloquest.ui.KidMap(s, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize()) })
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi")
+    @Test fun poseRocketSouthEast() = shot("pose-rocket-se", 390, 500, state = { withMap.copy(avatar = "🚀", bearing = 135f) }, custom = { s -> app.kiloquest.ui.KidMap(s, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize()) })
 }

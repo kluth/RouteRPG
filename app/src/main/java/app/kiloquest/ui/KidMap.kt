@@ -39,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.kiloquest.R
 import app.kiloquest.UiState
 import app.kiloquest.nav.LatLon
@@ -92,8 +93,8 @@ fun KidMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier) {
             metersPerPx = max(spanX / (w * 0.8), spanY / (h * 0.8))
         }
         val cosLat0 = cos(center.lat * PI / 180)
-        val headingUp = mode == MapMode.FOLLOW && state.bearing != null
-        val theta = if (headingUp) -(state.bearing!!) * PI / 180 else 0.0
+        // Nord ist oben; die Figur zeigt die Fahrtrichtung (siehe Avatars.pose)
+        val theta = 0.0
 
         fun project(p: LatLon): Offset {
             val x = (p.lon - center.lon) * cosLat0 * 111_320.0
@@ -154,7 +155,8 @@ fun KidMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier) {
         val pp = pos?.let { project(it) } ?: Offset(w / 2, h / 2)
         drawCircle(Color.White.copy(alpha = 0.85f), 26.dp.toPx(), pp)
         drawCircle(routeColor.copy(alpha = 0.35f), 26.dp.toPx(), pp, style = Stroke(width = 3.dp.toPx()))
-        drawEmoji(avatar, pp.x, pp.y, 34.dp.toPx())
+        val pose = app.kiloquest.game.Avatars.pose(avatar, state.bearing)
+        drawEmoji(avatar, pp.x, pp.y, 34.dp.toPx(), pose.rotationDegrees, pose.mirrored)
 
         // Kompass: kleiner Pfeil "Norden" oben links (dreht mit, wenn die Karte nach Fahrtrichtung zeigt)
         val cc = Offset(26.dp.toPx(), 26.dp.toPx())
@@ -168,17 +170,50 @@ fun KidMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier) {
     }
 }
 
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawEmoji(text: String, cx: Float, cy: Float, sizePx: Float) {
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawEmoji(
+    text: String, cx: Float, cy: Float, sizePx: Float, rotationDegrees: Float = 0f, mirrored: Boolean = false,
+) {
     val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply { textSize = sizePx; textAlign = Paint.Align.CENTER }
     val fm = paint.fontMetrics
-    drawContext.canvas.nativeCanvas.drawText(text, cx, cy - (fm.ascent + fm.descent) / 2, paint)
+    val c = drawContext.canvas.nativeCanvas
+    c.save()
+    c.rotate(rotationDegrees, cx, cy)
+    if (mirrored) c.scale(-1f, 1f, cx, cy)
+    c.drawText(text, cx, cy - (fm.ascent + fm.descent) / 2, paint)
+    c.restore()
+}
+
+/**
+ * Karte fuer Kinder: echte Kacheln, wenn gewuenscht und Position bekannt, sonst (oder ohne Netz) die schematische Karte.
+ * Die Namen und Urheberrechte der Kartendaten stehen sichtbar dabei.
+ */
+@Composable
+fun KidMapView(state: UiState, mode: MapMode, modifier: Modifier = Modifier, interactive: Boolean = false) {
+    var failed by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    // Neuer Versuch, wenn der Nutzer "Echte Karte" erneut waehlt
+    androidx.compose.runtime.LaunchedEffect(state.realMap) { if (state.realMap) failed = false }
+    if (state.realMap && state.position != null && !failed) {
+        Box(modifier) {
+            KidTileMap(state, mode, Modifier.fillMaxSize(), interactive) { failed = true }
+            Text(
+                stringResource(R.string.map_attribution),
+                Modifier.align(Alignment.BottomEnd).padding(4.dp).background(Color.White.copy(alpha = 0.7f), RoundedCornerShape(6.dp)).padding(horizontal = 4.dp),
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Normal),
+                color = Color(0xFF14171A),
+            )
+        }
+    } else {
+        KidMap(state, mode, modifier)
+    }
 }
 
 /** Kleine Karte mit Vollbild-Knopf und Figur-Wahl; sonst ruhig, nur auf Wunsch gross. */
 @Composable
 fun KidMapCard(state: UiState, onOpen: () -> Unit, onPickAvatar: () -> Unit, modifier: Modifier = Modifier, height: androidx.compose.ui.unit.Dp = 160.dp) {
     Box(modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(24.dp))) {
-        KidMap(state, MapMode.FOLLOW, Modifier.fillMaxSize().clickable(onClick = onOpen))
+        KidMapView(state, MapMode.FOLLOW, Modifier.fillMaxSize())
+        // Tippen oeffnet die grosse Karte (die Kartenansicht selbst nimmt keine Gesten an)
+        Box(Modifier.fillMaxSize().clickable(onClick = onOpen))
         if (state.route == null && state.position == null) {
             Text(stringResource(R.string.map_waiting), Modifier.align(Alignment.Center).padding(16.dp), style = MaterialTheme.typography.bodyMedium)
         }
@@ -206,15 +241,20 @@ fun AvatarBadge(avatar: String, onClick: () -> Unit, modifier: Modifier = Modifi
 
 /** Vollbild-Karte auf Wunsch: Umgebung oder ganze Route, Figur waehlen, schliessen. */
 @Composable
-fun KidMapFull(state: UiState, onClose: () -> Unit, onPickAvatar: () -> Unit) {
+fun KidMapFull(state: UiState, onClose: () -> Unit, onPickAvatar: () -> Unit, onRealMap: (Boolean) -> Unit = {}) {
     var mode by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(MapMode.FOLLOW) }
     androidx.activity.compose.BackHandler(onBack = onClose)
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Box(Modifier.fillMaxSize()) {
-            KidMap(state, mode, Modifier.fillMaxSize())
+            KidMapView(state, mode, Modifier.fillMaxSize(), interactive = true)
             Row(Modifier.align(Alignment.TopCenter).padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 FilterChip(selected = mode == MapMode.FOLLOW, onClick = { mode = MapMode.FOLLOW }, label = { Text(stringResource(R.string.map_mode_near)) })
                 FilterChip(selected = mode == MapMode.OVERVIEW, onClick = { mode = MapMode.OVERVIEW }, label = { Text(stringResource(R.string.map_mode_route)) })
+            }
+            // Echte Karte oder schematische Skizze (ohne Internet)
+            Row(Modifier.align(Alignment.TopCenter).padding(top = 64.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(selected = state.realMap, onClick = { onRealMap(true) }, label = { Text(stringResource(R.string.map_style_real)) })
+                FilterChip(selected = !state.realMap, onClick = { onRealMap(false) }, label = { Text(stringResource(R.string.map_style_sketch)) })
             }
             MapRoundButton(R.drawable.ic_close, stringResource(R.string.map_close), onClose, Modifier.align(Alignment.TopEnd).padding(12.dp))
             AvatarBadge(state.avatar, onPickAvatar, Modifier.align(Alignment.CenterEnd).padding(16.dp))

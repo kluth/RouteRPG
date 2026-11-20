@@ -10,4 +10,6 @@ interface KidsActions {
     fun requestToilet()
     /** Figur fuer die eigene Position (Emoji); gilt nur auf diesem Geraet. */
     fun setAvatar(emoji: String)
+    /** Kinderkarte: echte Kacheln (true) oder schematisch (false); Einstellung dieses Geraets. */
+    fun setRealMap(on: Boolean)
 }
