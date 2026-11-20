@@ -36,3 +36,20 @@ class GameStringsTest {
         }
     }
 }
+
+/** Texte der Maut-, Funkloch- und Notfall-Funktionen: jedes Land der Tabelle braucht einen Text in beiden Sprachen. */
+class TravelInfoStringsTest {
+    private fun keys(dir: String): Map<String, String> =
+        Regex("""<string name="([^"]+)"[^>]*>(.*?)</string>""", RegexOption.DOT_MATCHES_ALL)
+            .findAll(java.io.File("src/main/res/$dir/strings.xml").readText()).associate { it.groupValues[1] to it.groupValues[2] }
+
+    @Test fun everyTollCountryHasTextInBothLanguages() {
+        for (dir in listOf("values", "values-de")) {
+            val k = keys(dir)
+            app.kiloquest.nav.TollGuide.rules.values.filter { it.type != app.kiloquest.nav.TollType.NONE }.forEach {
+                assertTrue("$dir fehlt ${app.kiloquest.nav.TollGuide.textKey(it.country)}", app.kiloquest.nav.TollGuide.textKey(it.country) in k)
+            }
+            listOf("toll_intro", "toll_check", "toll_none", "remote_warn", "remote_inside", "emergency_spoken", "emergency_disclaimer").forEach { assertTrue("$dir fehlt $it", it in k) }
+        }
+    }
+}

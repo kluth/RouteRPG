@@ -125,7 +125,11 @@ class MainActivity : ComponentActivity() {
                 ThemeMode.LIGHT -> false
                 ThemeMode.DARK -> true
             }
-            app.kiloquest.ui.KiloQuestTheme(dark = dark) { AppScreen(vm) }
+            app.kiloquest.ui.KiloQuestTheme(dark = dark) {
+                AppScreen(vm)
+                // Notfall-Karte liegt ueber jedem Bildschirm (auch per Sprachbefehl erreichbar)
+                app.kiloquest.ui.EmergencyDialog(settings, vm)
+            }
         }
     }
 }

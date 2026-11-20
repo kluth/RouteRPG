@@ -525,3 +525,7 @@ für Gemini, Test auf echten Geräten und im DHU, Betrieb im Hintergrund.
 ## 49. Hörspiele, Teamziel, Hörserie
 Umgesetzt (Spec 010): vier Audio-Spiele, gemeinsames Teamziel mit Meilensteinen, sechsteilige Hörserie, adaptive Schwierigkeit (`FrustrationGuard`).
 Offen: Tests im Auto mit Kinderstimmen, größere Wortlisten, aufgenommene Kilo-Stimme für die Spielzeilen, weitere Folgen/Serien.
+
+## 50. Maut, Funkloch, Spuren, Notfall
+Umgesetzt (Spec 011): Maut-/Vignetten-Lotse, Funkloch-Vorwarnung über Ortsdichte, offizielle Spuranzeige im Auto, Notfall-Karte. Offen: Test im Auto/DHU,
+Pflege der Maut-Tabelle, echte Abdeckungsdaten (falls eine freie Quelle auftaucht), Satelliten-SOS-Hinweis.

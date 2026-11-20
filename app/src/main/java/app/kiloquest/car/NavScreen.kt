@@ -17,6 +17,7 @@ import androidx.lifecycle.lifecycleScope
 import app.kiloquest.NavController
 import app.kiloquest.R
 import app.kiloquest.UiState
+import app.kiloquest.nav.LaneGuidance
 import app.kiloquest.nav.Maneuver
 import java.util.TimeZone
 import kotlinx.coroutines.launch
@@ -55,7 +56,7 @@ class NavScreen(carContext: CarContext, private val nav: NavController, private 
             val next = route.maneuvers.getOrNull(g.nextManeuverIndex + 1)
             builder.setNavigationInfo(
                 RoutingInfo.Builder()
-                    .setCurrentStep(step(m), distance(g.metersToNextManeuver))
+                    .setCurrentStep(step(m, s.lanes.takeIf { s.settings.laneHints }), distance(g.metersToNextManeuver))
                     .apply { if (next != null && g.nextManeuverIndex + 1 < route.maneuvers.size) setNextStep(step(next)) }
                     .build(),
             )
@@ -71,9 +72,12 @@ class NavScreen(carContext: CarContext, private val nav: NavController, private 
         return builder.build()
     }
 
-    private fun step(m: Maneuver?): Step {
+    private fun step(m: Maneuver?, lanes: LaneGuidance? = null): Step {
         val b = Step.Builder(m?.instruction.orEmpty()).setManeuver(carManeuver(carContext, m))
         m?.streetNames?.firstOrNull()?.let { b.setRoad(it) }
+        // Offizielle Spuranzeige (Host zeichnet sie nativ); schlaegt etwas fehl, bleibt der Schritt ohne Spuren
+        val extra = lanes?.takeIf { it.lanes.size in 2..8 }?.let { runCatching { CarLanes.carLanes(it) to CarLanes.image(it) }.getOrNull() }
+        if (extra != null) { extra.first.forEach { b.addLane(it) }; b.setLanesImage(extra.second) }
         return b.build()
     }
 

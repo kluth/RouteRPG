@@ -75,6 +75,8 @@ fun ParentScreen(state: UiState, nav: NavController) {
             if (state.navigating) {
                 OutlinedButton(onClick = { shooting = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.photo_now)) }
             }
+            OutlinedButton(onClick = nav::openEmergency, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.emergency_open)) }
+            app.kiloquest.ui.TripInfoCard(state)
             app.kiloquest.ui.GamesCard(state, nav)
             app.kiloquest.link.KidsStatusCard(
                 state.points, state.stickers, state.questsDone, state.questsTotal,

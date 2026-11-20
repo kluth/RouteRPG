@@ -87,6 +87,13 @@ import kotlinx.coroutines.currentCoroutineContext
 import app.kiloquest.nav.OfflinePackMeta
 import app.kiloquest.nav.OfflinePackCodec
 import app.kiloquest.nav.VoiceCommands
+import app.kiloquest.nav.Emergency
+import app.kiloquest.nav.Hospital
+import app.kiloquest.nav.RemoteStretch
+import app.kiloquest.nav.RemoteStretches
+import app.kiloquest.nav.RemoteWarner
+import app.kiloquest.nav.TollGuide
+import app.kiloquest.nav.TollRule
 import app.kiloquest.nav.VoiceCommand
 import app.kiloquest.nav.RouteAvoid
 import app.kiloquest.nav.NavIntents
@@ -146,6 +153,9 @@ fun Context.stringByKey(key: String, args: List<String> = emptyList()): String {
     val id = resources.getIdentifier(key, "string", packageName)
     return if (id != 0) getString(id, *args.toTypedArray()) else key
 }
+
+/** Notfall-Karte: Notrufnummer, Standort als Text, naechste Krankenhaeuser (Suche laeuft ggf. noch). */
+data class EmergencyUi(val number: String, val location: String, val hospitals: List<Hospital> = emptyList(), val loading: Boolean = false, val searched: Boolean = false)
 
 /** Vorschlag fuer eine schnellere Route um eine Verkehrsmeldung herum. */
 data class RerouteProposal(
@@ -277,6 +287,12 @@ data class UiState(
     val diaryScreen: Boolean = false,
     /** Laufendes Audio-Spiel (AudioGameType-Name) und gemeinsames Teamziel der Familie. */
     val audioGame: String? = null,
+    /** Reise-Hinweise: Maut/Vignetten der Laender der Route und lange Strecken ohne Ortschaften (moeglicher Funkloch-Bereich). */
+    val tolls: List<TollRule> = emptyList(),
+    val remoteStretches: List<RemoteStretch> = emptyList(),
+    val tripInfoReady: Boolean = false,
+    /** Notfall-Karte (null = geschlossen). */
+    val emergency: EmergencyUi? = null,
     val teamGoal: TeamGoal? = null,
     /** Hoerserie: naechste freigeschaltete Folge (null = heute nichts Neues) und Zahl gehoerter Folgen. */
     val seriesNext: Int? = null,
@@ -562,6 +578,7 @@ class NavController(private val app: Application) : KidsActions {
         countryTimeline = null
         packageJob?.cancel()
         _state.update { it.copy(pkg = PackageState(estimatedMb = estimateMb(l.route))) }
+        scanTripInfo(l.route)
     }
 
     private fun newAdventure(route: Route) {
@@ -744,6 +761,7 @@ class NavController(private val app: Application) : KidsActions {
         if (_state.value.settings.voiceCommands) startCommandListening()
         ensureTeamGoal()
         guard.reset()
+        briefTripInfo()
         // Navigation laeuft auch im Hintergrund/bei gesperrtem Bildschirm weiter (Vordergrunddienst)
         KeepAliveService.start(app)
         _state.value.route?.maneuvers?.firstOrNull()?.instruction?.let(::speak)
@@ -781,6 +799,8 @@ class NavController(private val app: Application) : KidsActions {
             )
         }
         toiletJob?.cancel(); toiletJob = null; toiletResume = null
+        tripInfoJob?.cancel(); remoteWarner = null
+        _state.update { it.copy(tolls = emptyList(), remoteStretches = emptyList(), tripInfoReady = false) }
         stopAudioGame()
         voiceJob?.cancel()
         voice.stop()
@@ -1412,6 +1432,8 @@ class NavController(private val app: Application) : KidsActions {
             VoiceCommand.GAME_STORY -> startAudioGame(AudioGameType.STORY_RELAY)
             VoiceCommand.GAME_STOP -> stopAudioGame()
             VoiceCommand.SERIES -> tellSeries()
+            VoiceCommand.TOLLS -> sayTolls()
+            VoiceCommand.EMERGENCY -> openEmergency()
         }
     }
 
@@ -1633,6 +1655,104 @@ class NavController(private val app: Application) : KidsActions {
         kiloClips.stop()
         if (!kiloClips.play(text)) tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "kq-series-${System.nanoTime()}")
     }
+
+
+    // ---------------------------------------------------------------- Reise-Hinweise: Maut/Vignette, Funkloch, Notfall
+
+    private var tripInfoJob: Job? = null
+    private var remoteWarner: RemoteWarner? = null
+    private var tripBriefed = false
+
+    /** Laender der Route (alle ~80 km, meist ohne Netz ueber die Grobschaetzung) fuer Maut-Hinweise; Ortschaften fuer die Funkloch-Vorwarnung. */
+    private fun scanTripInfo(route: Route) {
+        tripInfoJob?.cancel(); remoteWarner = null; tripBriefed = false
+        _state.update { it.copy(tolls = emptyList(), remoteStretches = emptyList(), tripInfoReady = false) }
+        tripInfoJob = scope.launch {
+            val codes = ArrayList<String>()
+            for ((_, p) in Corridor.samplePositions(route, 80_000.0)) {
+                val guess = CountryGuess.guess(p.lat, p.lon)
+                val code = guess ?: runCatching { withContext(Dispatchers.IO) { fetchCountryCode(p.lat, p.lon) } }.getOrNull().also { delay(400) }
+                if (code != null) codes += code
+            }
+            _state.update { it.copy(tolls = TollGuide.notices(codes)) }
+
+            // Ortschaften entlang der Route (Overpass, fensterweise). Schlaegt ein Fenster fehl, gibt es keine Aussage (sonst falsche Luecken).
+            val places = ArrayList<Double>()
+            var ok = true
+            var m = 0.0
+            while (m < route.lengthMeters && ok) {
+                val end = minOf(route.lengthMeters, m + 250_000.0)
+                runCatching { RemoteStretches.parsePlaces(withContext(Dispatchers.IO) { fetchOverpass(RemoteStretches.buildQuery(route, m, end)) }, route) }
+                    .onSuccess { places += it }.onFailure { ok = false }
+                m = end
+                delay(1_200)
+            }
+            val stretches = if (ok) RemoteStretches.find(route.lengthMeters, places) else emptyList()
+            remoteWarner = if (ok) RemoteWarner(stretches) else null
+            _state.update { it.copy(remoteStretches = stretches, tripInfoReady = true) }
+        }
+    }
+
+    private fun tollLine(r: TollRule) = app.stringByKey(TollGuide.textKey(r.country))
+
+    /** Beim Start der Fahrt einmal kurz sagen, was gekauft werden muss (Fahrer bekommt nur Audio). */
+    private fun briefTripInfo() {
+        scope.launch {
+            delay(8_000)
+            if (tripBriefed || !_state.value.navigating || gameActive) return@launch
+            val tolls = _state.value.tolls
+            if (tolls.isEmpty()) return@launch
+            tripBriefed = true
+            sayQueued(app.getString(R.string.toll_intro) + " " + tolls.joinToString(" ") { tollLine(it) } + " " + app.getString(R.string.toll_check))
+        }
+    }
+
+    private fun sayQueued(text: String) {
+        if (!_state.value.settings.naviVoice) return
+        tts?.speak(text, TextToSpeech.QUEUE_ADD, null, "kq-info-${System.nanoTime()}")
+    }
+
+    fun sayTolls() {
+        val s = _state.value
+        val tolls = s.tolls
+        when {
+            tolls.isNotEmpty() -> say(app.getString(R.string.toll_intro) + " " + tolls.joinToString(" ") { tollLine(it) } + " " + app.getString(R.string.toll_check))
+            s.tripInfoReady -> say(app.getString(R.string.toll_none))
+            else -> say(app.getString(R.string.toll_checking))
+        }
+    }
+
+    private fun announceRemote(st: RemoteStretch, aheadMeters: Double, along: Double) {
+        val lenKm = (st.lengthMeters / 1000).toInt()
+        val text = if (aheadMeters < 1_000) app.getString(R.string.remote_inside, ((st.endMeters - along) / 1000).toInt().coerceAtLeast(1))
+        else app.getString(R.string.remote_warn, (aheadMeters / 1000).toInt(), lenKm)
+        val hint = if (_state.value.packs.isEmpty()) " " + app.getString(R.string.remote_pack_hint) else ""
+        sayQueued(text + hint)
+    }
+
+    // --- Notfall-Karte
+
+    private fun currentRoadName(): String? {
+        val s = _state.value
+        val idx = (s.guidance?.nextManeuverIndex ?: 0) - 1
+        return s.route?.maneuvers?.getOrNull(idx.coerceAtLeast(0))?.streetNames?.firstOrNull()
+    }
+
+    /** Zeigt die Notfall-Karte (auch per Sprache). Die App waehlt nie selbst; sie nennt Nummer und Standort und sucht Krankenhaeuser. */
+    fun openEmergency() {
+        val pos = _state.value.position
+        val number = Emergency.numberFor(_state.value.country)
+        val loc = if (pos != null) Emergency.locationText(pos, currentRoadName()) else app.getString(R.string.emergency_no_position)
+        _state.update { it.copy(emergency = EmergencyUi(number, loc, loading = pos != null)) }
+        say(app.getString(R.string.emergency_spoken, number))
+        if (pos == null) return
+        scope.launch {
+            val hospitals = runCatching { Emergency.parseHospitals(withContext(Dispatchers.IO) { fetchOverpass(Emergency.hospitalQuery(pos)) }, pos) }.getOrDefault(emptyList())
+            _state.update { st -> st.emergency?.let { st.copy(emergency = it.copy(hospitals = hospitals, loading = false, searched = true)) } ?: st }
+        }
+    }
+
+    fun closeEmergency() = _state.update { it.copy(emergency = null) }
 
     // --- Roadtrip-Fotostory
 
@@ -2376,6 +2496,7 @@ class NavController(private val app: Application) : KidsActions {
             }
             if (res != null) speak(app.getString(res))
         }
+        remoteWarner?.next(along)?.let { (st, ahead) -> announceRemote(st, ahead, along) }
         ensureSpeedWindow(route, along)
     }
 
