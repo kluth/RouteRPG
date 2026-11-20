@@ -168,6 +168,7 @@ data class UiState(
     val country: String? = null,
     val riddles: List<Riddle> = emptyList(),
     val riddleScreen: Boolean = false,
+    val parentScreen: Boolean = false,
     val voiceMode: Boolean = false,
     val voiceAvailable: Boolean = false,
     val listening: Boolean = false,
@@ -430,6 +431,7 @@ class NavController(private val app: Application) {
         _state.update { it.copy(carSimpleMap = on) }
     }
 
+    fun showParent(show: Boolean) = _state.update { it.copy(parentScreen = show) }
     fun showKids(show: Boolean) = _state.update { it.copy(kidsScreen = show) }
 
     fun answerQuest(choice: Int? = null) {

@@ -2,6 +2,7 @@ package app.kiloquest.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -136,9 +137,10 @@ fun EtaBar(remainingMeters: Double, remainingSeconds: Double, onStop: () -> Unit
 
 /** Quests-Knopf mit Kilo (Fuchs); nur fuer Beifahrer gedacht, gross genug zum Treffen. */
 @Composable
-fun QuestsPill(onClick: () -> Unit, modifier: Modifier = Modifier) {
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+fun QuestsPill(onClick: () -> Unit, modifier: Modifier = Modifier, onLongClick: (() -> Unit)? = null) {
     val c = KiloTheme.colors
-    Surface(onClick = onClick, modifier = modifier, shape = RoundedCornerShape(28.dp), color = c.hintContainer, contentColor = c.onHintContainer, shadowElevation = 6.dp) {
+    Surface(modifier = modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick), shape = RoundedCornerShape(28.dp), color = c.hintContainer, contentColor = c.onHintContainer, shadowElevation = 6.dp) {
         Row(Modifier.padding(start = 8.dp, end = 18.dp).size(width = 132.dp, height = 56.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             androidx.compose.foundation.Image(painterResource(R.drawable.kilo_fox), contentDescription = null, modifier = Modifier.size(40.dp))
             Text(stringResource(R.string.kids_open), style = MaterialTheme.typography.titleSmall)
@@ -153,6 +155,7 @@ fun RoutePreviewSheet(
     durationSeconds: Double,
     onStart: () -> Unit,
     onQuests: () -> Unit,
+    onQuestsLong: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     extra: @Composable () -> Unit = {},
 ) {
@@ -174,7 +177,7 @@ fun RoutePreviewSheet(
                     modifier = Modifier.weight(1f).height(56.dp),
                     shape = RoundedCornerShape(18.dp),
                 ) { Text(stringResource(R.string.start_navigation), style = MaterialTheme.typography.titleMedium) }
-                QuestsPill(onQuests)
+                QuestsPill(onQuests, onLongClick = onQuestsLong)
             }
         }
     }

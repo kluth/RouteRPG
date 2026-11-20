@@ -114,7 +114,7 @@ private fun AppScreen(vm: NavController) {
             }
         }
 
-        if (state.navigating && !state.kidsScreen && !state.tripScreen && !state.riddleScreen) {
+        if (state.navigating && !state.kidsScreen && !state.tripScreen && !state.riddleScreen && !state.parentScreen) {
             val g = state.guidance
             val route = state.route
             if (g != null && route != null) {
@@ -124,7 +124,7 @@ private fun AppScreen(vm: NavController) {
                     Modifier.align(Alignment.TopStart).padding(12.dp),
                 )
             }
-            QuestsPill({ vm.showKids(true) }, Modifier.align(Alignment.TopEnd).padding(12.dp))
+            QuestsPill({ vm.showKids(true) }, Modifier.align(Alignment.TopEnd).padding(12.dp), onLongClick = { vm.showParent(true) })
             state.lanes?.let { LaneStrip(it, Modifier.align(Alignment.BottomCenter).padding(bottom = 100.dp)) }
             SpeedSign(
                 limit = state.speedLimit,
@@ -137,9 +137,10 @@ private fun AppScreen(vm: NavController) {
         if (state.kidsScreen) KidsScreen(state, vm)
         if (state.tripScreen) TripScreen(state, vm)
         if (state.riddleScreen) RiddleScreen(state, vm)
+        if (state.parentScreen) ParentScreen(state, vm)
 
         val route = state.route
-        if (route != null && !state.kidsScreen && !state.tripScreen && !state.riddleScreen) {
+        if (route != null && !state.kidsScreen && !state.tripScreen && !state.riddleScreen && !state.parentScreen) {
             if (state.navigating) {
                 val g = state.guidance
                 val remaining = g?.remainingMeters ?: route.lengthMeters
@@ -151,11 +152,12 @@ private fun AppScreen(vm: NavController) {
                     durationSeconds = route.durationSeconds,
                     onStart = vm::startNavigation,
                     onQuests = { vm.showKids(true) },
+                    onQuestsLong = { vm.showParent(true) },
                     modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
                     extra = { PackageLine(state.pkg, vm) },
                 )
             }
-        } else if (!state.kidsScreen && !state.tripScreen && !state.riddleScreen) {
+        } else if (!state.kidsScreen && !state.tripScreen && !state.riddleScreen && !state.parentScreen) {
             Text(
                 text = stringResource(R.string.map_attribution),
                 style = MaterialTheme.typography.labelSmall,
@@ -238,7 +240,7 @@ private fun WeatherCard(state: UiState, vm: NavController) {
 
 /** Offline-Reise-Paket: Knopf mit Groessenschaetzung, Fortschritt, Bereit-Hinweis. */
 @Composable
-private fun PackageLine(pkg: PackageState, vm: NavController) {
+internal fun PackageLine(pkg: PackageState, vm: NavController) {
     when (pkg.phase) {
         PackagePhase.IDLE -> androidx.compose.material3.TextButton(onClick = vm::downloadPackage) {
             Text(stringResource(R.string.pkg_button, pkg.estimatedMb))
@@ -330,6 +332,9 @@ private fun SearchPanel(state: UiState, vm: NavController) {
                 }
                 androidx.compose.material3.OutlinedButton(onClick = { vm.showTrip(true) }, modifier = Modifier.padding(start = 8.dp)) {
                     Text(stringResource(R.string.trip_open))
+                }
+                androidx.compose.material3.OutlinedButton(onClick = { vm.showParent(true) }, modifier = Modifier.padding(start = 8.dp)) {
+                    Text(stringResource(R.string.parent_open))
                 }
             }
             (if (state.results.isEmpty() && query.isBlank()) state.recents else state.results).forEach { place ->

@@ -252,4 +252,8 @@
     <string name="speed_limit_desc">Tempolimit %1$d</string>
     <string name="route_arrival">Ankunft %1$s</string>
     <string name="kilo_intro">Schaut mal raus!</string>
+    <string name="parent_title">Beifahrer-Menü</string>
+    <string name="parent_driver_hears">Der Fahrer hört nur eine kurze Ansage.</string>
+    <string name="parent_hint">Alle Daten bleiben auf dem Gerät. Das Menü öffnet sich mit langem Drücken auf den Quests-Knopf.</string>
+    <string name="parent_open">Beifahrer</string>
 </resources>

@@ -252,4 +252,8 @@
     <string name="speed_limit_desc">Speed limit %1$d</string>
     <string name="route_arrival">arrival %1$s</string>
     <string name="kilo_intro">Look outside!</string>
+    <string name="parent_title">Co-driver menu</string>
+    <string name="parent_driver_hears">The driver only hears a short message.</string>
+    <string name="parent_hint">Everything stays on this device. Long-press the Quests button to open this menu.</string>
+    <string name="parent_open">Co-driver</string>
 </resources>

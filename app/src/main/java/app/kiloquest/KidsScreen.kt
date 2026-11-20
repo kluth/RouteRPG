@@ -33,9 +33,6 @@ import app.kiloquest.game.StickerBook
 @Composable
 fun KidsScreen(state: UiState, nav: NavController) {
     val ctx = LocalContext.current
-    val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) nav.setVoiceMode(true)
-    }
     Surface(Modifier.fillMaxSize(), color = app.kiloquest.ui.kidsBackground(state.ageBand)) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
@@ -55,35 +52,6 @@ fun KidsScreen(state: UiState, nav: NavController) {
             }
 
             if (state.players > 1) Scoreboard(state)
-
-            if (!state.navigating) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Switch(checked = state.sicknessMode, onCheckedChange = nav::setSicknessMode)
-                    Text(stringResource(R.string.kids_sickness_mode), style = MaterialTheme.typography.titleMedium)
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Switch(
-                        checked = state.voiceMode,
-                        enabled = state.voiceAvailable,
-                        onCheckedChange = { on ->
-                            if (!on) nav.setVoiceMode(false)
-                            else if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) ==
-                                android.content.pm.PackageManager.PERMISSION_GRANTED
-                            ) nav.setVoiceMode(true)
-                            else micPermission.launch(android.Manifest.permission.RECORD_AUDIO)
-                        },
-                    )
-                    Text(stringResource(R.string.voice_mode), style = MaterialTheme.typography.titleMedium)
-                }
-                if (!state.voiceAvailable) Text(stringResource(R.string.voice_unavailable), style = MaterialTheme.typography.bodySmall)
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Switch(checked = state.carSimpleMap, onCheckedChange = nav::setCarSimpleMap)
-                    Text(stringResource(R.string.car_simple_map), style = MaterialTheme.typography.titleMedium)
-                }
-                Text(stringResource(R.string.car_simple_map_hint), style = MaterialTheme.typography.bodySmall)
-                AgePicker(state.ageBand, nav::setAgeBand)
-                PlayerPicker(state.players, nav::setPlayers)
-            }
 
             val q = state.quest
             val fb = state.feedback
@@ -155,11 +123,6 @@ fun KidsScreen(state: UiState, nav: NavController) {
             Album(state.album)
             Text(stringResource(R.string.kids_total, state.totalPoints), style = MaterialTheme.typography.bodyMedium)
 
-            if (!state.navigating) {
-                OutlinedButton(onClick = { nav.showKids(false); nav.showRiddles(true) }, modifier = Modifier.fillMaxWidth()) {
-                    Text(stringResource(R.string.riddle_open))
-                }
-            }
             OutlinedButton(onClick = { nav.showKids(false) }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.kids_back))
             }
@@ -168,7 +131,7 @@ fun KidsScreen(state: UiState, nav: NavController) {
 }
 
 @Composable
-private fun AgePicker(selected: AgeBand, onSelect: (AgeBand) -> Unit) {
+fun AgePicker(selected: AgeBand, onSelect: (AgeBand) -> Unit) {
     Text(stringResource(R.string.kids_age), style = MaterialTheme.typography.titleMedium)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         for (band in AgeBand.entries) {
@@ -192,7 +155,7 @@ private fun AgePicker(selected: AgeBand, onSelect: (AgeBand) -> Unit) {
 }
 
 @Composable
-private fun PlayerPicker(selected: Int, onSelect: (Int) -> Unit) {
+fun PlayerPicker(selected: Int, onSelect: (Int) -> Unit) {
     Text(stringResource(R.string.kids_players), style = MaterialTheme.typography.titleMedium)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         for (n in 1..4) {
