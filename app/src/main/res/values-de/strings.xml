@@ -2,4 +2,21 @@
 <resources>
     <string name="app_name">KiloQuest</string>
     <string name="map_attribution">© OpenStreetMap-Mitwirkende · OpenFreeMap · MapLibre</string>
+    <string name="search_hint">Wohin?</string>
+    <string name="search_action">Suchen</string>
+    <string name="start_navigation">Start</string>
+    <string name="stop_navigation">Stopp</string>
+    <string name="route_summary">%1$s · %2$s</string>
+    <string name="remaining_summary">noch %1$s</string>
+    <string name="error_no_position">Noch keine GPS-Position. Bitte kurz warten und erneut versuchen.</string>
+    <string name="error_no_server">Routing-Server nicht konfiguriert (valhalla.url in local.properties).</string>
+    <string name="error_route">Route konnte nicht berechnet werden.</string>
+    <string name="error_search">Suche fehlgeschlagen.</string>
+    <string name="error_no_results">Keine Treffer.</string>
+    <string name="arrived">Sie haben Ihr Ziel erreicht.</string>
+    <string name="rerouting">Route wird neu berechnet.</string>
+    <string name="unit_km">%1$.1f km</string>
+    <string name="unit_m">%1$d m</string>
+    <string name="unit_min">%1$d Min.</string>
+    <string name="unit_h_min">%1$d Std. %2$d Min.</string>
 </resources>

@@ -4,11 +4,12 @@ KiloQuest: Familien-Navi (Android + Android Auto) mit Schnitzeljagd für Kinder 
 
 ## Build & Test
 - Android SDK: `ANDROID_HOME=/opt/android-sdk` (oder `local.properties` mit `sdk.dir=`), JDK 21.
-- Alles prüfen: `./gradlew :game-engine:test :app:assembleDebug :app:lintDebug`
+- Alles prüfen: `./gradlew :game-engine:test :nav-core:test :app:assembleDebug :app:lintDebug`
 - Ein Änderungs-PR muss diese drei Befehle grün haben.
 
 ## Module
 - `:app` – Android-App (Compose, MapLibre). Später `:feature-car` (Car App Library).
+- `:nav-core` – reines Kotlin/JVM: Geometrie, Polyline-Decoder, Valhalla-Request/Parser, Guidance-Engine, Sprachansage-Planer. Keine Android-Abhängigkeiten.
 - `:game-engine` – reines Kotlin/JVM, **keine Android-Abhängigkeiten**, sprachneutral. Muss unit-testbar bleiben.
 
 ## Regeln

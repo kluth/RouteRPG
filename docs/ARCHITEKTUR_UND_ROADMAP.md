@@ -270,3 +270,9 @@ Umsetzung:
 - **Nutzung:** privat, nur Android, kein iOS.
 - **Budget ≈ 0 €:** Backend zunächst minimal. Karte über OpenFreeMap (frei, ohne Key) für Entwicklung und privaten Gebrauch, später Offline-PMTiles. Routing per Valhalla auf eigenem PC oder Always-Free-VM; Verkehrs-Ingest erst in Phase 3. Keine Pflichtkosten vor einer Veröffentlichung.
 - **Gebaut in Phase 0:** Gradle-Monorepo (`:app`, `:game-engine`), MapLibre-Karte, Quest-Generator mit Tests, i18n (EN Standard, DE), CI, `AGENTS.md`, Valhalla-Compose.
+
+## 15. Stand Phase 1 (in Arbeit)
+
+Fertig und getestet (Unit-Tests grün): `:nav-core` mit Geometrie/Projektion, Polyline-Decoder, Valhalla-Anfrage/-Parser, Guidance-Engine (Fortschritt, Off-Route, Ankunft), Ansage-Planer.
+Gebaut, noch nicht auf dem Gerät erprobt: Zielsuche (Photon), Routenabfrage, Routenlinie auf der Karte, Sprachansagen (TTS), Neuberechnung bei Abweichung.
+Offen in Phase 1: Android-Auto-Anbindung (`:feature-car`), Tempolimit/Spurhinweise, Favoriten, Tests im Auto.

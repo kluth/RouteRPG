@@ -12,4 +12,4 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
-      - run: ./gradlew :game-engine:test :app:assembleDebug :app:lintDebug
+      - run: ./gradlew :game-engine:test :nav-core:test :app:assembleDebug :app:lintDebug

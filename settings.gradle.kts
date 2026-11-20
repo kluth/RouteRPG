@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "kiloquest"
-include(":app", ":game-engine")
+include(":app", ":game-engine", ":nav-core")

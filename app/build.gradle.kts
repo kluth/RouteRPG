@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -14,6 +16,13 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
+
+        // Server-Zugang kommt aus local.properties (nicht im Repo): valhalla.url / valhalla.token
+        val local = Properties().apply {
+            rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+        }
+        buildConfigField("String", "VALHALLA_URL", "\"${local.getProperty("valhalla.url", "")}\"")
+        buildConfigField("String", "VALHALLA_TOKEN", "\"${local.getProperty("valhalla.token", "")}\"")
     }
 
     buildTypes {
@@ -26,7 +35,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_21
     }
     kotlinOptions { jvmTarget = "21" }
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
     lint {
         // i18n von Tag 1: harte Strings sind Fehler
         error += "HardcodedText"
@@ -35,9 +47,12 @@ android {
 
 dependencies {
     implementation(project(":game-engine"))
+    implementation(project(":nav-core"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.kotlinx.coroutines.android)
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
     implementation(libs.compose.material3)
