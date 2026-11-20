@@ -95,3 +95,12 @@ suspend fun fetchCountryCode(lat: Double, lon: Double): String? = runCatching {
     val f = JSONObject(body).getJSONArray("features")
     if (f.length() == 0) null else f.getJSONObject(0).getJSONObject("properties").optString("countrycode").takeIf { it.isNotBlank() }
 }.getOrNull()
+
+/** Ortsname (Stadt/Ort/Name) einer Position per Photon-Reverse; null bei Fehler. */
+suspend fun fetchPlaceName(lat: Double, lon: Double, languageCode: String): String? = runCatching {
+    val body = http("https://photon.komoot.io/reverse?lat=$lat&lon=$lon&limit=1&lang=$languageCode")
+    val f = JSONObject(body).getJSONArray("features")
+    if (f.length() == 0) return@runCatching null
+    val pr = f.getJSONObject(0).getJSONObject("properties")
+    listOf("city", "town", "village", "name", "county").firstNotNullOfOrNull { k -> pr.optString(k).takeIf { it.isNotBlank() } }
+}.getOrNull()

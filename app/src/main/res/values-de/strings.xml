@@ -446,4 +446,16 @@
     <string name="corridor_4_hint">Mehr Auswahl, größere Umwege; die Suche wird bei Bedarf automatisch breiter</string>
     <string name="toilet_none_open">Alle Toiletten in der Nähe sind gerade geschlossen.</string>
     <string name="toilet_open_until">geöffnet bis %1$s</string>
+    <string name="set_daily_hours">Fahrzeit pro Tag</string>
+    <string name="set_daily_hours_hint">Wird beim Aufteilen einer langen Route in Tage genutzt</string>
+    <string name="daily_hours_value">%1$d Std.</string>
+    <string name="daily_4_hint">Entspannt, gut für kleine Kinder</string>
+    <string name="daily_6_hint">Angenehm mit regelmäßigen Pausen</string>
+    <string name="daily_8_hint">Üblicher Langstrecken-Tag</string>
+    <string name="daily_10_hint">Lang und anstrengend, nur für Erfahrene</string>
+    <string name="trip_split">Route in Tage aufteilen</string>
+    <string name="trip_split_hint">Teilt die aktuelle Route gleichmäßig nach deiner Tagesfahrzeit auf und ergänzt Übernachtungsorte.</string>
+    <string name="trip_split_one_day">Diese Route passt an einem Tag.</string>
+    <string name="trip_overnight_near">Übernachtung bei %1$s</string>
+    <string name="trip_day_label">Tag %1$d</string>
 </resources>

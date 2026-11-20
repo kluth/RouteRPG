@@ -109,6 +109,12 @@ fun TripScreen(state: UiState, nav: NavController) {
             }
             state.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
 
+            if (state.route != null && state.destination != null && (trip == null || trip.stops.isEmpty())) {
+                Text(stringResource(R.string.trip_split_hint), style = MaterialTheme.typography.bodyMedium)
+                Button(onClick = nav::splitRouteIntoDays, modifier = Modifier.fillMaxWidth(), enabled = !state.busy) {
+                    Text(stringResource(R.string.trip_split))
+                }
+            }
             if (trip != null) {
                 OutlinedButton(onClick = nav::clearTrip, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.trip_clear)) }
             }

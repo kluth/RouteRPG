@@ -34,7 +34,7 @@ import app.kiloquest.ui.SettingSwitch
 import app.kiloquest.ui.SettingsSection
 import app.kiloquest.ui.screenColumn
 
-private enum class Dlg { NONE, CORRIDOR, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES }
+private enum class Dlg { NONE, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES }
 
 /** Einstellungen: alles, was sich dauerhaft einstellen laesst, mit Abfragen vor dem Loeschen. */
 @Composable
@@ -84,6 +84,8 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 SettingSwitch(stringResource(R.string.set_breaks), stringResource(R.string.set_breaks_hint), s.breakSuggestions) { v -> nav.updateSettings { it.copy(breakSuggestions = v) } }
                 SettingDivider()
                 SettingRow(stringResource(R.string.set_toilet_corridor), stringResource(R.string.set_toilet_corridor_hint), value = stringResource(R.string.corridor_km, s.toiletCorridorKm)) { dialog = Dlg.CORRIDOR }
+                SettingDivider()
+                SettingRow(stringResource(R.string.set_daily_hours), stringResource(R.string.set_daily_hours_hint), value = stringResource(R.string.daily_hours_value, s.dailyDriveHours)) { dialog = Dlg.DAILY }
                 SettingDivider()
                 SettingSwitch(stringResource(R.string.set_keep_screen), null, s.keepScreenOn) { v -> nav.updateSettings { it.copy(keepScreenOn = v) } }
             }
@@ -150,6 +152,16 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 Triple(4, stringResource(R.string.corridor_km, 4), stringResource(R.string.corridor_4_hint)),
             ),
             s.toiletCorridorKm, { v -> nav.updateSettings { it.copy(toiletCorridorKm = v) } }, { dialog = Dlg.NONE }, close,
+        )
+        Dlg.DAILY -> ChoiceDialog(
+            stringResource(R.string.set_daily_hours),
+            listOf(
+                Triple(4, stringResource(R.string.daily_hours_value, 4), stringResource(R.string.daily_4_hint)),
+                Triple(6, stringResource(R.string.daily_hours_value, 6), stringResource(R.string.daily_6_hint)),
+                Triple(8, stringResource(R.string.daily_hours_value, 8), stringResource(R.string.daily_8_hint)),
+                Triple(10, stringResource(R.string.daily_hours_value, 10), stringResource(R.string.daily_10_hint)),
+            ),
+            s.dailyDriveHours, { v -> nav.updateSettings { it.copy(dailyDriveHours = v) } }, { dialog = Dlg.NONE }, close,
         )
         Dlg.THEME -> ChoiceDialog(
             stringResource(R.string.set_theme),

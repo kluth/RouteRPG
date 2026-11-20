@@ -24,6 +24,8 @@ data class AppSettings(
     val liveQuests: Boolean = true,
     /** Klo-Alarm: so weit (km) darf ein Halt seitlich von der Route liegen. */
     val toiletCorridorKm: Int = 2,
+    /** Mehrtagesreise: so viele Stunden Fahrzeit pro Tag. */
+    val dailyDriveHours: Int = 8,
 )
 
 internal object SettingsStore {
@@ -43,6 +45,7 @@ internal object SettingsStore {
             breakSuggestions = p.getBoolean(P + "breaks", d.breakSuggestions),
             liveQuests = p.getBoolean(P + "live_quests", d.liveQuests),
             toiletCorridorKm = p.getInt(P + "toilet_corridor", d.toiletCorridorKm).takeIf { it in setOf(1, 2, 4) } ?: d.toiletCorridorKm,
+            dailyDriveHours = p.getInt(P + "daily_hours", d.dailyDriveHours).takeIf { it in setOf(4, 6, 8, 10) } ?: d.dailyDriveHours,
         )
     }
 
@@ -59,6 +62,7 @@ internal object SettingsStore {
             .putBoolean(P + "breaks", s.breakSuggestions)
             .putBoolean(P + "live_quests", s.liveQuests)
             .putInt(P + "toilet_corridor", s.toiletCorridorKm)
+            .putInt(P + "daily_hours", s.dailyDriveHours)
             .apply()
     }
 }

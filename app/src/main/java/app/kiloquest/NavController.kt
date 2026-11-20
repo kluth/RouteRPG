@@ -64,6 +64,7 @@ import app.kiloquest.nav.IncidentMatcher
 import app.kiloquest.nav.LaneAnnouncer
 import app.kiloquest.nav.LegSummary
 import app.kiloquest.nav.TripApi
+import app.kiloquest.nav.DayPlanner
 import app.kiloquest.nav.LaneGuidance
 import app.kiloquest.nav.LaneHint
 import app.kiloquest.nav.LaneParser
@@ -977,6 +978,33 @@ class NavController(private val app: Application) : KidsActions {
         _state.update { it.copy(trip = updated) }
         saveTrip(updated)
         planTrip()
+    }
+
+    /** Teilt die aktuelle Route nach der Tagesfahrzeit in Etappen; Uebernachtungsorte werden per Reverse-Geocoding benannt. */
+    fun splitRouteIntoDays() {
+        val s = _state.value
+        val route = s.route ?: return
+        val dest = s.destination ?: return
+        val origin = s.position ?: return
+        val cuts = DayPlanner.split(route, s.settings.dailyDriveHours * 3600.0)
+        if (cuts.size <= 1) {
+            _state.update { it.copy(error = R.string.trip_split_one_day) }
+            return
+        }
+        scope.launch {
+            val lang = Locale.getDefault().language
+            val stops = cuts.map { c ->
+                if (c.isFinal) dest
+                else {
+                    val n = fetchPlaceName(c.point.lat, c.point.lon, lang) ?: app.getString(R.string.trip_day_label, c.day)
+                    Place(app.getString(R.string.trip_overnight_near, n), c.point)
+                }
+            }
+            val updated = TripState(origin = origin, stops = stops)
+            _state.update { it.copy(trip = updated, error = null) }
+            saveTrip(updated)
+            planTrip()
+        }
     }
 
     fun clearTrip() {
