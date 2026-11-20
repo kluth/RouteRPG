@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -26,6 +27,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -76,6 +81,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Unter Android 15 ist Edge-to-Edge Pflicht; die Oberflaeche haelt selbst Abstand zu den Systemleisten
+        enableEdgeToEdge()
         MapLibre.getInstance(this)
         setContent {
             val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -93,7 +100,20 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun AppScreen(vm: NavController) {
     val state by vm.state.collectAsState()
-    Box(Modifier.fillMaxSize()) {
+    // Waehrend der Navigation bleibt das Display an
+    val view = androidx.compose.ui.platform.LocalView.current
+    androidx.compose.runtime.DisposableEffect(state.navigating) {
+        view.keepScreenOn = state.navigating
+        onDispose { view.keepScreenOn = false }
+    }
+    // Statusleiste (Benachrichtigungen, Uhr) bleibt sichtbar: nichts wird darunter gezeichnet
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .windowInsetsPadding(WindowInsets.systemBars)
+            .imePadding(),
+    ) {
         MapScreen(
             route = state.route?.line?.points,
             position = state.position,
@@ -101,7 +121,7 @@ private fun AppScreen(vm: NavController) {
             incidents = state.incidents.map { it.incident.position },
         )
 
-        Column(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = if (state.navigating) 120.dp else 12.dp, start = 12.dp, end = 12.dp, bottom = 12.dp)) {
+        Column(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = if (state.navigating) (if (app.kiloquest.ui.isCompactWidth()) 100.dp else 120.dp) else 12.dp, start = 12.dp, end = 12.dp, bottom = 12.dp)) {
             if (!state.navigating) SearchPanel(state, vm)
             state.proposal?.let { ProposalCard(it, vm) }
             if (state.proposal == null) BreakCard(state, vm)
@@ -121,10 +141,10 @@ private fun AppScreen(vm: NavController) {
                 ManeuverCard(
                     route.maneuvers.getOrNull(g.nextManeuverIndex),
                     g.metersToNextManeuver,
-                    Modifier.align(Alignment.TopStart).padding(12.dp),
+                    Modifier.align(Alignment.TopStart).padding(12.dp).then(if (app.kiloquest.ui.isCompactWidth()) Modifier.fillMaxWidth() else Modifier),
                 )
             }
-            QuestsPill({ vm.showKids(true) }, Modifier.align(Alignment.TopEnd).padding(12.dp), onLongClick = { vm.showParent(true) })
+            QuestsPill({ vm.showKids(true) }, Modifier.align(if (app.kiloquest.ui.isCompactWidth()) Alignment.CenterEnd else Alignment.TopEnd).padding(12.dp), onLongClick = { vm.showParent(true) })
             state.lanes?.let { LaneStrip(it, Modifier.align(Alignment.BottomCenter).padding(bottom = 100.dp)) }
             SpeedSign(
                 limit = state.speedLimit,
@@ -196,7 +216,7 @@ private fun HintBanner(state: UiState, vm: NavController) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_hint_warning), contentDescription = null)
-            Text(app.kiloquest.ui.hintText(ctx, hint), style = MaterialTheme.typography.titleMedium)
+            Text(app.kiloquest.ui.hintText(ctx, hint), style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
             if (hint.more > 0) Text(stringResource(R.string.hint_more, hint.more), style = MaterialTheme.typography.labelMedium)
         }
     }

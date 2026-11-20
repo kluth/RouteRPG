@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -36,15 +37,20 @@ import app.kiloquest.nav.SpeedProfile
 import java.text.DateFormat
 import java.util.Date
 
+/** Schmale Bildschirme (Hochformat): kleinere Schrift und feste Einzeiler statt unkontrollierter Umbrueche. */
+@Composable
+fun isCompactWidth(): Boolean = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 420
+
 @Composable
 private fun distanceLabel(meters: Double): String =
     if (meters >= 1000) stringResource(R.string.unit_km, meters / 1000.0)
     else stringResource(R.string.unit_m, (meters.coerceAtLeast(0.0) / 10).toInt() * 10)
 
-/** Abbiege-Karte: grosses Symbol, Distanz (36-40 sp, fett) und Strasse. */
+/** Abbiege-Karte: grosses Symbol, Distanz (fett) und Strasse; immer einzeilig, Strasse wird gekuerzt. */
 @Composable
 fun ManeuverCard(maneuver: Maneuver?, metersToGo: Double, modifier: Modifier = Modifier) {
     val c = KiloTheme.colors
+    val compact = isCompactWidth()
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(22.dp),
@@ -52,11 +58,21 @@ fun ManeuverCard(maneuver: Maneuver?, metersToGo: Double, modifier: Modifier = M
         contentColor = c.onNavBanner,
         shadowElevation = 6.dp,
     ) {
-        Row(Modifier.padding(horizontal = 14.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Icon(painterResource(maneuverIconRes(maneuver?.kind ?: ManeuverKind.STRAIGHT)), contentDescription = null, modifier = Modifier.size(60.dp))
-            Column {
-                Text(distanceLabel(metersToGo), style = MaterialTheme.typography.displayMedium)
-                maneuver?.streetNames?.firstOrNull()?.let { Text(it, style = MaterialTheme.typography.titleMedium, maxLines = 1) }
+        Row(Modifier.padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Icon(painterResource(maneuverIconRes(maneuver?.kind ?: ManeuverKind.STRAIGHT)), contentDescription = null, modifier = Modifier.size(if (compact) 44.dp else 60.dp))
+            Column(Modifier.weight(1f, fill = false)) {
+                Text(
+                    distanceLabel(metersToGo),
+                    style = MaterialTheme.typography.displayMedium.let { if (compact) it.copy(fontSize = 30.sp, lineHeight = 34.sp) else it },
+                    maxLines = 1, softWrap = false,
+                )
+                maneuver?.streetNames?.firstOrNull()?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.titleMedium.let { st -> if (compact) st.copy(fontSize = 16.sp, lineHeight = 20.sp) else st },
+                        maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
@@ -116,20 +132,22 @@ fun LaneStrip(g: LaneGuidance, modifier: Modifier = Modifier) {
     }
 }
 
-/** Untere Leiste waehrend der Fahrt: Ankunft, Rest-Strecke, Rest-Zeit und Stopp. */
+/** Untere Leiste waehrend der Fahrt: Ankunft, Rest-Strecke, Rest-Zeit und Stopp (einzeilig, im Hochformat kleiner). */
 @Composable
 fun EtaBar(remainingMeters: Double, remainingSeconds: Double, onStop: () -> Unit, modifier: Modifier = Modifier) {
+    val compact = isCompactWidth()
     val arrival = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(System.currentTimeMillis() + (remainingSeconds * 1000).toLong()))
     val minutes = (remainingSeconds / 60).toInt()
     val duration = if (minutes >= 60) stringResource(R.string.unit_h_min, minutes / 60, minutes % 60) else stringResource(R.string.unit_min, minutes)
     val km = if (remainingMeters >= 1000) stringResource(R.string.unit_km, remainingMeters / 1000.0) else stringResource(R.string.unit_m, remainingMeters.toInt())
+    val style = if (compact) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleLarge
     Surface(modifier, shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 6.dp) {
-        Row(Modifier.padding(start = 20.dp, end = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            Text(arrival, style = MaterialTheme.typography.titleLarge)
-            Text(km, style = MaterialTheme.typography.titleLarge)
-            Text(duration, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-            androidx.compose.material3.TextButton(onClick = onStop, modifier = Modifier.width(96.dp).padding(vertical = 4.dp)) {
-                Text(stringResource(R.string.stop_navigation), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.titleSmall)
+        Row(Modifier.padding(start = if (compact) 14.dp else 20.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 20.dp)) {
+            Text(arrival, style = style, maxLines = 1, softWrap = false)
+            Text(km, style = style, maxLines = 1, softWrap = false)
+            Text(duration, style = style, maxLines = 1, softWrap = false, modifier = Modifier.weight(1f))
+            androidx.compose.material3.TextButton(onClick = onStop, modifier = Modifier.padding(vertical = 4.dp)) {
+                Text(stringResource(R.string.stop_navigation), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.titleSmall, maxLines = 1, softWrap = false)
             }
         }
     }
@@ -141,9 +159,9 @@ fun EtaBar(remainingMeters: Double, remainingSeconds: Double, onStop: () -> Unit
 fun QuestsPill(onClick: () -> Unit, modifier: Modifier = Modifier, onLongClick: (() -> Unit)? = null) {
     val c = KiloTheme.colors
     Surface(modifier = modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick), shape = RoundedCornerShape(28.dp), color = c.hintContainer, contentColor = c.onHintContainer, shadowElevation = 6.dp) {
-        Row(Modifier.padding(start = 8.dp, end = 18.dp).size(width = 132.dp, height = 56.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(Modifier.padding(start = 8.dp, end = 16.dp).height(56.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             androidx.compose.foundation.Image(painterResource(R.drawable.kilo_fox), contentDescription = null, modifier = Modifier.size(40.dp))
-            Text(stringResource(R.string.kids_open), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.kids_open), style = MaterialTheme.typography.titleSmall, maxLines = 1, softWrap = false)
         }
     }
 }
@@ -165,10 +183,18 @@ fun RoutePreviewSheet(
     val arrival = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(System.currentTimeMillis() + (durationSeconds * 1000).toLong()))
     Surface(modifier, shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 12.dp) {
         Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            val compact = isCompactWidth()
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(duration, style = MaterialTheme.typography.displayMedium)
-                Text(km, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(stringResource(R.string.route_arrival, arrival), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    duration,
+                    style = MaterialTheme.typography.displayMedium.let { if (compact) it.copy(fontSize = 30.sp, lineHeight = 34.sp) else it },
+                    maxLines = 1, softWrap = false,
+                )
+                Column(Modifier.weight(1f)) {
+                    val sub = if (compact) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.titleMedium
+                    Text(km, style = sub, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, softWrap = false)
+                    Text(stringResource(R.string.route_arrival, arrival), style = sub, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, softWrap = false)
+                }
             }
             extra()
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
