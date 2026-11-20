@@ -54,6 +54,9 @@ object QuestCatalog {
         QuestTemplate("nature", QuestType.NATURE, setOf(MINI, EXPLORER, PRO), NatureSpotting.PENDING_KEY),
         QuestTemplate("nature_2", QuestType.NATURE, setOf(MINI, EXPLORER, PRO), NatureSpotting.PENDING_KEY),
         // Platzhalter: Wort-Quiz in der Sprache des aktuellen Landes (siehe LanguageCourses); ohne Kurs Rueckfall-Aufgabe
+        // Platzhalter: Himmel (Polarlicht/Mond bei Dunkelheit, sonst Flugzeug ueber euch), siehe Sky.kt
+        QuestTemplate("sky", QuestType.SKY, setOf(MINI, EXPLORER, PRO), PlaneSpotting.PENDING_KEY),
+        QuestTemplate("sky_2", QuestType.SKY, setOf(MINI, EXPLORER, PRO), PlaneSpotting.PENDING_KEY),
         QuestTemplate("lang", QuestType.LANGUAGE, setOf(EXPLORER, PRO), LanguageCourses.PENDING_KEY),
     )
 }

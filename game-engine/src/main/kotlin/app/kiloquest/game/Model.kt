@@ -3,7 +3,7 @@ package app.kiloquest.game
 /** Altersstufen 4-6 / 7-10 / 11-14. */
 enum class AgeBand { MINI, EXPLORER, PRO }
 
-enum class QuestType { SPOTTING, ROUTE_FACT, ALPHABET, STORY, BREAK, QUIZ, NATURE, LANGUAGE }
+enum class QuestType { SPOTTING, ROUTE_FACT, ALPHABET, STORY, BREAK, QUIZ, NATURE, LANGUAGE, SKY }
 
 /** Wie wird eine Quest abgeschlossen? */
 enum class QuestKind {

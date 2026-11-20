@@ -20,7 +20,12 @@ import app.kiloquest.game.QuestGenerator
 import app.kiloquest.game.QuestType
 import app.kiloquest.game.LanguageCourse
 import app.kiloquest.game.LanguageCourses
+import app.kiloquest.game.Aurora
+import app.kiloquest.game.AuroraChance
+import app.kiloquest.game.Moon
 import app.kiloquest.game.NatureSpotting
+import app.kiloquest.game.PlaneSpotting
+import app.kiloquest.game.Sun
 import app.kiloquest.game.Phrase
 import app.kiloquest.game.QuestKind
 import app.kiloquest.game.RouteFacts
@@ -490,6 +495,34 @@ class NavController(private val app: Application) {
             speak(app.getString(R.string.rerouting))
             calculateRoute()
         }
+    }
+
+    // ---------------------------------------------------------------- Himmel & Flugzeuge
+
+    /**
+     * Nachts: Polarlicht-Chance (NOAA Kp, nur noerdlich von 55 Grad) oder Mondphase; tagsueber: Flugzeug in der Naehe
+     * (adsb.lol). Ohne Daten gibt es die Rueckfall-Aufgabe.
+     */
+    private suspend fun skyQuest(q: Quest, pos: LatLon): Quest {
+        val nowSec = System.currentTimeMillis() / 1000
+        val dark = Sun.isDark(pos.lat, pos.lon, nowSec)
+        if (dark) {
+            if (pos.lat >= 55.0) {
+                val kp = runCatching { Aurora.latestKp(fetchUrl("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json")) }.getOrNull()
+                if (Aurora.chance(pos.lat, kp, true) != AuroraChance.NONE && kp != null) {
+                    return q.copy(type = QuestType.SKY, textKey = PlaneSpotting.AURORA_KEY, args = listOf(String.format(Locale.ROOT, "%.1f", kp)))
+                }
+            }
+            val moon = app.stringByKey("moon_" + Moon.phase(nowSec).name.lowercase())
+            return q.copy(type = QuestType.SKY, textKey = PlaneSpotting.MOON_KEY, args = listOf(moon))
+        }
+        val planes = runCatching {
+            PlaneSpotting.parse(fetchUrl(PlaneSpotting.buildUrl(pos.lat, pos.lon)), pos.lat, pos.lon)
+        }.getOrDefault(emptyList())
+        val plane = PlaneSpotting.pick(planes, Random.Default) ?: return RouteFacts.resolve(q, null)
+        val direction = app.stringByKey("dir_" + PlaneSpotting.compass(plane.bearingDegrees).name.lowercase())
+        val km = String.format(Locale.getDefault(), "%.1f", plane.altitudeMeters / 1000.0)
+        return q.copy(type = QuestType.SKY, textKey = PlaneSpotting.PLANE_KEY, args = listOf(PlaneSpotting.typeName(plane.typeCode), direction, km))
     }
 
     // ---------------------------------------------------------------- Laender-Mini-Sprachkurs
@@ -980,6 +1013,7 @@ class NavController(private val app: Application) {
                 }
                 WikiStories.resolve(q, story)
             }
+            q.textKey == PlaneSpotting.PENDING_KEY -> resolveQuest(q) { skyQuest(q, pos) }
             q.textKey == LanguageCourses.PENDING_KEY -> resolveQuest(q) {
                 val course = LanguageCourses.forCountry(_state.value.country)
                 if (course == null) RouteFacts.resolve(q, null) else languageQuest(q, course, taughtPhrases.toSet())

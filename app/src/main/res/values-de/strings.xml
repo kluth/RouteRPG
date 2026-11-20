@@ -185,4 +185,25 @@
     <string name="phrase_no">Nein</string>
     <string name="phrase_water">Wasser</string>
     <string name="phrase_icecream">Eis</string>
+    <string name="sky_pending">Wir schauen in den Himmel …</string>
+    <string name="sky_plane">Schaut nach oben! Ein %1$s fliegt %2$s in etwa %3$s km Höhe. Seht ihr es?</string>
+    <string name="sky_moon">Schaut nach oben: Der Mond ist heute %1$s. Seht ihr ihn?</string>
+    <string name="sky_aurora">Polarlicht-Chance heute Nacht (Kp %1$s)! Schaut nach Norden: Seht ihr grünes Licht am Himmel?</string>
+    <string name="sky_source">Daten: adsb.lol, NOAA SWPC</string>
+    <string name="moon_new">Neumond</string>
+    <string name="moon_waxing_crescent">eine zunehmende Sichel</string>
+    <string name="moon_first_quarter">Halbmond (zunehmend)</string>
+    <string name="moon_waxing_gibbous">zunehmend fast voll</string>
+    <string name="moon_full">Vollmond</string>
+    <string name="moon_waning_gibbous">abnehmend fast voll</string>
+    <string name="moon_last_quarter">Halbmond (abnehmend)</string>
+    <string name="moon_waning_crescent">eine abnehmende Sichel</string>
+    <string name="dir_n">im Norden</string>
+    <string name="dir_ne">im Nordosten</string>
+    <string name="dir_e">im Osten</string>
+    <string name="dir_se">im Südosten</string>
+    <string name="dir_s">im Süden</string>
+    <string name="dir_sw">im Südwesten</string>
+    <string name="dir_w">im Westen</string>
+    <string name="dir_nw">im Nordwesten</string>
 </resources>

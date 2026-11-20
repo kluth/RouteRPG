@@ -185,4 +185,25 @@
     <string name="phrase_no">No</string>
     <string name="phrase_water">Water</string>
     <string name="phrase_icecream">Ice cream</string>
+    <string name="sky_pending">Let us look at the sky…</string>
+    <string name="sky_plane">Look up! A %1$s is flying %2$s of you at about %3$s km altitude. Can you spot it?</string>
+    <string name="sky_moon">Look up: the moon is %1$s tonight. Can you see it?</string>
+    <string name="sky_aurora">Aurora chance tonight (Kp %1$s)! Look north: do you see green light in the sky?</string>
+    <string name="sky_source">Data: adsb.lol, NOAA SWPC</string>
+    <string name="moon_new">a new moon</string>
+    <string name="moon_waxing_crescent">a waxing crescent</string>
+    <string name="moon_first_quarter">a first quarter moon</string>
+    <string name="moon_waxing_gibbous">a waxing gibbous moon</string>
+    <string name="moon_full">a full moon</string>
+    <string name="moon_waning_gibbous">a waning gibbous moon</string>
+    <string name="moon_last_quarter">a last quarter moon</string>
+    <string name="moon_waning_crescent">a waning crescent</string>
+    <string name="dir_n">to the north</string>
+    <string name="dir_ne">to the northeast</string>
+    <string name="dir_e">to the east</string>
+    <string name="dir_se">to the southeast</string>
+    <string name="dir_s">to the south</string>
+    <string name="dir_sw">to the southwest</string>
+    <string name="dir_w">to the west</string>
+    <string name="dir_nw">to the northwest</string>
 </resources>

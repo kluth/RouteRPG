@@ -380,3 +380,12 @@ Gebaut (Build/Lint/Tests grün; nicht auf dem Gerät erprobt, besonders die Spra
 - **Landeserkennung:** alle ca. 10 km per Photon-Reverse-Geocoding; erster erkannter Wert setzt nur das Land, erst ein **Wechsel** (z. B. DE → DK) löst „Willkommen in Dänemark! Auf Dänisch heißt „Hallo" „Hej" …" aus. Danach spricht die App die beiden Wörter in der Landessprache (Sprachausgabe wird dafür kurz umgestellt und bei jeder Navigationsansage sofort zurückgesetzt) und stellt eine Quizfrage dazu (drei Wörter zur Wahl, 15 Punkte).
 - **Quiz-Platzhalter** („lang") im Aufgabenkatalog für Altersstufen 7–14: fragt im aktuellen Land ein noch nicht gelerntes Wort ab, ohne Kurs gibt es eine Rückfall-Aufgabe.
 - Grenzen: Aussprache hängt von den auf dem Handy installierten TTS-Sprachen ab (fehlt die Sprache, wird das Wort nicht gesprochen); Länderzuordnung braucht Netz; Deutsch als Zielsprache und weitere Länder (Frankreich, Italien …) fehlen noch.
+
+## 28. Stand Erweiterung 7: Himmel & Flugzeuge
+
+Gebaut (Build/Lint/Tests grün; Flugzeug- und Kp-Antworten gegen echte Daten vom 20.11.2026 getestet; nicht auf dem Gerät erprobt):
+- **Flugzeuge (tagsüber):** adsb.lol (frei, ohne Schlüssel, Community-ADS-B): „Schaut nach oben! Ein Airbus A320 fliegt im Nordosten in etwa 10,7 km Höhe." Es werden nur Flugzeuge über 1000 m und höchstens 25 km entfernt genommen (aus den 5 nächsten gewürfelt). OpenSky ist von der Entwicklungsumgebung nicht erreichbar und wird nicht genutzt.
+- **Nachts:** Sonnenstand wird lokal berechnet (Dunkelheit = Sonne > 6° unter dem Horizont). Dann entweder **Polarlicht-Chance** (NOAA SWPC Kp-Index, nur nördlich von 55° Breite; Faustregel: Rand des Ovals bei 67° − 2° je Kp; „gut" ab 3° nördlich davon) oder die **Mondphase** (lokal berechnet).
+- **Quellen-Hinweis** („Daten: adsb.lol, NOAA SWPC") in der Kinderansicht.
+- **Nicht umgesetzt:** ISS-Überflüge (Datenquellen erreichbar, aber Sichtbarkeitsberechnung nicht gebaut), Sternbilder/Planeten, Mondhöhe über dem Horizont.
+- Hinweis zum Datenschutz: Für Flugzeuge, Tiere und Geschichten wird die aktuelle Position an die jeweiligen freien Dienste (adsb.lol, iNaturalist, Wikipedia, Overpass, Open-Meteo, Photon) gesendet; ohne Konto/Kennung, nur für den privaten Gebrauch gedacht.
