@@ -277,3 +277,12 @@ Fertig und getestet (Unit-Tests grün): `:nav-core` mit Geometrie/Projektion, Po
 Gebaut, noch nicht auf dem Gerät erprobt: Zielsuche (Photon), Routenabfrage, Routenlinie auf der Karte, Sprachansagen (TTS), Neuberechnung bei Abweichung.
 Android Auto: `KiloQuestCarService` (Kategorie NAVIGATION), `NavScreen` mit `NavigationTemplate` (Abbiegeinfo, Stopp-Button) und Canvas-Karte (Route + Position) auf der Auto-Surface. Handy-UI und Auto teilen den Zustand über `NavController` (Application-Prozess). Gebaut/lint-geprüft, **noch nicht im Auto/DHU getestet**; Host-Validator erlaubt aktuell alle Hosts (nur privat/Sideload).
 Offen in Phase 1: Test mit DHU und im Auto, MapLibre-Karte statt Canvas im Auto, Abbiegepfeile, Tempolimit/Spurhinweise, Favoriten, Zielsuche aus dem Auto.
+
+## 16. Stand Phase 2 (Schnitzeljagd-MVP)
+
+Gebaut (Build, Lint und 15 Unit-Tests grün; **nicht auf dem Gerät erprobt**):
+- `:game-engine`: Quest-Katalog (20 Aufgaben: Spotting, Zählen, Alphabet, Quiz mit Multiple Choice, Bewegungspausen), Generator mit Altersstufen und **Sicherheitsregel** (keine Quest im Umkreis von 300 m um eine Abbiegung), `AdventureSession` (aktive Quest, Punkte, Sticker alle 3 Aufgaben, unbeantwortete Quest verfällt).
+- i18n: alle Quest-Texte EN + DE als Ressourcen; Test prüft, dass jede Katalog-Aufgabe in jeder Sprachdatei existiert und beide Dateien dieselben Schlüssel haben.
+- App: Kinderansicht („Aufgaben"-Button) mit Altersauswahl, Punkten, Stickern und großen Buttons; neue Aufgabe wird zusätzlich per Sprache angesagt (Fahrer bekommt nur Audio). Altersstufe wird gespeichert.
+
+Noch offen für Phase 2: streckenbezogene Aufgaben aus OSM/Wikipedia („Gleich seht ihr einen Fluss"), Sammelalbum/Sticker-Motive, Persistenz der Gesamtpunkte, Team-Modus für Geschwister, Sprachansagen-Priorität gegenüber Navigationsansagen.

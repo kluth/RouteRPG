@@ -11,6 +11,12 @@ import android.os.Looper
 import android.speech.tts.TextToSpeech
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
+import android.content.Context
+import app.kiloquest.game.AdventureSession
+import app.kiloquest.game.AgeBand
+import app.kiloquest.game.Quest
+import app.kiloquest.game.QuestCatalog
+import app.kiloquest.game.QuestGenerator
 import app.kiloquest.nav.AnnouncementPlanner
 import app.kiloquest.nav.GuidanceEngine
 import app.kiloquest.nav.GuidanceState
@@ -26,6 +32,15 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+data class QuestFeedback(val correct: Boolean, val points: Int, val correctOptionKey: String?)
+
+/** Text einer String-Ressource per Schluessel (Quest-Texte sind sprachneutral als Schluessel gespeichert). */
+fun Context.stringByKey(key: String): String {
+    @Suppress("DiscouragedApi")
+    val id = resources.getIdentifier(key, "string", packageName)
+    return if (id != 0) getString(id) else key
+}
+
 data class UiState(
     val results: List<Place> = emptyList(),
     val destination: Place? = null,
@@ -35,12 +50,26 @@ data class UiState(
     val position: LatLon? = null,
     val busy: Boolean = false,
     @StringRes val error: Int? = null,
+    val quest: Quest? = null,
+    val feedback: QuestFeedback? = null,
+    val points: Int = 0,
+    val stickers: Int = 0,
+    val questsDone: Int = 0,
+    val questsTotal: Int = 0,
+    val ageBand: AgeBand = AgeBand.EXPLORER,
+    val kidsScreen: Boolean = false,
 )
 
 /** Gemeinsamer Navigationszustand fuer Handy-UI und Android-Auto (lebt im Application-Prozess). */
 class NavController(private val app: Application) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private val _state = MutableStateFlow(UiState())
+    private val prefs = app.getSharedPreferences("kq", Context.MODE_PRIVATE)
+    private val generator = QuestGenerator(QuestCatalog.default)
+    private var adventure: AdventureSession? = null
+
+    private val _state = MutableStateFlow(
+        UiState(ageBand = runCatching { AgeBand.valueOf(prefs.getString("age", null) ?: "EXPLORER") }.getOrDefault(AgeBand.EXPLORER)),
+    )
     val state: StateFlow<UiState> = _state
 
     private val locationManager = app.getSystemService(LocationManager::class.java)
@@ -109,12 +138,57 @@ class NavController(private val app: Application) {
             }.onSuccess { route ->
                 engine = GuidanceEngine(route)
                 planner = AnnouncementPlanner(route)
+                // Abenteuer nur beim ersten Berechnen anlegen, nicht bei Neuberechnung unterwegs
+                if (adventure == null || !_state.value.navigating) newAdventure(route)
                 _state.update { it.copy(route = route, busy = false, guidance = null) }
             }.onFailure {
                 _state.update { it.copy(busy = false, error = R.string.error_route) }
             }
         }
     }
+
+    private fun newAdventure(route: Route) {
+        // Keine Quests nahe Abbiegungen (Fahrsicherheit)
+        val quests = generator.generate(
+            routeLengthMeters = route.lengthMeters,
+            ageBand = _state.value.ageBand,
+            seed = System.nanoTime(),
+            avoidMeters = route.maneuvers.map { it.atMeters },
+        )
+        adventure = AdventureSession(quests)
+        _state.update { it.copy(quest = null, feedback = null, points = 0, stickers = 0, questsDone = 0, questsTotal = quests.size) }
+    }
+
+    fun setAgeBand(band: AgeBand) {
+        prefs.edit().putString("age", band.name).apply()
+        _state.update { it.copy(ageBand = band) }
+        // Vor dem Start neu wuerfeln, damit Altersstufe gilt
+        val r = _state.value.route
+        if (r != null && !_state.value.navigating) newAdventure(r)
+    }
+
+    fun showKids(show: Boolean) = _state.update { it.copy(kidsScreen = show) }
+
+    fun answerQuest(choice: Int? = null) {
+        val q = _state.value.quest ?: return
+        val adv = adventure ?: return
+        val r = adv.answer(choice) ?: return
+        val correctKey = q.optionKeys.getOrNull(r.correctIndex)
+        _state.update {
+            it.copy(
+                quest = null,
+                feedback = QuestFeedback(r.correct, r.pointsAwarded, correctKey),
+                points = adv.points, stickers = adv.stickers, questsDone = adv.completed,
+            )
+        }
+    }
+
+    fun skipQuest() {
+        adventure?.skip()
+        _state.update { it.copy(quest = null) }
+    }
+
+    fun dismissFeedback() = _state.update { it.copy(feedback = null) }
 
     fun startNavigation() {
         if (_state.value.route == null) return
@@ -123,7 +197,10 @@ class NavController(private val app: Application) {
     }
 
     fun stopNavigation() {
-        _state.update { it.copy(navigating = false, route = null, destination = null, guidance = null) }
+        _state.update {
+            it.copy(navigating = false, route = null, destination = null, guidance = null, quest = null, feedback = null, kidsScreen = false)
+        }
+        adventure = null
         engine = null
         planner = null
         tts?.stop()
@@ -142,6 +219,10 @@ class NavController(private val app: Application) {
             return
         }
         planner?.next(g)?.let(::speak)
+        adventure?.onProgress(g.alongMeters)?.let { q ->
+            _state.update { it.copy(quest = q, feedback = null) }
+            speak(app.stringByKey(q.textKey))
+        }
         val now = System.currentTimeMillis()
         if (g.isOffRoute && now - lastReroute > 15_000) {
             lastReroute = now

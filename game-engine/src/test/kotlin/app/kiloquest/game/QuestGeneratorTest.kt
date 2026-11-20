@@ -38,4 +38,32 @@ class QuestGeneratorTest {
             gen.generate(40_000.0, AgeBand.PRO, seed = 42),
         )
     }
+
+    @Test
+    fun `no quest is triggered near a maneuver`() {
+        val avoid = listOf(2_750.0, 7_750.0, 12_750.0, 17_750.0)
+        val quests = gen.generate(20_000.0, AgeBand.EXPLORER, seed = 3, avoidMeters = avoid)
+        assertTrue(quests.isNotEmpty())
+        for (q in quests) {
+            assertTrue(avoid.none { kotlin.math.abs(it - q.triggerMeters) < 300.0 }, "quest at ${q.triggerMeters} too close to maneuver")
+        }
+    }
+
+    @Test
+    fun `catalog covers every age band with quizzes and breaks`() {
+        val gen = QuestGenerator(QuestCatalog.default)
+        for (band in AgeBand.entries) {
+            val quests = gen.generate(300_000.0, band, seed = 5)
+            assertTrue(quests.any { it.type == QuestType.QUIZ }, "$band needs quizzes")
+            assertTrue(quests.any { it.type == QuestType.BREAK }, "$band needs breaks")
+        }
+    }
+
+    @Test
+    fun `catalog choice quests are consistent`() {
+        for (t in QuestCatalog.default.filter { it.kind == QuestKind.CHOICE }) {
+            assertEquals(3, t.optionKeys.size, t.id)
+            assertTrue(t.correctIndex in t.optionKeys.indices, t.id)
+        }
+    }
 }

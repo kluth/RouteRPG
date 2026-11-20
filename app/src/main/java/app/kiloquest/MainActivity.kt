@@ -94,8 +94,10 @@ private fun AppScreen(vm: NavController) {
             }
         }
 
+        if (state.kidsScreen) KidsScreen(state, vm)
+
         val route = state.route
-        if (route != null) {
+        if (route != null && !state.kidsScreen) {
             Surface(
                 tonalElevation = 6.dp,
                 modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = 24.dp, start = 12.dp, end = 12.dp),
@@ -113,14 +115,17 @@ private fun AppScreen(vm: NavController) {
                         stringResource(R.string.route_summary, formatDistance(meters), formatDuration(route.durationSeconds))
                     }
                     Text(summary, style = MaterialTheme.typography.titleMedium)
-                    if (state.navigating) {
-                        Button(onClick = vm::stopNavigation) { Text(stringResource(R.string.stop_navigation)) }
-                    } else {
-                        Button(onClick = vm::startNavigation) { Text(stringResource(R.string.start_navigation)) }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(onClick = { vm.showKids(true) }) { Text(stringResource(R.string.kids_open)) }
+                        if (state.navigating) {
+                            Button(onClick = vm::stopNavigation) { Text(stringResource(R.string.stop_navigation)) }
+                        } else {
+                            Button(onClick = vm::startNavigation) { Text(stringResource(R.string.start_navigation)) }
+                        }
                     }
                 }
             }
-        } else {
+        } else if (!state.kidsScreen) {
             Text(
                 text = stringResource(R.string.map_attribution),
                 style = MaterialTheme.typography.labelSmall,
