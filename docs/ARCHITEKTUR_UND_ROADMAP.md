@@ -372,3 +372,11 @@ Gebaut (Build/Lint/Tests grün, Etappen-Parser gegen echte Valhalla-Antwort gete
 - **Reiseplaner** („Reise"-Button neben der Suche): Etappenziele selbst hinzufügen/entfernen. Eine Valhalla-Anfrage liefert Länge und Dauer je Etappe und die Summe; Etappen über 8 Stunden werden mit „Langer Tag – plant eine zusätzliche Pause ein" markiert.
 - **Jede Etappe = eigene Route mit eigenem Abenteuer:** „Etappe n starten" berechnet die Route von der aktuellen Position zum Etappenziel und startet die Navigation. Am Etappenziel werden die Punkte des Tages gespeichert, die nächste Etappe wird freigegeben und angesagt („Etappe 2 geschafft! … Punkte heute"). Die Reise bleibt über App-Neustarts und mehrere Tage erhalten (lokal gespeichert).
 - Grenzen: Übernachtungsvorschläge (Camping/Hotel) sind noch nicht eingebaut; die Etappenzeiten sind reine Fahrzeit ohne Pausen und Verkehr; Reihenfolge der Ziele ist vom Nutzer vorgegeben (keine Optimierung).
+
+## 27. Stand Erweiterung 6: Länder-Mini-Sprachkurs
+
+Gebaut (Build/Lint/Tests grün; nicht auf dem Gerät erprobt, besonders die Sprachausgabe in der Landessprache):
+- **Kurse** für Schweden, Dänemark, Finnland, Norwegen, Niederlande, Polen mit je 8 Alltagswörtern (Hallo, Danke, Bitte, Auf Wiedersehen, Ja, Nein, Wasser, Eis). Die Bedeutungen sind übersetzte Ressourcen (EN/DE), die Wörter der Landessprache sind Daten.
+- **Landeserkennung:** alle ca. 10 km per Photon-Reverse-Geocoding; erster erkannter Wert setzt nur das Land, erst ein **Wechsel** (z. B. DE → DK) löst „Willkommen in Dänemark! Auf Dänisch heißt „Hallo" „Hej" …" aus. Danach spricht die App die beiden Wörter in der Landessprache (Sprachausgabe wird dafür kurz umgestellt und bei jeder Navigationsansage sofort zurückgesetzt) und stellt eine Quizfrage dazu (drei Wörter zur Wahl, 15 Punkte).
+- **Quiz-Platzhalter** („lang") im Aufgabenkatalog für Altersstufen 7–14: fragt im aktuellen Land ein noch nicht gelerntes Wort ab, ohne Kurs gibt es eine Rückfall-Aufgabe.
+- Grenzen: Aussprache hängt von den auf dem Handy installierten TTS-Sprachen ab (fehlt die Sprache, wird das Wort nicht gesprochen); Länderzuordnung braucht Netz; Deutsch als Zielsprache und weitere Länder (Frankreich, Italien …) fehlen noch.

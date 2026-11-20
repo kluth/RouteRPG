@@ -174,4 +174,15 @@
     <string name="trip_stage_done_speech">Stage %1$d done! You collected %2$d points today.</string>
     <string name="trip_finished">Trip complete – well done!</string>
     <string name="trip_no_position">Planning needs your position. Please wait for GPS.</string>
+    <string name="lang_pending">Let us learn a new word…</string>
+    <string name="lang_question">How do you say \"%1$s\" in %2$s?</string>
+    <string name="lang_welcome">Welcome to %1$s! In %2$s, \"%3$s\" is \"%4$s\" and \"%5$s\" is \"%6$s\".</string>
+    <string name="phrase_hello">Hello</string>
+    <string name="phrase_thanks">Thank you</string>
+    <string name="phrase_please">Please</string>
+    <string name="phrase_goodbye">Goodbye</string>
+    <string name="phrase_yes">Yes</string>
+    <string name="phrase_no">No</string>
+    <string name="phrase_water">Water</string>
+    <string name="phrase_icecream">Ice cream</string>
 </resources>

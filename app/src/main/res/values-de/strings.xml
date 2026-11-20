@@ -174,4 +174,15 @@
     <string name="trip_stage_done_speech">Etappe %1$d geschafft! Ihr habt heute %2$d Punkte gesammelt.</string>
     <string name="trip_finished">Reise geschafft – gut gemacht!</string>
     <string name="trip_no_position">Für die Planung wird eure Position gebraucht. Bitte kurz auf GPS warten.</string>
+    <string name="lang_pending">Wir lernen ein neues Wort …</string>
+    <string name="lang_question">Wie sagt man \"%1$s\" auf %2$s?</string>
+    <string name="lang_welcome">Willkommen in %1$s! Auf %2$s heißt \"%3$s\" \"%4$s\" und \"%5$s\" heißt \"%6$s\".</string>
+    <string name="phrase_hello">Hallo</string>
+    <string name="phrase_thanks">Danke</string>
+    <string name="phrase_please">Bitte</string>
+    <string name="phrase_goodbye">Auf Wiedersehen</string>
+    <string name="phrase_yes">Ja</string>
+    <string name="phrase_no">Nein</string>
+    <string name="phrase_water">Wasser</string>
+    <string name="phrase_icecream">Eis</string>
 </resources>

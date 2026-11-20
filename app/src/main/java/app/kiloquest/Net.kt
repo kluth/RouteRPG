@@ -88,3 +88,10 @@ suspend fun fetchAutobahn(road: String, service: String): String = http(Autobahn
 
 /** Einfacher GET (z. B. Wikipedia-API). */
 suspend fun fetchUrl(url: String): String = http(url)
+
+/** Landescode (ISO 3166, z. B. "SE") der Position per Photon-Reverse-Geocoding; null bei Fehler/ohne Treffer. */
+suspend fun fetchCountryCode(lat: Double, lon: Double): String? = runCatching {
+    val body = http("https://photon.komoot.io/reverse?lat=$lat&lon=$lon&limit=1")
+    val f = JSONObject(body).getJSONArray("features")
+    if (f.length() == 0) null else f.getJSONObject(0).getJSONObject("properties").optString("countrycode").takeIf { it.isNotBlank() }
+}.getOrNull()

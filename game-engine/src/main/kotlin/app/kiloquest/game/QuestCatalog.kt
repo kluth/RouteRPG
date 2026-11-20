@@ -53,5 +53,7 @@ object QuestCatalog {
         // Platzhalter: Tiere aus Beobachtungen der Umgebung (siehe NatureSpotting)
         QuestTemplate("nature", QuestType.NATURE, setOf(MINI, EXPLORER, PRO), NatureSpotting.PENDING_KEY),
         QuestTemplate("nature_2", QuestType.NATURE, setOf(MINI, EXPLORER, PRO), NatureSpotting.PENDING_KEY),
+        // Platzhalter: Wort-Quiz in der Sprache des aktuellen Landes (siehe LanguageCourses); ohne Kurs Rueckfall-Aufgabe
+        QuestTemplate("lang", QuestType.LANGUAGE, setOf(EXPLORER, PRO), LanguageCourses.PENDING_KEY),
     )
 }

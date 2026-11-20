@@ -18,7 +18,11 @@ import app.kiloquest.game.Quest
 import app.kiloquest.game.QuestCatalog
 import app.kiloquest.game.QuestGenerator
 import app.kiloquest.game.QuestType
+import app.kiloquest.game.LanguageCourse
+import app.kiloquest.game.LanguageCourses
 import app.kiloquest.game.NatureSpotting
+import app.kiloquest.game.Phrase
+import app.kiloquest.game.QuestKind
 import app.kiloquest.game.RouteFacts
 import app.kiloquest.game.Story
 import app.kiloquest.game.WikiStories
@@ -74,6 +78,8 @@ data class QuestFeedback(val correct: Boolean, val points: Int, val correctOptio
 
 /** Text einer String-Ressource per Schluessel (Quest-Texte sind sprachneutral als Schluessel gespeichert). */
 fun Context.stringByKey(key: String, args: List<String> = emptyList()): String {
+    // "=Text": direkter Text (z. B. Woerter in der Landessprache), keine Ressource
+    if (key.startsWith("=")) return key.substring(1)
     @Suppress("DiscouragedApi")
     val id = resources.getIdentifier(key, "string", packageName)
     return if (id != 0) getString(id, *args.toTypedArray()) else key
@@ -143,6 +149,8 @@ data class UiState(
     val weather: WeatherSummary? = null,
     val trip: TripState? = null,
     val tripScreen: Boolean = false,
+    /** Land der aktuellen Position (ISO-Code), falls erkannt. */
+    val country: String? = null,
 )
 
 private const val TRAFFIC_REFRESH_MS = 5 * 60_000L
@@ -150,6 +158,7 @@ private const val MAX_TRAFFIC_ROADS = 10
 private const val ANNOUNCE_AHEAD_METERS = 100_000.0
 private const val MIN_SAVED_MINUTES = 5
 private const val MAX_RECENTS = 5
+private const val COUNTRY_CHECK_METERS = 10_000.0
 private const val WEATHER_REFRESH_MS = 30 * 60_000L
 private const val BREAK_ARRIVAL_METERS = 400.0
 private const val SPEED_WINDOW_METERS = 25_000.0
@@ -177,6 +186,9 @@ class NavController(private val app: Application) {
     private var breakPlanning = false
     private var weatherJob: Job? = null
     private var autoStartAfterRoute = false
+    private var countryChecking = false
+    private var lastCountryCheckAlong = -1e9
+    private val taughtPhrases = HashSet<Phrase>()
     private val announcedHazards = HashSet<WeatherHazard>()
     /** Meter, die auf frueheren Routen schon gefahren wurden (Quest-Positionen gelten fuer die Gesamtfahrt). */
     private var questOffset = 0.0
@@ -196,9 +208,21 @@ class NavController(private val app: Application) {
     val state: StateFlow<UiState> = _state
 
     private val locationManager = app.getSystemService(LocationManager::class.java)
+    private val mainHandler = android.os.Handler(Looper.getMainLooper())
     private var tts: TextToSpeech? = TextToSpeech(app) { status ->
-        if (status == TextToSpeech.SUCCESS) tts?.language = Locale.getDefault()
+        if (status == TextToSpeech.SUCCESS) {
+            tts?.language = Locale.getDefault()
+            tts?.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
+                override fun onStart(utteranceId: String?) {}
+                @Deprecated("Deprecated in Java") override fun onError(utteranceId: String?) { mainHandler.post { onSpeechDone(utteranceId) } }
+                override fun onDone(utteranceId: String?) { mainHandler.post { onSpeechDone(utteranceId) } }
+            })
+        }
     }
+    // Fremdsprachige Woerter nacheinander in der Landessprache sprechen (Sprache nur kurz umschalten)
+    private val foreignQueue = ArrayDeque<String>()
+    private var foreignLocale: Locale? = null
+    private var foreignActive = false
     private var engine: GuidanceEngine? = null
     private var planner: AnnouncementPlanner? = null
     private var lastReroute = 0L
@@ -413,13 +437,15 @@ class NavController(private val app: Application) {
                 navigating = false, route = null, destination = null, guidance = null, quest = null, feedback = null,
                 kidsScreen = false, incidents = emptyList(), proposal = null,
                 speedKmh = null, speedLimit = null, overspeed = false, lanes = null,
-                curvy = false, breakProposal = null, breakTarget = null, weather = null,
+                curvy = false, breakProposal = null, breakTarget = null, weather = null, country = null,
             )
         }
         trafficJob?.cancel()
         trafficJob = null
         weatherJob?.cancel()
         weatherJob = null
+        taughtPhrases.clear()
+        lastCountryCheckAlong = -1e9
         announcedIncidents.clear()
         adventure = null
         engine = null
@@ -454,6 +480,7 @@ class NavController(private val app: Application) {
             speakQuest(app.getString(res))
         }
         updateBreaks(loc, g.alongMeters, now0)
+        checkCountry(pos, g.alongMeters)
         // Auf kurvigen Abschnitten keine neue Bildschirm-Aufgabe ausloesen; sie kommt auf gerader Strecke
         if (!curvy) adventure?.onProgress(questOffset + g.alongMeters)?.let { q -> onQuestTriggered(q, pos) }
         arbiter.poll(System.currentTimeMillis(), tts?.isSpeaking == true)?.let(::speakQuest)
@@ -463,6 +490,86 @@ class NavController(private val app: Application) {
             speak(app.getString(R.string.rerouting))
             calculateRoute()
         }
+    }
+
+    // ---------------------------------------------------------------- Laender-Mini-Sprachkurs
+
+    private fun languageName(course: LanguageCourse): String =
+        Locale(course.language).getDisplayLanguage(Locale.getDefault()).replaceFirstChar { it.uppercase() }
+
+    /** Quizfrage "Wie sagt man X auf Schwedisch?" mit drei Woertern als Antwort. */
+    private fun languageQuest(base: Quest, course: LanguageCourse, taught: Set<Phrase>): Quest {
+        val quiz = LanguageCourses.quiz(course, taught, Random.Default)
+        taughtPhrases += quiz.phrase
+        return base.copy(
+            type = QuestType.LANGUAGE,
+            kind = QuestKind.CHOICE,
+            textKey = LanguageCourses.QUESTION_KEY,
+            args = listOf(app.stringByKey(quiz.phrase.textKey), languageName(course)),
+            optionKeys = quiz.options.map { "=$it" },
+            correctIndex = quiz.correctIndex,
+            points = 15,
+        )
+    }
+
+    /** Alle ca. 10 km das Land pruefen (Photon-Reverse); bei Wechsel in ein Land mit Kurs: Willkommen + Quiz. */
+    private fun checkCountry(pos: LatLon, along: Double) {
+        if (countryChecking || along - lastCountryCheckAlong < COUNTRY_CHECK_METERS) return
+        countryChecking = true
+        lastCountryCheckAlong = along
+        scope.launch {
+            try {
+                val code = fetchCountryCode(pos.lat, pos.lon) ?: return@launch
+                val previous = _state.value.country
+                if (code == previous) return@launch
+                _state.update { it.copy(country = code) }
+                if (previous != null) onCountryChanged(code)
+            } finally {
+                countryChecking = false
+            }
+        }
+    }
+
+    private fun onCountryChanged(code: String) {
+        val course = LanguageCourses.forCountry(code) ?: return
+        val words = LanguageCourses.welcomePhrases
+        val countryName = Locale("", code).getDisplayCountry(Locale.getDefault())
+        val intro = app.getString(
+            R.string.lang_welcome, countryName, languageName(course),
+            app.stringByKey(words[0].textKey), course.words.getValue(words[0]),
+            app.stringByKey(words[1].textKey), course.words.getValue(words[1]),
+        )
+        // Willkommen sagen, danach die Woerter in der Landessprache
+        speakQuest(intro, utteranceId = "kq-lang-intro")
+        foreignQueue.clear()
+        words.forEach { foreignQueue.addLast(course.words.getValue(it)) }
+        foreignLocale = Locale(course.language)
+        taughtPhrases.addAll(words)
+        // Quiz zu den eben gelernten Woertern
+        val base = Quest("lang_welcome", LanguageCourses.PENDING_KEY, QuestType.LANGUAGE, questOffset + (_state.value.guidance?.alongMeters ?: 0.0))
+        val q = languageQuest(base, course, Phrase.entries.toSet() - words.toSet())
+        adventure?.forceQuest(q)
+        _state.update { it.copy(quest = q, feedback = null, newSticker = null) }
+    }
+
+    private fun onSpeechDone(id: String?) {
+        if (id == null || !id.startsWith("kq-lang")) return
+        val next = foreignQueue.removeFirstOrNull()
+        if (next == null) { if (foreignActive) endForeign(); return }
+        val loc = foreignLocale ?: return
+        val engine = tts ?: return
+        if (!foreignActive) {
+            if (engine.isLanguageAvailable(loc) < TextToSpeech.LANG_AVAILABLE) { foreignQueue.clear(); return }
+            foreignActive = true
+            engine.language = loc
+        }
+        engine.speak(next, TextToSpeech.QUEUE_ADD, null, "kq-lang-word-${System.nanoTime()}")
+    }
+
+    private fun endForeign() {
+        foreignActive = false
+        foreignQueue.clear()
+        tts?.language = Locale.getDefault()
     }
 
     // ---------------------------------------------------------------- Mehrtagesreise
@@ -839,12 +946,13 @@ class NavController(private val app: Application) {
 
     /** Navigationsansage: hat Vorrang und unterbricht Quest-Ansagen. */
     private fun speak(text: String) {
+        if (foreignActive) endForeign()
         arbiter.navSpoken(System.currentTimeMillis())
         tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "kq-nav-${System.nanoTime()}")
     }
 
-    private fun speakQuest(text: String) {
-        tts?.speak(text, TextToSpeech.QUEUE_ADD, null, "kq-quest-${System.nanoTime()}")
+    private fun speakQuest(text: String, utteranceId: String = "kq-quest-${System.nanoTime()}") {
+        tts?.speak(text, TextToSpeech.QUEUE_ADD, null, utteranceId)
     }
 
     private fun onQuestTriggered(q: Quest, pos: LatLon) {
@@ -871,6 +979,10 @@ class NavController(private val app: Application) {
                     if (story != null) break
                 }
                 WikiStories.resolve(q, story)
+            }
+            q.textKey == LanguageCourses.PENDING_KEY -> resolveQuest(q) {
+                val course = LanguageCourses.forCountry(_state.value.country)
+                if (course == null) RouteFacts.resolve(q, null) else languageQuest(q, course, taughtPhrases.toSet())
             }
             q.textKey == NatureSpotting.PENDING_KEY -> resolveQuest(q) {
                 val lang = Locale.getDefault().language
