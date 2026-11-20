@@ -1614,7 +1614,38 @@ class NavController(private val app: Application) : KidsActions {
         }
     }
 
+    /**
+     * Klo-Alarm: Wird navigiert, wird die naechste Toilette auf dem WEITEREN Reiseverlauf gesucht (nicht dahinter): in einem
+     * Korridor um die Route, erst die naechsten 15 km, dann 40 km, dann 100 km, mit etwas breiterem Korridor. Unter den
+     * besten Kandidaten entscheidet die echte Fahrzeit. Ohne Route oder wenn nichts voraus liegt: Umkreissuche um die Position.
+     */
     private suspend fun findToilet(pos: LatLon): ToiletChoice? {
+        val s = _state.value
+        val route = s.route
+        val along = s.guidance?.alongMeters
+        if (route != null && s.navigating && along != null) findToiletAhead(route, along, pos, s.settings.toiletCorridorKm * 1000.0)?.let { return it }
+        return findToiletAround(pos)
+    }
+
+    private suspend fun findToiletAhead(route: Route, along: Double, pos: LatLon, corridorMeters: Double): ToiletChoice? {
+        val tiers = listOf(15_000.0 to corridorMeters, 40_000.0 to corridorMeters * 1.5, 100_000.0 to corridorMeters * 2)
+        for ((window, corridor) in tiers) {
+            val w = minOf(window, route.lengthMeters - along)
+            if (w < 300.0) break
+            val cands = runCatching { ToiletFinder.parse(fetchOverpass(ToiletFinder.buildRouteQuery(route, along, along + w, corridor.toInt()))) }.getOrDefault(emptyList())
+            val top = ToiletFinder.ahead(cands, route, along, w, corridor).take(8)
+            if (top.isEmpty()) continue
+            val stops = top.map { it.stop }
+            val seconds = runCatching {
+                ToiletFinder.parseMatrix(fetchValhalla("sources_to_targets", ToiletFinder.matrixRequest(pos, stops)), stops.size)
+            }.getOrNull()
+            val choice = ToiletFinder.choose(pos, stops, seconds) ?: continue
+            return choice.copy(aheadMeters = top.firstOrNull { it.stop == choice.stop }?.aheadMeters)
+        }
+        return null
+    }
+
+    private suspend fun findToiletAround(pos: LatLon): ToiletChoice? {
         for (radius in listOf(6_000, 20_000)) {
             val cands = runCatching { ToiletFinder.parse(fetchOverpass(ToiletFinder.buildQuery(pos, radius))) }.getOrDefault(emptyList())
             val near = ToiletFinder.nearest(cands, pos, 8)

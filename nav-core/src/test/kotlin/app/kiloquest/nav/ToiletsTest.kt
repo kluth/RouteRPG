@@ -71,4 +71,40 @@ class ToiletsTest {
         assertNull(offline.seconds)
         assertNotNull(ToiletFinder.choose(pos, listOf(near), emptyList()))
     }
+
+    // Gerade Route von Sueden nach Norden, ca. 22 km lang (0,2 Grad Breite)
+    private val route = Route(Polyline((0..20).map { LatLon(51.0 + it * 0.01, 7.0) }), emptyList(), 22_000.0, 1_000.0)
+    private fun at(kind: ToiletKind, lat: Double, lonOffsetMeters: Double = 0.0) =
+        ToiletStop(kind, null, LatLon(lat, 7.0 + lonOffsetMeters / (111_320.0 * Math.cos(Math.toRadians(lat)))))
+
+    @Test fun routeQueryCoversTheRouteAheadWithCorridor() {
+        val q = ToiletFinder.buildRouteQuery(route, 5_000.0, 15_000.0, 2000)
+        assertTrue("around:2000" in q && "amenity=toilets" in q && "highway=services" in q)
+        assertTrue("51.04" in q && "51.13" in q, "points along the window: $q")
+        assertTrue("51.00" !in q.substringAfter("around:2000,").substringBefore(")"), "nothing behind the window start")
+    }
+
+    @Test fun onlyStopsAheadWithinWindowAndCorridorCount() {
+        val behind = at(ToiletKind.TOILETS, 51.02)        // ca. 2,2 km vom Start, wir sind bei 5 km
+        val near = at(ToiletKind.TOILETS, 51.06)          // vorn
+        val farOff = at(ToiletKind.REST_AREA, 51.08, 3500.0) // zu weit von der Route
+        val tooFar = at(ToiletKind.SERVICES, 51.19)       // ausserhalb des Fensters
+        val list = ToiletFinder.ahead(listOf(behind, near, farOff, tooFar), route, 5_000.0, 12_000.0, 2_000.0)
+        assertEquals(listOf(near), list.map { it.stop })
+        assertTrue(list[0].aheadMeters in 1_200.0..2_200.0, "ahead=${list[0].aheadMeters}")
+    }
+
+    @Test fun nearerAheadWinsAndBigDetoursRankLower() {
+        val a = at(ToiletKind.TOILETS, 51.07, 0.0)        // ca. 7,8 km, auf der Route
+        val b = at(ToiletKind.TOILETS, 51.065, 1800.0)    // etwas frueher, aber 1,8 km Umweg (zaehlt doppelt)
+        val c = at(ToiletKind.TOILETS, 51.10, 0.0)        // spaeter
+        val ranked = ToiletFinder.ahead(listOf(c, b, a), route, 5_000.0, 20_000.0, 2_500.0)
+        assertEquals(listOf(a.position, b.position, c.position), ranked.map { it.stop.position })
+        assertTrue(ranked[1].offsetMeters in 1_500.0..2_100.0)
+    }
+
+    @Test fun duplicatesAreMerged() {
+        val x = at(ToiletKind.TOILETS, 51.06); val y = at(ToiletKind.TOILETS, 51.06005)
+        assertEquals(1, ToiletFinder.ahead(listOf(x, y), route, 0.0, 20_000.0, 1_000.0).size)
+    }
 }

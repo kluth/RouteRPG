@@ -17,7 +17,13 @@ enum class ToiletKind { TOILETS, REST_AREA, SERVICES, FUEL }
 data class ToiletStop(val kind: ToiletKind, val name: String?, val position: LatLon)
 
 /** Ergebnis der Auswahl: Ziel und echte Fahrzeit (Sekunden) dorthin, null wenn nur geschaetzt. */
-data class ToiletChoice(val stop: ToiletStop, val seconds: Double?, val straightMeters: Double)
+data class ToiletChoice(val stop: ToiletStop, val seconds: Double?, val straightMeters: Double, val aheadMeters: Double? = null)
+
+/** Kandidat auf dem weiteren Reiseverlauf: [aheadMeters] bis zur Stelle auf der Route, [offsetMeters] Abstand von der Route (Umweg). */
+data class AheadStop(val stop: ToiletStop, val aheadMeters: Double, val offsetMeters: Double) {
+    /** Je kleiner, desto besser: Strecke bis dorthin plus doppelter Umweg (hin und zurueck). */
+    val score: Double get() = aheadMeters + 2 * offsetMeters
+}
 
 /**
  * Klo-Alarm: naechste Toilette in Fahrzeit (nicht Luftlinie) finden. Overpass liefert Kandidaten rund um die Position,
@@ -34,6 +40,45 @@ object ToiletFinder {
         val at = "${"%.5f".format(java.util.Locale.ROOT, pos.lat)},${"%.5f".format(java.util.Locale.ROOT, pos.lon)}"
         fun q(filter: String) = "nwr(around:$radiusMeters,$at)$filter;"
         return "[out:json][timeout:20];(" + q("[amenity=toilets]") + q("[highway=rest_area]") + q("[highway=services]") + q("[amenity=fuel]") + ");out center tags 120;"
+    }
+
+    /**
+     * Overpass-Anfrage entlang des weiteren Reiseverlaufs: von [fromMeters] bis [toMeters] auf der Route, jeweils im Umkreis
+     * [corridorMeters] um Stuetzpunkte im Abstand von hoechstens der Haelfte des Korridors (so entsteht ein durchgehender Korridor).
+     */
+    fun buildRouteQuery(route: Route, fromMeters: Double, toMeters: Double, corridorMeters: Int): String {
+        val end = minOf(toMeters, route.line.lengthMeters)
+        val step = (corridorMeters * 1.6).coerceAtLeast(800.0)
+        val pts = ArrayList<LatLon>()
+        var m = fromMeters.coerceAtLeast(0.0)
+        while (m < end) { pts += route.line.points[route.line.indexAtMeters(m)]; m += step }
+        pts += route.line.points[route.line.indexAtMeters(end)]
+        val line = pts.distinct().joinToString(",") { "${"%.5f".format(java.util.Locale.ROOT, it.lat)},${"%.5f".format(java.util.Locale.ROOT, it.lon)}" }
+        fun q(filter: String) = "nwr(around:$corridorMeters,$line)$filter;"
+        return "[out:json][timeout:25];(" + q("[amenity=toilets]") + q("[highway=rest_area]") + q("[highway=services]") + q("[amenity=fuel]") + ");out center tags 250;"
+    }
+
+    /**
+     * Nur Kandidaten, die noch vor uns liegen ([minAheadMeters] bis [windowMeters] voraus) und hoechstens [corridorMeters] von der
+     * Route entfernt sind, nach [AheadStop.score] sortiert (naechste zuerst, grosse Umwege hinten). Dubletten entfernt.
+     */
+    fun ahead(
+        candidates: List<ToiletStop>,
+        route: Route,
+        alongMeters: Double,
+        windowMeters: Double,
+        corridorMeters: Double,
+        minAheadMeters: Double = 150.0,
+    ): List<AheadStop> {
+        val out = ArrayList<AheadStop>()
+        for (c in candidates) {
+            val pr = route.line.project(c.position)
+            val ahead = pr.alongMeters - alongMeters
+            if (ahead < minAheadMeters || ahead > windowMeters || pr.offsetMeters > corridorMeters) continue
+            if (out.any { it.stop.kind == c.kind && haversine(it.stop.position, c.position) < 120.0 }) continue
+            out += AheadStop(c, ahead, pr.offsetMeters)
+        }
+        return out.sortedBy { it.score }
     }
 
     fun parse(body: String): List<ToiletStop> {

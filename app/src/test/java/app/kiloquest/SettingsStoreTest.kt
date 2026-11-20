@@ -21,7 +21,7 @@ class SettingsStoreTest {
     @Test fun roundTrip() {
         val s = AppSettings(
             theme = ThemeMode.DARK, naviVoice = false, kiloVoice = false, keepScreenOn = false, showSpeedLimit = false,
-            laneHints = false, detourSuggestions = false, weatherHints = false, breakSuggestions = false, liveQuests = false,
+            laneHints = false, detourSuggestions = false, weatherHints = false, breakSuggestions = false, liveQuests = false, toiletCorridorKm = 4,
         )
         SettingsStore.save(prefs, s)
         assertEquals(s, SettingsStore.load(prefs))
@@ -30,5 +30,10 @@ class SettingsStoreTest {
     @Test fun unknownThemeFallsBackToSystem() {
         prefs.edit().putString("set_theme", "NEON").apply()
         assertEquals(ThemeMode.SYSTEM, SettingsStore.load(prefs).theme)
+    }
+
+    @Test fun invalidCorridorFallsBackToDefault() {
+        prefs.edit().putInt("set_toilet_corridor", 7).apply()
+        assertEquals(2, SettingsStore.load(prefs).toiletCorridorKm)
     }
 }

@@ -34,7 +34,7 @@ import app.kiloquest.ui.SettingSwitch
 import app.kiloquest.ui.SettingsSection
 import app.kiloquest.ui.screenColumn
 
-private enum class Dlg { NONE, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES }
+private enum class Dlg { NONE, CORRIDOR, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES }
 
 /** Einstellungen: alles, was sich dauerhaft einstellen laesst, mit Abfragen vor dem Loeschen. */
 @Composable
@@ -82,6 +82,8 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 SettingSwitch(stringResource(R.string.set_weather), stringResource(R.string.set_weather_hint), s.weatherHints) { v -> nav.updateSettings { it.copy(weatherHints = v) } }
                 SettingDivider()
                 SettingSwitch(stringResource(R.string.set_breaks), stringResource(R.string.set_breaks_hint), s.breakSuggestions) { v -> nav.updateSettings { it.copy(breakSuggestions = v) } }
+                SettingDivider()
+                SettingRow(stringResource(R.string.set_toilet_corridor), stringResource(R.string.set_toilet_corridor_hint), value = stringResource(R.string.corridor_km, s.toiletCorridorKm)) { dialog = Dlg.CORRIDOR }
                 SettingDivider()
                 SettingSwitch(stringResource(R.string.set_keep_screen), null, s.keepScreenOn) { v -> nav.updateSettings { it.copy(keepScreenOn = v) } }
             }
@@ -140,6 +142,15 @@ fun SettingsScreen(state: UiState, nav: NavController) {
     val close = stringResource(R.string.dlg_close)
     when (dialog) {
         Dlg.NONE -> Unit
+        Dlg.CORRIDOR -> ChoiceDialog(
+            stringResource(R.string.set_toilet_corridor),
+            listOf(
+                Triple(1, stringResource(R.string.corridor_km, 1), stringResource(R.string.corridor_1_hint)),
+                Triple(2, stringResource(R.string.corridor_km, 2), stringResource(R.string.corridor_2_hint)),
+                Triple(4, stringResource(R.string.corridor_km, 4), stringResource(R.string.corridor_4_hint)),
+            ),
+            s.toiletCorridorKm, { v -> nav.updateSettings { it.copy(toiletCorridorKm = v) } }, { dialog = Dlg.NONE }, close,
+        )
         Dlg.THEME -> ChoiceDialog(
             stringResource(R.string.set_theme),
             ThemeMode.entries.map { Triple(it, stringResource(themeLabel(it)), null) },

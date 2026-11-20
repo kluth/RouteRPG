@@ -438,4 +438,10 @@
     <string name="dlg_reset_msg">All settings in this screen go back to their defaults. Points, stickers and paired devices stay.</string>
     <string name="privacy_text">KiloQuest has no ads, no tracking and no analytics.\n\nYour position is used only for navigation on this device and is never stored on a server of ours. To plan routes, search places and load traffic, weather and quest content, the app asks free services (your own route server, OpenStreetMap services, Wikipedia, iNaturalist, Open-Meteo, the German Autobahn API) with the places needed for each request. Nothing is linked to a person.\n\nPaired devices exchange the game state and the position of the car only via Bluetooth, and only with devices you allowed. Points, stickers, settings and figures stay on the device.</string>
     <string name="licenses_text">Maps: © OpenStreetMap contributors (ODbL), map tiles from OpenFreeMap, rendering by MapLibre (BSD).\nRouting: Valhalla (MIT).\nStories: Wikipedia (CC BY-SA). Animals: iNaturalist. Weather: Open-Meteo. Traffic: Autobahn GmbH.\n\n3D figures: Kenney (kenney.nl), CC0: Car Kit, Train Kit, Watercraft Kit, Space Kit, Cube Pets, Mini Characters, Blocky Characters; aircraft from OpenGameArt, CC0.\nKilo and emoji: Noto Emoji (Google).\nIcons: Material Symbols (Apache 2.0).\nFonts: Atkinson Hyperlegible and Nunito (SIL OFL 1.1).</string>
+    <string name="set_toilet_corridor">Toilet alert: search corridor</string>
+    <string name="set_toilet_corridor_hint">How far from the route a stop may be</string>
+    <string name="corridor_km">%1$d km</string>
+    <string name="corridor_1_hint">Close to the route, little detour</string>
+    <string name="corridor_2_hint">Balanced (recommended)</string>
+    <string name="corridor_4_hint">More choice, bigger detours; the search widens automatically if nothing is found</string>
 </resources>

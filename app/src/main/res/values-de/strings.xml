@@ -438,4 +438,10 @@
     <string name="dlg_reset_msg">Alle Einstellungen auf diesem Bildschirm gehen auf Standard zurück. Punkte, Sticker und gekoppelte Geräte bleiben.</string>
     <string name="privacy_text">KiloQuest hat keine Werbung, kein Tracking und keine Analyse.\n\nDeine Position wird nur für die Navigation auf diesem Gerät genutzt und nie auf einem Server von uns gespeichert. Um Routen zu planen, Orte zu suchen und Verkehr, Wetter und Aufgabeninhalte zu laden, fragt die App freie Dienste (euren eigenen Routenserver, OpenStreetMap-Dienste, Wikipedia, iNaturalist, Open-Meteo, die Autobahn-API) mit den Orten, die für die jeweilige Anfrage nötig sind. Nichts wird einer Person zugeordnet.\n\nGekoppelte Geräte tauschen Spielstand und Position des Autos nur per Bluetooth aus, und nur mit Geräten, die du erlaubt hast. Punkte, Sticker, Einstellungen und Figuren bleiben auf dem Gerät.</string>
     <string name="licenses_text">Karten: © OpenStreetMap-Mitwirkende (ODbL), Kacheln von OpenFreeMap, Darstellung mit MapLibre (BSD).\nRouting: Valhalla (MIT).\nGeschichten: Wikipedia (CC BY-SA). Tiere: iNaturalist. Wetter: Open-Meteo. Verkehr: Autobahn GmbH.\n\n3D-Figuren: Kenney (kenney.nl), CC0: Car Kit, Train Kit, Watercraft Kit, Space Kit, Cube Pets, Mini Characters, Blocky Characters; Flugzeuge von OpenGameArt, CC0.\nKilo und Emoji: Noto Emoji (Google).\nSymbole: Material Symbols (Apache 2.0).\nSchriften: Atkinson Hyperlegible und Nunito (SIL OFL 1.1).</string>
+    <string name="set_toilet_corridor">Klo-Alarm: Suchkorridor</string>
+    <string name="set_toilet_corridor_hint">Wie weit ein Halt von der Route entfernt sein darf</string>
+    <string name="corridor_km">%1$d km</string>
+    <string name="corridor_1_hint">Nah an der Route, kleiner Umweg</string>
+    <string name="corridor_2_hint">Ausgewogen (empfohlen)</string>
+    <string name="corridor_4_hint">Mehr Auswahl, größere Umwege; die Suche wird bei Bedarf automatisch breiter</string>
 </resources>

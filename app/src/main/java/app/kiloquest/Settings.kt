@@ -22,6 +22,8 @@ data class AppSettings(
     val breakSuggestions: Boolean = true,
     /** Zusaetzliche Aufgaben, die unterwegs aus dem aktuellen Ort erzeugt werden. */
     val liveQuests: Boolean = true,
+    /** Klo-Alarm: so weit (km) darf ein Halt seitlich von der Route liegen. */
+    val toiletCorridorKm: Int = 2,
 )
 
 internal object SettingsStore {
@@ -40,6 +42,7 @@ internal object SettingsStore {
             weatherHints = p.getBoolean(P + "weather", d.weatherHints),
             breakSuggestions = p.getBoolean(P + "breaks", d.breakSuggestions),
             liveQuests = p.getBoolean(P + "live_quests", d.liveQuests),
+            toiletCorridorKm = p.getInt(P + "toilet_corridor", d.toiletCorridorKm).takeIf { it in setOf(1, 2, 4) } ?: d.toiletCorridorKm,
         )
     }
 
@@ -55,6 +58,7 @@ internal object SettingsStore {
             .putBoolean(P + "weather", s.weatherHints)
             .putBoolean(P + "breaks", s.breakSuggestions)
             .putBoolean(P + "live_quests", s.liveQuests)
+            .putInt(P + "toilet_corridor", s.toiletCorridorKm)
             .apply()
     }
 }
