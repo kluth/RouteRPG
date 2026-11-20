@@ -24,4 +24,4 @@ curl -H "X-Api-Token: <TOKEN>" https://<DOMAIN>/route --data '{"locations":[{"la
 - Alternative ohne öffentliche Domain: Tailscale auf VPS und Handy, Valhalla nur im Tailnet.
 
 ## Stand: Hostinger-VPS (srv1091497)
-Auf dem VPS läuft bereits Traefik, daher ist dort `docker-compose.traefik.yml` deployt (Projekt `kiloquest-valhalla`, 4 GB RAM-Limit, Deutschland). Adresse: `https://valhalla.kluth.cloud`, Zugriff nur mit Header `X-Api-Token` (Token in der Projekt-Umgebung auf dem VPS). Der erste Start baut die Tiles, solange antwortet `/status` noch nicht.
+Auf dem VPS läuft bereits Traefik, daher ist dort `docker-compose.traefik.yml` deployt (Projekt `kiloquest-valhalla`, 4 GB RAM-Limit, Gebiet: NRW, Niedersachsen, Bremen, Hamburg, Schleswig-Holstein, Dänemark, Schweden – also Duisburg bis Lappland). Adresse: `https://valhalla.kluth.cloud`, Zugriff nur mit Header `X-Api-Token` (Token in der Projekt-Umgebung auf dem VPS). Der erste Start baut die Tiles, solange antwortet `/status` noch nicht.

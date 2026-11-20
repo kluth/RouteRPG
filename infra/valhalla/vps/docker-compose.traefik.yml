@@ -12,7 +12,7 @@ services:
     volumes:
       - valhalla-data:/custom_files
     environment:
-      - tile_urls=https://download.geofabrik.de/europe/germany-latest.osm.pbf
+      - tile_urls=https://download.geofabrik.de/europe/germany/nordrhein-westfalen-latest.osm.pbf https://download.geofabrik.de/europe/germany/niedersachsen-latest.osm.pbf https://download.geofabrik.de/europe/germany/bremen-latest.osm.pbf https://download.geofabrik.de/europe/germany/hamburg-latest.osm.pbf https://download.geofabrik.de/europe/germany/schleswig-holstein-latest.osm.pbf https://download.geofabrik.de/europe/denmark-latest.osm.pbf https://download.geofabrik.de/europe/sweden-latest.osm.pbf
       - use_tiles_ignore_pbf=True
       - build_elevation=False
       - build_admins=True
