@@ -33,6 +33,14 @@ data class RerouteDto(val savedMinutes: Int, val blocked: Boolean, val incidentT
 @Serializable
 data class BreakDto(val aheadMeters: Double, val stopText: String)
 
+/** Route fuer die Karte der Kinder: vereinfachte Linie (Polyline, 6 Nachkommastellen) und Ziel; [id] erkennt Neuberechnungen. */
+@Serializable
+data class RouteDto(val id: Long, val encoded: String, val lengthMeters: Double, val destLat: Double? = null, val destLon: Double? = null)
+
+/** Aktuelle Position fuer die Karte (leicht, oft gesendet; getrennt vom Schnappschuss). */
+@Serializable
+data class PosDto(val lat: Double, val lon: Double, val bearing: Float? = null, val alongMeters: Double = 0.0, val routeId: Long = 0)
+
 /** Klo-Alarm: Stand fuer die gekoppelten Geraete. [phase]: SEARCHING, HEADING, ARRIVED oder NONE. */
 @Serializable
 data class ToiletDto(val phase: String, val label: String = "", val seconds: Double? = null, val meters: Double? = null)
@@ -90,6 +98,8 @@ sealed interface HostMsg {
     @Serializable @SerialName("welcome") data class Welcome(val role: Role, val player: Int, val version: Int = PROTOCOL_VERSION) : HostMsg
     @Serializable @SerialName("denied") data class Denied(val reason: DenyReason) : HostMsg
     @Serializable @SerialName("snapshot") data class SnapshotMsg(val snapshot: Snapshot) : HostMsg
+    @Serializable @SerialName("route") data class RouteMsg(val route: RouteDto?) : HostMsg
+    @Serializable @SerialName("pos") data class PositionMsg(val pos: PosDto?) : HostMsg
     @Serializable @SerialName("bye") data object Bye : HostMsg
 }
 

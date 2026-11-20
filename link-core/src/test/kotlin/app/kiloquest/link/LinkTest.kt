@@ -19,7 +19,7 @@ class LinkTest {
     @Test fun hostMessagesRoundTripAndHideCorrectAnswer() {
         val q = QuestDto("quiz_x", "quest_quiz_x", "QUIZ", "CHOICE", listOf("a", "b"), emptyList(), 15, 1200.0)
         val snap = Snapshot(seq = 5, quest = q, scores = listOf(10, 5), plan = listOf(q), reroute = RerouteDto(8, false, "JAM", "A1"))
-        for (m in listOf<HostMsg>(HostMsg.Welcome(Role.KID, 0), HostMsg.Denied(DenyReason.FULL), HostMsg.SnapshotMsg(snap), HostMsg.Bye)) {
+        for (m in listOf<HostMsg>(HostMsg.Welcome(Role.KID, 0), HostMsg.Denied(DenyReason.FULL), HostMsg.SnapshotMsg(snap), HostMsg.RouteMsg(RouteDto(7, "_p~iF~ps|U", 1234.0, 51.0, 7.0)), HostMsg.RouteMsg(null), HostMsg.PositionMsg(PosDto(51.4, 6.7, 90f, 500.0, 7)), HostMsg.PositionMsg(null), HostMsg.Bye)) {
             assertEquals(m, Wire.decodeHost(Wire.encode(m)))
         }
         assertFalse("correct" in Wire.encode(HostMsg.SnapshotMsg(snap)).substringBefore("feedback"), "open quest must not carry the answer")

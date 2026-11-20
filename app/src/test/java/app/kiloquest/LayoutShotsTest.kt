@@ -20,6 +20,7 @@ import app.kiloquest.nav.LatLon
 import app.kiloquest.nav.Maneuver
 import app.kiloquest.nav.Polyline
 import app.kiloquest.nav.Route
+import app.kiloquest.Place
 import app.kiloquest.ui.KiloQuestTheme
 import org.junit.Rule
 import org.junit.Test
@@ -66,7 +67,19 @@ class LayoutShotsTest {
     private val driveNoToilet = driving
     private val miniAlarm = mini.copy(toilet = ToiletState(ToiletPhase.HEADING, "Raststätte", 240.0, 3200.0))
 
-    private fun shot(name: String, w: Int, h: Int, dark: Boolean = false, state: () -> UiState, screen: Boolean = false) {
+    // Kurvige Test-Route (ca. 9 km) fuer die Karte der Kinder
+    private val curvy: List<LatLon> = (0..60).map { i ->
+        val t = i / 60.0
+        LatLon(51.43 + t * 0.07, 6.76 + t * 0.09 + 0.012 * Math.sin(t * 9))
+    }
+    private val mapRoute = Route(Polyline(curvy), emptyList(), lengthMeters = Polyline(curvy).lengthMeters, durationSeconds = 900.0)
+    private val withMap = kids.copy(
+        route = mapRoute, position = curvy[24], bearing = 50f, avatar = "🚀",
+        guidance = GuidanceState(Polyline(curvy).cumulative[24], 0.0, false, 0, 0.0, mapRoute.lengthMeters - Polyline(curvy).cumulative[24], false),
+        destination = Place("Ziel", curvy.last()),
+    )
+
+    private fun shot(name: String, w: Int, h: Int, dark: Boolean = false, state: () -> UiState, screen: Boolean = false, custom: (@androidx.compose.runtime.Composable (UiState) -> Unit)? = null) {
         val app = ApplicationProvider.getApplicationContext<Application>()
         val fake = object : KidsActions {
             override fun answerQuest(choice: Int?) {}
@@ -74,12 +87,13 @@ class LayoutShotsTest {
             override fun dismissFeedback() {}
             override fun showKids(show: Boolean) {}
             override fun requestToilet() {}
+            override fun setAvatar(emoji: String) {}
         }
         val vm by lazy { NavController(app) }
         rule.setContent {
             KiloQuestTheme(dark = dark) {
                 Box(Modifier.fillMaxSize().background(if (dark) Color(0xFF2B3036) else Color(0xFFE5E1D6))) {
-                    if (screen) KidsScreen(state(), fake) else AppOverlays(state(), vm)
+                    if (custom != null) custom(state()) else if (screen) KidsScreen(state(), fake) else AppOverlays(state(), vm)
                 }
             }
         }
@@ -127,4 +141,15 @@ class LayoutShotsTest {
 
     @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
     @Test fun miniAlarmShot() = shot("mini-alarm-390x844", 390, 844, state = { miniAlarm }, screen = true)
+
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun kidsWithMap() = shot("kids-map-390x844", 390, 844, state = { withMap }, screen = true)
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun miniWithMap() = shot("mini-map-390x844", 390, 844, state = { withMap.copy(ageBand = AgeBand.MINI, quest = mini.quest) }, screen = true)
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun mapFullShot() = shot("map-full-390x844", 390, 844, state = { withMap }, custom = { s -> app.kiloquest.ui.KidMapFull(s, {}, {}) })
+    @Config(qualifiers = "w1000dp-h640dp-land-notnight-xxhdpi")
+    @Test fun mapFullTablet() = shot("map-full-1000x640", 1000, 640, state = { withMap }, custom = { s -> app.kiloquest.ui.KidMapFull(s, {}, {}) })
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun avatarPickerShot() = shot("avatar-390x844", 390, 844, state = { withMap }, custom = { s -> app.kiloquest.ui.AvatarPicker(s.avatar, {}, {}) })
 }

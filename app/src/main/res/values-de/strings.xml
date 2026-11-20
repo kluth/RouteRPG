@@ -360,4 +360,21 @@
     <string name="shape_square_orange">Oranges Quadrat</string>
     <string name="shape_triangle_green">Grünes Dreieck</string>
     <string name="mini_read_aloud">Vorlesen</string>
+    <string name="map_live_desc">Live-Karte mit Route und deiner Figur</string>
+    <string name="map_waiting">Die Karte erscheint, sobald die Fahrt startet</string>
+    <string name="map_fullscreen">Karte im Vollbild</string>
+    <string name="map_close">Karte schließen</string>
+    <string name="map_mode_near">Bei uns</string>
+    <string name="map_mode_route">Ganze Route</string>
+    <string name="avatar_title">Wähle deine Figur</string>
+    <string name="avatar_cat_vehicles">Fahrzeuge</string>
+    <string name="avatar_cat_air">Luft, Meer, Weltall</string>
+    <string name="avatar_cat_animals">Tiere</string>
+    <string name="avatar_cat_heroes">Helden &amp; Personen</string>
+    <string name="avatar_cat_fun">Spaß</string>
+    <string name="avatar_custom">Eigenes Emoji</string>
+    <string name="avatar_custom_hint">Ein Emoji eintippen oder einfügen</string>
+    <string name="avatar_apply">Nehmen</string>
+    <string name="avatar_done">Fertig</string>
+    <string name="avatar_invalid">Das ist kein Emoji</string>
 </resources>

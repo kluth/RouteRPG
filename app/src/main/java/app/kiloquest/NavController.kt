@@ -13,6 +13,7 @@ import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import android.content.Context
 import app.kiloquest.game.AdventureSession
+import app.kiloquest.game.Avatars
 import app.kiloquest.nav.ToiletChoice
 import app.kiloquest.nav.ToiletFinder
 import app.kiloquest.nav.ToiletKind
@@ -156,6 +157,8 @@ data class UiState(
     val plan: List<Quest> = emptyList(),
     /** Gekoppeltes Geraet: Zustand kommt vom Hauptgeraet (keine eigene Route). */
     val remote: Boolean = false,
+    /** Figur, die die eigene Position auf der Karte zeigt (Emoji, frei waehlbar). */
+    val avatar: String = Avatars.DEFAULT,
     /** Klo-Alarm: laeuft gerade (Suche, Fahrt zum Halt, Angekommen). */
     val toilet: ToiletState? = null,
     /** Ein Kind (Geraetename) hat "Ich muss mal" gedrueckt. */
@@ -266,6 +269,7 @@ class NavController(private val app: Application) : KidsActions {
         UiState(
             ageBand = runCatching { AgeBand.valueOf(prefs.getString("age", null) ?: "EXPLORER") }.getOrDefault(AgeBand.EXPLORER),
             players = prefs.getInt("players", 1).coerceIn(1, 4),
+            avatar = prefs.getString("avatar", null)?.let { Avatars.sanitizeCustom(it) } ?: Avatars.DEFAULT,
             album = book.collected.toSet(),
             totalPoints = prefs.getInt("total_points", 0),
             recents = loadRecents(),
@@ -460,6 +464,13 @@ class NavController(private val app: Application) : KidsActions {
         val r = _state.value.route
         if (r != null && !_state.value.navigating) newAdventure(r)
         else _state.update { it.copy(players = maxOf(it.players, bands.size)) }
+    }
+
+    /** Figur fuer die eigene Position waehlen (aus dem Katalog oder ein eigenes Emoji); ungueltige Eingaben werden ignoriert. */
+    override fun setAvatar(emoji: String) {
+        val a = Avatars.sanitizeCustom(emoji) ?: return
+        prefs.edit().putString("avatar", a).apply()
+        _state.update { it.copy(avatar = a) }
     }
 
     fun setAgeBand(band: AgeBand) {

@@ -3,6 +3,10 @@ package app.kiloquest.link
 import android.app.Application
 import app.kiloquest.KeepAliveService
 import app.kiloquest.NavController
+import app.kiloquest.nav.LatLon
+import app.kiloquest.nav.PolylineCodec
+import app.kiloquest.nav.Route
+import app.kiloquest.nav.haversine
 import app.kiloquest.UiState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +44,8 @@ class LinkController(private val app: Application, private val nav: NavControlle
     private var pushJob: Job? = null
     private var seq = 0L
     private val lastSent = HashMap<String, String>()
+    private val lastRouteSent = HashMap<String, Long>()
+    private val lastPosSent = HashMap<String, Pair<Long, PosDto?>>()
 
     init { applyKidBands() }
 
@@ -66,7 +72,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
     fun stopHosting() {
         pushJob?.cancel(); pushJob = null
         host.stop()
-        lastSent.clear()
+        lastSent.clear(); lastRouteSent.clear(); lastPosSent.clear()
         _state.update { it.copy(hosting = false, devices = devicesUi()) }
     }
 
@@ -91,7 +97,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
     fun remove(address: String) {
         roster.remove(address); saveDevices(); applyKidBands()
         host.disconnect(address)
-        lastSent.remove(address)
+        lastSent.remove(address); lastRouteSent.remove(address); lastPosSent.remove(address)
         refresh()
     }
 
@@ -99,7 +105,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
 
     override fun onConnected(address: String) { scope.launch { refresh() } }
 
-    override fun onDisconnected(address: String) { scope.launch { lastSent.remove(address); refresh() } }
+    override fun onDisconnected(address: String) { scope.launch { lastSent.remove(address); lastRouteSent.remove(address); lastPosSent.remove(address); refresh() } }
 
     override fun onMessage(address: String, msg: ClientMsg) {
         scope.launch { handle(address, msg) }
@@ -150,8 +156,38 @@ class LinkController(private val app: Application, private val nav: NavControlle
         for (d in roster.devices()) sendSnapshot(d, st)
     }
 
+    /** Route (vereinfacht) einmal je Neuberechnung und Position hoechstens einmal pro Sekunde und nur bei Bewegung. */
+    private fun sendMap(d: Device, st: UiState) {
+        val route = st.route
+        val routeId = route?.let { routeId(it) } ?: 0L
+        if (lastRouteSent[d.address] != routeId) {
+            lastRouteSent[d.address] = routeId
+            val dto = route?.let {
+                val pts = it.line.slice(0.0, it.line.lengthMeters, MAP_POINTS)
+                RouteDto(routeId, PolylineCodec.encode(pts), it.lengthMeters, st.destination?.position?.lat, st.destination?.position?.lon)
+            }
+            host.send(d.address, HostMsg.RouteMsg(dto))
+        }
+        val p = st.position
+        val dto = p?.let { PosDto(it.lat, it.lon, st.bearing, st.guidance?.alongMeters ?: 0.0, routeId) }
+        val now = System.currentTimeMillis()
+        val (at, prev) = lastPosSent[d.address] ?: (0L to null)
+        val moved = prev == null || dto == null || haversine(LatLon(prev.lat, prev.lon), LatLon(dto.lat, dto.lon)) > 5.0 ||
+            bearingChanged(prev.bearing, dto.bearing) || prev.routeId != dto.routeId
+        if (moved && now - at >= 1_000) {
+            lastPosSent[d.address] = now to dto
+            host.send(d.address, HostMsg.PositionMsg(dto))
+        }
+    }
+
+    private fun bearingChanged(a: Float?, b: Float?): Boolean = a != null && b != null && kotlin.math.abs(a - b) > 8f
+
+    private fun routeId(r: Route): Long =
+        (r.line.points.size * 1_000_003L) xor r.lengthMeters.toLong() xor (r.line.points.first().lat * 1e5).toLong()
+
     private fun sendSnapshot(d: Device, st: UiState) {
         if (d.address !in host.connectedAddresses()) return
+        sendMap(d, st)
         val snap = st.toSnapshot(d.role, d.player, ++seq) { nav.stopText(it) }
         // Nur senden, wenn sich etwas geaendert hat (ohne die laufende Nummer verglichen)
         val key = snap.copy(seq = 0).toString()
@@ -185,4 +221,6 @@ class LinkController(private val app: Application, private val nav: NavControlle
             Device(o.getString("a"), o.getString("n"), Role.valueOf(o.getString("r")), o.getInt("p"), o.getString("g"))
         }
     }.getOrDefault(emptyList())
+
+    private companion object { const val MAP_POINTS = 500 }
 }

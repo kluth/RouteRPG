@@ -40,7 +40,16 @@ fun UiState.toSnapshot(role: Role, yourPlayer: Int, seq: Long, stopText: (app.ki
 )
 
 /** Auf dem gekoppelten Geraet: Zustand fuer die vorhandene Kinderansicht; [ownBand] ist das eigene Alter. */
-fun Snapshot.toUiState(ownBand: AgeBand): UiState = UiState(
+fun Snapshot.toUiState(ownBand: AgeBand, ownAvatar: String = app.kiloquest.game.Avatars.DEFAULT, routeDto: RouteDto? = null, posDto: PosDto? = null): UiState = UiState(
+    avatar = ownAvatar,
+    // Karte der Kinder: Route nur als Linie (keine Manoever), Position und Fortschritt vom Hauptgeraet
+    route = routeDto?.takeIf { posDto == null || posDto.routeId == 0L || posDto.routeId == it.id }?.let { r ->
+        app.kiloquest.nav.Route(app.kiloquest.nav.Polyline(app.kiloquest.nav.PolylineCodec.decode(r.encoded)), emptyList(), r.lengthMeters, 0.0)
+    },
+    destination = routeDto?.takeIf { it.destLat != null && it.destLon != null }?.let { app.kiloquest.Place("", app.kiloquest.nav.LatLon(it.destLat!!, it.destLon!!)) },
+    position = posDto?.let { app.kiloquest.nav.LatLon(it.lat, it.lon) },
+    bearing = posDto?.bearing,
+    guidance = posDto?.let { app.kiloquest.nav.GuidanceState(it.alongMeters, 0.0, false, 0, 0.0, (routeDto?.lengthMeters ?: 0.0) - it.alongMeters, false) },
     remote = true,
     navigating = navigating,
     curvy = curvy,

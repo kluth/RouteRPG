@@ -67,7 +67,7 @@ private fun rememberSpeaker(): (String) -> Unit {
 }
 
 @Composable
-fun MiniKids(state: UiState, nav: KidsActions) {
+fun MiniKids(state: UiState, nav: KidsActions, onOpenMap: () -> Unit = {}, onPickAvatar: () -> Unit = {}) {
     val ctx = LocalContext.current
     val speak = rememberSpeaker()
     val c = KiloTheme.colors
@@ -100,6 +100,9 @@ fun MiniKids(state: UiState, nav: KidsActions) {
                 }
                 Box(Modifier.size(64.dp))
             }
+
+            // Kleine Live-Karte mit der eigenen Figur; gross nur auf Wunsch
+            KidMapCard(state, onOpenMap, onPickAvatar, height = 130.dp)
 
             when {
                 q != null -> {

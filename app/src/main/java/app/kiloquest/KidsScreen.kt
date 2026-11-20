@@ -19,6 +19,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import app.kiloquest.ui.screenColumn
 import androidx.compose.ui.platform.LocalContext
@@ -34,12 +36,25 @@ import app.kiloquest.game.StickerBook
  */
 @Composable
 fun KidsScreen(state: UiState, nav: KidsActions) {
+    // Karte nur auf Wunsch im Vollbild, sonst klein; Figur-Wahl liegt darueber
+    var mapFull by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    var picker by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    androidx.compose.foundation.layout.Box(Modifier.fillMaxSize()) {
+        KidsContent(state, nav, { mapFull = true }, { picker = true })
+        if (mapFull) app.kiloquest.ui.KidMapFull(state, { mapFull = false }, { picker = true })
+        if (picker) app.kiloquest.ui.AvatarPicker(state.avatar, nav::setAvatar, { picker = false })
+    }
+}
+
+@Composable
+private fun KidsContent(state: UiState, nav: KidsActions, onOpenMap: () -> Unit, onPickAvatar: () -> Unit) {
     val ctx = LocalContext.current
     // Die Kleinsten (4-6) bekommen eine eigene, riesige Ansicht
-    if (state.ageBand == AgeBand.MINI) { app.kiloquest.ui.MiniKids(state, nav); return }
+    if (state.ageBand == AgeBand.MINI) { app.kiloquest.ui.MiniKids(state, nav, onOpenMap, onPickAvatar); return }
     val win = app.kiloquest.ui.rememberWindowInfo()
     val questPane: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
         app.kiloquest.ui.ToiletStatusCard(state.toilet, {}, showActions = false)
+            app.kiloquest.ui.KidMapCard(state, onOpenMap, onPickAvatar)
             app.kiloquest.ui.KiloSays(stringResource(if (state.quest != null) R.string.kilo_intro else R.string.kids_title))
 
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {

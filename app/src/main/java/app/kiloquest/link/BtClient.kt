@@ -28,6 +28,9 @@ data class ClientState(
     val role: Role? = null,
     val player: Int = 0,
     val snapshot: Snapshot? = null,
+    /** Route und Position fuer die Karte der Kinder (getrennt vom Schnappschuss, damit der klein bleibt). */
+    val route: RouteDto? = null,
+    val pos: PosDto? = null,
     val hostName: String? = null,
 )
 
@@ -140,6 +143,8 @@ class BtClient(private val ctx: Context, private val scope: CoroutineScope) {
                 it.copy(status = when (m.reason) { DenyReason.REFUSED -> ClientStatus.REFUSED; DenyReason.FULL -> ClientStatus.FULL; DenyReason.VERSION -> ClientStatus.VERSION })
             }
             is HostMsg.SnapshotMsg -> _state.update { it.copy(snapshot = m.snapshot) }
+            is HostMsg.RouteMsg -> _state.update { it.copy(route = m.route) }
+            is HostMsg.PositionMsg -> _state.update { it.copy(pos = m.pos) }
             HostMsg.Bye -> { wanted = false; _state.update { ClientState() } }
         }
     }

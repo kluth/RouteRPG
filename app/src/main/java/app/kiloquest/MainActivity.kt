@@ -81,6 +81,21 @@ private const val ROUTE_SOURCE = "route-source"
 private const val ROUTE_LAYER = "route-layer"
 private const val INCIDENT_SOURCE = "incident-source"
 private const val INCIDENT_LAYER = "incident-layer"
+private const val AVATAR_SOURCE = "avatar-source"
+private const val AVATAR_LAYER = "avatar-layer"
+private const val AVATAR_IMAGE = "avatar-image"
+
+/** Emoji als Bild (fuer die Karten-Ebene); die Emoji-Schrift des Geraets zeichnet es. */
+private fun emojiBitmap(emoji: String, px: Int): android.graphics.Bitmap {
+    val bmp = android.graphics.Bitmap.createBitmap(px, px, android.graphics.Bitmap.Config.ARGB_8888)
+    val c = android.graphics.Canvas(bmp)
+    // heller Kreis dahinter, damit die Figur auf jeder Karte zu sehen ist
+    c.drawCircle(px / 2f, px / 2f, px / 2f - 2f, android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = 0xE6FFFFFF.toInt() })
+    val p = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { textSize = px * 0.62f; textAlign = android.graphics.Paint.Align.CENTER }
+    val fm = p.fontMetrics
+    c.drawText(emoji, px / 2f, px / 2f - (fm.ascent + fm.descent) / 2, p)
+    return bmp
+}
 
 class MainActivity : ComponentActivity() {
     private val vm: NavController by lazy { (application as KiloQuestApp).nav }
@@ -132,6 +147,7 @@ private fun AppScreen(vm: NavController) {
             position = state.position,
             follow = state.navigating,
             incidents = state.incidents.map { it.incident.position },
+            avatar = state.avatar,
         )
         AppOverlays(state, vm)
     }
@@ -214,7 +230,7 @@ internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
             if (client.role == app.kiloquest.link.Role.COPILOT) {
                 app.kiloquest.link.CopilotRemoteScreen(snap) { vm.showParent(true) }
             } else if (snap != null) {
-                KidsScreen(snap.toUiStateFor(state.ageBand), app.kiloquest.link.RemoteActions(linkApp.linkClient, vm))
+                KidsScreen(snap.toUiStateFor(state.ageBand, state.avatar, client.route, client.pos), app.kiloquest.link.RemoteActions(linkApp.linkClient, vm))
             }
         }
     }
@@ -450,7 +466,7 @@ private fun formatDuration(seconds: Double): String {
 }
 
 @Composable
-private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean, incidents: List<LatLon>) {
+private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean, incidents: List<LatLon>, avatar: String) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
@@ -481,6 +497,16 @@ private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean, 
                             PropertyFactory.circleRadius(9f),
                             PropertyFactory.circleStrokeColor("#FFFFFF"),
                             PropertyFactory.circleStrokeWidth(2f),
+                        ),
+                    )
+                    // Eigene Position als gewaehlte Figur (Bild wird unten gesetzt)
+                    style.addSource(GeoJsonSource(AVATAR_SOURCE))
+                    style.addLayer(
+                        org.maplibre.android.style.layers.SymbolLayer(AVATAR_LAYER, AVATAR_SOURCE).withProperties(
+                            PropertyFactory.iconImage(AVATAR_IMAGE),
+                            PropertyFactory.iconAllowOverlap(true),
+                            PropertyFactory.iconIgnorePlacement(true),
+                            PropertyFactory.iconSize(0.5f),
                         ),
                     )
                     styleReady = true
@@ -518,6 +544,25 @@ private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean, 
                     incidents.map { Feature.fromGeometry(Point.fromLngLat(it.lon, it.lat)) },
                 ),
             )
+        }
+    }
+
+    // Figur als Bild (Emoji der Emoji-Schrift) und Position
+    LaunchedEffect(avatar, styleReady) {
+        val m = map ?: return@LaunchedEffect
+        if (!styleReady) return@LaunchedEffect
+        m.getStyle { style: Style ->
+            runCatching { style.removeImage(AVATAR_IMAGE) }
+            style.addImage(AVATAR_IMAGE, emojiBitmap(avatar, 128))
+        }
+    }
+    LaunchedEffect(position, styleReady) {
+        val m = map ?: return@LaunchedEffect
+        if (!styleReady) return@LaunchedEffect
+        m.getStyle { style: Style ->
+            val src = style.getSourceAs<GeoJsonSource>(AVATAR_SOURCE) ?: return@getStyle
+            if (position == null) src.setGeoJson(org.maplibre.geojson.FeatureCollection.fromFeatures(emptyList()))
+            else src.setGeoJson(Feature.fromGeometry(Point.fromLngLat(position.lon, position.lat)))
         }
     }
 
