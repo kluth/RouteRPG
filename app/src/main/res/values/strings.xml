@@ -599,4 +599,11 @@
     <string name="kilo_retry_2">Not quite, but good try!</string>
     <string name="kilo_retry_3">That was a tricky one!</string>
     <string name="kilo_retry_4">Good thinking! Now we know.</string>
+    <string name="set_cameras">Speed camera warnings</string>
+    <string name="set_cameras_hint">Why they are off</string>
+    <string name="cameras_off">Off</string>
+    <string name="cameras_info">KiloQuest always shows the speed limit. Warnings about speed cameras are switched off in every country, because the law differs and is changing: in some countries drivers may not use them at all, in others the rules are unclear or disputed. A country is only enabled after a documented legal check. This is not legal advice.</string>
+    <string name="cameras_status_banned">banned for drivers</string>
+    <string name="cameras_status_restricted">only general danger zones</string>
+    <string name="cameras_status_unclear">not clearly settled, stays off</string>
 </resources>

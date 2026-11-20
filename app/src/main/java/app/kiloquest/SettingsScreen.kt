@@ -34,7 +34,7 @@ import app.kiloquest.ui.SettingSwitch
 import app.kiloquest.ui.SettingsSection
 import app.kiloquest.ui.screenColumn
 
-private enum class Dlg { NONE, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES }
+private enum class Dlg { NONE, CAMERAS, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES }
 
 /** Einstellungen: alles, was sich dauerhaft einstellen laesst, mit Abfragen vor dem Loeschen. */
 @Composable
@@ -82,6 +82,8 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 SettingSwitch(stringResource(R.string.set_weather), stringResource(R.string.set_weather_hint), s.weatherHints) { v -> nav.updateSettings { it.copy(weatherHints = v) } }
                 SettingDivider()
                 SettingSwitch(stringResource(R.string.set_breaks), stringResource(R.string.set_breaks_hint), s.breakSuggestions) { v -> nav.updateSettings { it.copy(breakSuggestions = v) } }
+                SettingDivider()
+                SettingRow(stringResource(R.string.set_cameras), stringResource(R.string.set_cameras_hint), value = stringResource(R.string.cameras_off)) { dialog = Dlg.CAMERAS }
                 SettingDivider()
                 SettingRow(stringResource(R.string.set_toilet_corridor), stringResource(R.string.set_toilet_corridor_hint), value = stringResource(R.string.corridor_km, s.toiletCorridorKm)) { dialog = Dlg.CORRIDOR }
                 SettingDivider()
@@ -184,6 +186,19 @@ fun SettingsScreen(state: UiState, nav: NavController) {
         Dlg.RECENTS -> ConfirmDialog(stringResource(R.string.set_clear_recents), stringResource(R.string.dlg_recents_msg), stringResource(R.string.dlg_delete), cancel, onConfirm = nav::clearRecents, onDismiss = { dialog = Dlg.NONE })
         Dlg.MEMORY -> ConfirmDialog(stringResource(R.string.set_reset_memory), stringResource(R.string.dlg_memory_msg), stringResource(R.string.dlg_reset), cancel, onConfirm = nav::resetQuestMemory, onDismiss = { dialog = Dlg.NONE })
         Dlg.RESET -> ConfirmDialog(stringResource(R.string.set_reset_all), stringResource(R.string.dlg_reset_msg), stringResource(R.string.dlg_reset), cancel, onConfirm = nav::resetSettings, onDismiss = { dialog = Dlg.NONE })
+        Dlg.CAMERAS -> {
+            val banned = stringResource(R.string.cameras_status_banned)
+            val restricted = stringResource(R.string.cameras_status_restricted)
+            val unclear = stringResource(R.string.cameras_status_unclear)
+            val rules = app.kiloquest.nav.CameraPolicy.rules.joinToString("\n") { r ->
+                java.util.Locale("", r.country).getDisplayCountry(java.util.Locale.getDefault()) + ": " + when (r.status) {
+                    app.kiloquest.nav.LegalStatus.BANNED -> banned
+                    app.kiloquest.nav.LegalStatus.RESTRICTED -> restricted
+                    app.kiloquest.nav.LegalStatus.UNCLEAR -> unclear
+                }
+            }
+            InfoDialog(stringResource(R.string.set_cameras), stringResource(R.string.cameras_info) + "\n\n" + rules, close) { dialog = Dlg.NONE }
+        }
         Dlg.PRIVACY -> InfoDialog(stringResource(R.string.set_privacy), stringResource(R.string.privacy_text), close) { dialog = Dlg.NONE }
         Dlg.LICENSES -> InfoDialog(stringResource(R.string.set_licenses), stringResource(R.string.licenses_text), close) { dialog = Dlg.NONE }
     }

@@ -599,4 +599,11 @@
     <string name="kilo_retry_2">Nicht ganz, aber gut versucht!</string>
     <string name="kilo_retry_3">Das war knifflig!</string>
     <string name="kilo_retry_4">Gut überlegt! Jetzt wissen wir es.</string>
+    <string name="set_cameras">Blitzerwarnung</string>
+    <string name="set_cameras_hint">Warum sie aus ist</string>
+    <string name="cameras_off">Aus</string>
+    <string name="cameras_info">KiloQuest zeigt immer das Tempolimit. Warnungen vor Geschwindigkeitskontrollen sind in jedem Land ausgeschaltet, weil die Rechtslage unterschiedlich ist und sich ändert: In manchen Ländern dürfen Fahrer sie gar nicht nutzen, in anderen ist die Lage unklar oder umstritten. Ein Land wird erst nach einer dokumentierten Rechtsprüfung freigeschaltet. Das ist keine Rechtsberatung.</string>
+    <string name="cameras_status_banned">für Fahrer verboten</string>
+    <string name="cameras_status_restricted">nur allgemeine Gefahrenzonen</string>
+    <string name="cameras_status_unclear">nicht eindeutig geklärt, bleibt aus</string>
 </resources>

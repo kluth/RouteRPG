@@ -494,3 +494,9 @@ sich ohne Netz öffnen. Für geplante Reisen werden alle Etappen nacheinander ge
 ## 43. Kilo-Stimme
 Feste Kilo-Sätze (Quest-Texte, Antworten für die Kleinsten, Lob/Trost, Sticker) sind vorab aufgenommen und werden offline abgespielt
 (Spec 005). Deutsch und Englisch sind vollständig (je 53 Sätze). Offen: weitere Sprachen, Lob für Navigationsmeilensteine, Geschichten als Audio.
+
+## 44. Blitzer-Länder-Policy
+Umgesetzt: `CameraPolicy` (`:nav-core`) mit Länder-Register, Standard überall AUS; Tests erzwingen Prüfdatum und Rechtsdokument für jede
+Freischaltung und AUS in Ländern mit Verbot. Recherche in `docs/legal/speed-cameras.md` (Stand Juni 2026: kein Land belastbar belegt;
+EuGH C-188/24/C-190/24 vom 16.06.2026). Einstellungen zeigen Erklärung und Status je Land. Die Warnfunktion selbst (OSM-Daten, Audio) wird
+erst gebaut, wenn ein Land nach amtlicher Quelle oder Anwaltsprüfung freigegeben ist.
