@@ -11,6 +11,7 @@ import androidx.car.app.navigation.model.Maneuver
 import androidx.car.app.navigation.model.NavigationTemplate
 import androidx.car.app.navigation.model.RoutingInfo
 import androidx.car.app.navigation.model.Step
+import androidx.car.app.CarToast
 import androidx.lifecycle.lifecycleScope
 import app.kiloquest.NavController
 import app.kiloquest.R
@@ -19,8 +20,18 @@ import kotlinx.coroutines.launch
 /** Karte (Surface) + Abbiegeinfo. Nur erlaubte Templates, keine Spiel-UI (Ablenkungsregeln). */
 class NavScreen(carContext: CarContext, private val nav: NavController) : Screen(carContext) {
 
+    private var lastToastError: Int? = null
+
     init {
-        lifecycleScope.launch { nav.state.collect { invalidate() } }
+        lifecycleScope.launch {
+            nav.state.collect { st ->
+                // Fehler (z. B. keine GPS-Position) auch im Auto sichtbar machen
+                val err = st.error
+                if (err != null && err != lastToastError) CarToast.makeText(carContext, carContext.getString(err), CarToast.LENGTH_LONG).show()
+                lastToastError = err
+                invalidate()
+            }
+        }
     }
 
     override fun onGetTemplate(): Template {
@@ -51,7 +62,23 @@ class NavScreen(carContext: CarContext, private val nav: NavController) : Screen
                     .build(),
             )
         } else {
-            actions.addAction(Action.Builder().setTitle(carContext.getString(R.string.app_name)).build())
+            if (s.route != null) {
+                actions.addAction(
+                    Action.Builder()
+                        .setTitle(carContext.getString(R.string.start_navigation))
+                        .setOnClickListener { nav.startNavigation() }
+                        .build(),
+                )
+            }
+            actions.addAction(
+                Action.Builder()
+                    .setTitle(carContext.getString(R.string.search_action))
+                    .setOnClickListener {
+                        nav.clearResults()
+                        screenManager.push(SearchScreen(carContext, nav))
+                    }
+                    .build(),
+            )
         }
         builder.setActionStrip(actions.build())
 

@@ -278,7 +278,7 @@ private fun SearchPanel(state: UiState, vm: NavController) {
                     Text(stringResource(R.string.search_action))
                 }
             }
-            state.results.forEach { place ->
+            (if (state.results.isEmpty() && query.isBlank()) state.recents else state.results).forEach { place ->
                 Text(
                     place.name,
                     modifier = Modifier.fillMaxWidth().clickable { vm.selectPlace(place) }.padding(vertical = 10.dp),

@@ -104,12 +104,14 @@ data class UiState(
     val speedLimit: Int? = null,
     val overspeed: Boolean = false,
     val lanes: LaneGuidance? = null,
+    val recents: List<Place> = emptyList(),
 )
 
 private const val TRAFFIC_REFRESH_MS = 5 * 60_000L
 private const val MAX_TRAFFIC_ROADS = 10
 private const val ANNOUNCE_AHEAD_METERS = 100_000.0
 private const val MIN_SAVED_MINUTES = 5
+private const val MAX_RECENTS = 5
 private const val SPEED_WINDOW_METERS = 25_000.0
 private const val SPEED_PREFETCH_METERS = 5_000.0
 
@@ -138,6 +140,7 @@ class NavController(private val app: Application) {
             players = prefs.getInt("players", 1).coerceIn(1, 4),
             album = book.collected.toSet(),
             totalPoints = prefs.getInt("total_points", 0),
+            recents = loadRecents(),
         ),
     )
     val state: StateFlow<UiState> = _state
@@ -185,9 +188,28 @@ class NavController(private val app: Application) {
     }
 
     fun selectPlace(place: Place) {
-        _state.update { it.copy(destination = place, results = emptyList()) }
+        val recents = (listOf(place) + _state.value.recents.filter { it.name != place.name }).take(MAX_RECENTS)
+        saveRecents(recents)
+        _state.update { it.copy(destination = place, results = emptyList(), recents = recents) }
         calculateRoute()
     }
+
+    /** Zuletzt gewaehlte Ziele (auch fuer die Suche im Auto, ohne Tippen). */
+    private fun loadRecents(): List<Place> = runCatching {
+        val arr = org.json.JSONArray(prefs.getString("recents", "[]"))
+        (0 until arr.length()).map { i ->
+            val o = arr.getJSONObject(i)
+            Place(o.getString("n"), LatLon(o.getDouble("lat"), o.getDouble("lon")))
+        }
+    }.getOrDefault(emptyList())
+
+    private fun saveRecents(list: List<Place>) {
+        val arr = org.json.JSONArray()
+        list.forEach { arr.put(org.json.JSONObject().put("n", it.name).put("lat", it.position.lat).put("lon", it.position.lon)) }
+        prefs.edit().putString("recents", arr.toString()).apply()
+    }
+
+    fun clearResults() = _state.update { it.copy(results = emptyList(), error = null) }
 
     private fun calculateRoute() {
         val dest = _state.value.destination ?: return
