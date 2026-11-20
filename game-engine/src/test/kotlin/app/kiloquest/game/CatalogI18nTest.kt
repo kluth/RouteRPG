@@ -15,7 +15,7 @@ class CatalogI18nTest {
     fun `all catalog texts exist in every language`() {
         val dirs = resDir.listFiles { f -> f.isDirectory && f.name.startsWith("values") }.orEmpty()
         assertTrue(dirs.size >= 2, "expected values/ and values-de/")
-        val needed = QuestCatalog.default.flatMap { listOf(it.textKey) + it.optionKeys } + RouteFacts.textKeys + WikiStories.textKeys
+        val needed = QuestCatalog.default.flatMap { listOf(it.textKey) + it.optionKeys } + RouteFacts.textKeys + WikiStories.textKeys + NatureSpotting.textKeys
         for (d in dirs) {
             val have = keys(File(d, "strings.xml"))
             val missing = needed.filterNot { it in have }

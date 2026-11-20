@@ -18,6 +18,7 @@ import app.kiloquest.game.Quest
 import app.kiloquest.game.QuestCatalog
 import app.kiloquest.game.QuestGenerator
 import app.kiloquest.game.QuestType
+import app.kiloquest.game.NatureSpotting
 import app.kiloquest.game.RouteFacts
 import app.kiloquest.game.Story
 import app.kiloquest.game.WikiStories
@@ -755,6 +756,17 @@ class NavController(private val app: Application) {
                     if (story != null) break
                 }
                 WikiStories.resolve(q, story)
+            }
+            q.textKey == NatureSpotting.PENDING_KEY -> resolveQuest(q) {
+                val lang = Locale.getDefault().language
+                var picked: app.kiloquest.game.Species? = null
+                for (l in listOf(lang, "en").distinct()) {
+                    val list = runCatching { NatureSpotting.parse(fetchUrl(NatureSpotting.buildUrl(pos.lat, pos.lon, l))) }
+                        .getOrDefault(emptyList())
+                    picked = NatureSpotting.pick(list, Random.Default)
+                    if (picked != null) break
+                }
+                NatureSpotting.resolve(q, picked)
             }
             else -> announceQuest(q)
         }

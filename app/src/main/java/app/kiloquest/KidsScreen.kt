@@ -80,6 +80,9 @@ fun KidsScreen(state: UiState, nav: NavController) {
                         )
                     }
                     Text(ctx.stringByKey(q.textKey, q.args), style = MaterialTheme.typography.headlineMedium)
+                    if (q.type == app.kiloquest.game.QuestType.NATURE && q.args.isNotEmpty()) {
+                        Text(stringResource(R.string.nature_source), style = MaterialTheme.typography.labelMedium)
+                    }
                     if (q.textKey == app.kiloquest.game.WikiStories.TEXT_KEY) {
                         // Lizenzhinweis: Wikipedia-Texte stehen unter CC BY-SA
                         Text(stringResource(R.string.story_source), style = MaterialTheme.typography.labelMedium)

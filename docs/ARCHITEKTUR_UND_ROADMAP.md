@@ -359,3 +359,9 @@ Gebaut (Build/Lint/Tests grün; **Open-Meteo-Antwortformat nur nach Dokumentatio
 - Anzeige: Wetter am Ziel (Symbol, Text, Temperatur), bis zu zwei Gefahren voraus mit Entfernung (Starkregen, Schneefall, Glätte, Gewitter, Nebel, Böen ≥ 70 km/h, Frost ≤ −15 °C), Hinweis „Ankunft nach Einbruch der Dunkelheit"; bei Polarnacht (keine Sonnenzeiten) bleibt dieser Hinweis weg.
 - Ansage zum Fahrtstart (Zielwetter) und je Aktualisierung höchstens eine neue Gefahr.
 - Grenze: Vorhersage-Genauigkeit der Open-Meteo-Modelle; die Ankunftszeit ist linear aus der Routendauer geschätzt (ohne Verkehr/Pausen).
+
+## 25. Stand Erweiterung 4: Natur-Quests
+
+Gebaut (Build/Lint/Tests grün, gegen echte iNaturalist-Antwort für Kiruna getestet: Ren, Elch, Schneehase; Duisburg: Rotkehlchen, Stockente):
+- Platzhalter-Aufgaben werden unterwegs per iNaturalist `species_counts` (25 km Umkreis, nur „research grade", nur Vögel und Säugetiere, Namen in Gerätesprache, Rückfall Englisch) gefüllt: „Hier leben: Elch. Vielleicht entdeckt ihr eins!". Auswahl gewichtet nach Häufigkeit, Säugetiere doppelt. Ohne Netz/Treffer gibt es eine Rückfall-Aufgabe. Quelle „Daten: iNaturalist-Community" in der Kinderansicht.
+- Grenze: Es sind Beobachtungen der Umgebung, keine Garantie, dass man das Tier vom Auto aus sieht; Kinder-Tierbilder/Album mit Arten folgen ggf. später.

@@ -50,5 +50,8 @@ object QuestCatalog {
         // Platzhalter: Geschichte zu einem Ort in der Naehe aus Wikipedia (siehe WikiStories)
         QuestTemplate("story", QuestType.STORY, setOf(MINI, EXPLORER, PRO), WikiStories.PENDING_KEY),
         QuestTemplate("story_2", QuestType.STORY, setOf(MINI, EXPLORER, PRO), WikiStories.PENDING_KEY),
+        // Platzhalter: Tiere aus Beobachtungen der Umgebung (siehe NatureSpotting)
+        QuestTemplate("nature", QuestType.NATURE, setOf(MINI, EXPLORER, PRO), NatureSpotting.PENDING_KEY),
+        QuestTemplate("nature_2", QuestType.NATURE, setOf(MINI, EXPLORER, PRO), NatureSpotting.PENDING_KEY),
     )
 }

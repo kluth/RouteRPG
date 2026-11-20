@@ -155,4 +155,8 @@
     <string name="weather_dark">Ihr kommt nach Einbruch der Dunkelheit an.</string>
     <string name="weather_speech">Wetter am Ziel: %1$s, %2$d Grad.</string>
     <string name="weather_hazard_speech">Achtung: %1$s in %2$s.</string>
+    <string name="nature_pending">Wir suchen Tiere …</string>
+    <string name="nature_bird">Hier in der Gegend sieht man oft: %1$s. Entdeckt ihr einen Vogel?</string>
+    <string name="nature_mammal">Hier leben: %1$s. Vielleicht entdeckt ihr eins!</string>
+    <string name="nature_source">Daten: iNaturalist-Community</string>
 </resources>
