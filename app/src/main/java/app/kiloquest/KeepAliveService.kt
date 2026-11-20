@@ -32,6 +32,7 @@ class KeepAliveService : Service() {
     private var job: Job? = null
     private var lastText = ""
     private var lastProgress = -1
+    private var lastSpec: app.kiloquest.nav.IconSpec? = null
     private var lastNotifyAt = 0L
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -48,7 +49,7 @@ class KeepAliveService : Service() {
         val navNow = app.nav.state.value.navigating
         val linkNow = app.link.state.value.hosting || app.linkClient.state.value.status != ClientStatus.IDLE
         try {
-            startForegroundCompat(buildNotification(getString(R.string.link_notif_waiting)), typeFor(navNow, linkNow))
+            startForegroundCompat(buildNotification(getString(R.string.link_notif_waiting), null, null, defaultSpec()), typeFor(navNow, linkNow))
         } catch (_: Exception) {
             stopSelf(); return START_NOT_STICKY
         }
@@ -77,11 +78,12 @@ class KeepAliveService : Service() {
                     connectedKids > 0 -> getString(R.string.link_notif_host, connectedKids)
                     else -> getString(R.string.link_notif_waiting)
                 }
+                val spec = specFor(nav, navigating)
                 val now = System.currentTimeMillis()
                 // Hoechstens alle 10 s aktualisieren, sonst flackert die Benachrichtigung mit jedem Positions-Update
-                if ((text != lastText || progress != lastProgress.takeIf { it >= 0 }) && now - lastNotifyAt > 10_000) {
-                    lastText = text; lastNotifyAt = now; lastProgress = progress ?: -1
-                    try { startForegroundCompat(buildNotification(text, progress, chip), typeFor(navigating, host.hosting || clientActive)) } catch (_: Exception) { }
+                if ((text != lastText || progress != lastProgress.takeIf { it >= 0 } || spec != lastSpec) && now - lastNotifyAt > 10_000) {
+                    lastText = text; lastNotifyAt = now; lastProgress = progress ?: -1; lastSpec = spec
+                    try { startForegroundCompat(buildNotification(text, progress, chip, spec), typeFor(navigating, host.hosting || clientActive)) } catch (_: Exception) { }
                 }
             }
         }
@@ -98,6 +100,26 @@ class KeepAliveService : Service() {
         return t
     }
 
+    private fun dynamic() = SettingsStore.load(getSharedPreferences("kq", MODE_PRIVATE)).dynamicNotifIcons
+
+    private fun defaultSpec() = NotifIcons.spec(this, app.kiloquest.nav.NotifEvent.LINK_ONLY, null, dynamic())
+
+    /** Anlass aus dem Zustand: Notfall, Warnung (Umleitung/Wetter voraus), Klo-Alarm, Pause/Stopp, Spiel, laufende Fahrt oder nur gekoppelte Geraete. */
+    private fun specFor(nav: UiState, navigating: Boolean): app.kiloquest.nav.IconSpec {
+        val along = nav.guidance?.alongMeters ?: 0.0
+        val weatherAhead = nav.weather?.hazardsAhead.orEmpty().any { it.second - along in 0.0..30_000.0 }
+        val event = when {
+            nav.emergency != null -> app.kiloquest.nav.NotifEvent.EMERGENCY
+            nav.proposal != null || weatherAhead -> app.kiloquest.nav.NotifEvent.WARNING
+            nav.toilet != null -> app.kiloquest.nav.NotifEvent.TOILET
+            nav.stopover != null || nav.breakProposal != null || nav.breakTarget != null -> app.kiloquest.nav.NotifEvent.BREAK
+            nav.audioGame != null -> app.kiloquest.nav.NotifEvent.STORY
+            navigating -> app.kiloquest.nav.NotifEvent.TRIP_RUNNING
+            else -> app.kiloquest.nav.NotifEvent.LINK_ONLY
+        }
+        return NotifIcons.spec(this, event, nav.position?.lat, dynamic())
+    }
+
     private fun granted(p: String) = ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
 
     private fun startForegroundCompat(n: Notification, type: Int) {
@@ -111,7 +133,8 @@ class KeepAliveService : Service() {
         }
     }
 
-    private fun buildNotification(text: String, progressPermille: Int? = null, chip: String? = null): Notification {
+    private fun buildNotification(text: String, progressPermille: Int? = null, chip: String? = null, spec: app.kiloquest.nav.IconSpec = defaultSpec()): Notification {
+        val large = NotifIcons.large(spec)
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val stop = PendingIntent.getService(this, 1, Intent(this, KeepAliveService::class.java).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE)
         // Android 16+: Live-Update mit Fortschrittsstil (Statusleisten-Chip, Sperrbildschirm). Aeltere Versionen: normale Benachrichtigung mit Balken.
@@ -121,7 +144,8 @@ class KeepAliveService : Service() {
                 .setProgressPoints(listOf(250, 500, 750).map { android.app.Notification.ProgressStyle.Point(it) })
                 .setProgress(progressPermille)
             return android.app.Notification.Builder(this, CHANNEL)
-                .setSmallIcon(R.drawable.ic_stat_kiloquest)
+                .setSmallIcon(NotifIcons.smallRes(spec.glyph))
+                .setLargeIcon(android.graphics.drawable.Icon.createWithBitmap(large))
                 .setContentTitle(getString(R.string.app_name))
                 .setContentText(text)
                 .setContentIntent(open)
@@ -130,11 +154,12 @@ class KeepAliveService : Service() {
                 .setCategory(android.app.Notification.CATEGORY_NAVIGATION)
                 .setShortCriticalText(chip)
                 .setStyle(style)
-                .addAction(android.app.Notification.Action.Builder(android.graphics.drawable.Icon.createWithResource(this, R.drawable.ic_stat_kiloquest), getString(R.string.link_notif_stop), stop).build())
+                .addAction(android.app.Notification.Action.Builder(android.graphics.drawable.Icon.createWithResource(this, NotifIcons.smallRes(spec.glyph)), getString(R.string.link_notif_stop), stop).build())
                 .build()
         }
         return NotificationCompat.Builder(this, CHANNEL)
-            .setSmallIcon(R.drawable.ic_stat_kiloquest)
+            .setSmallIcon(NotifIcons.smallRes(spec.glyph))
+            .setLargeIcon(large)
             .setContentTitle(getString(R.string.app_name))
             .setContentText(text)
             .setContentIntent(open)

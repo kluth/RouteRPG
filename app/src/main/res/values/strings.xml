@@ -905,4 +905,6 @@
     <string name="icon_sunset">Sunset</string>
     <string name="icon_forest">Forest</string>
     <string name="icon_mono">Graphite</string>
+    <string name="set_dyn_icons">Dynamic notification icon</string>
+    <string name="set_dyn_icons_hint">The icon changes with the event (break, toilet, photo, warning …), the time of day, the season and the place. Off: always the pin with the star in your app icon colour.</string>
 </resources>

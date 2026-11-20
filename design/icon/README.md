@@ -17,7 +17,12 @@ Motiv: Orts-Pin (Navigation) mit Schatzstern (Schnitzeljagd) auf blauem Verlauf 
 - **Themed Icons (Android 13+):** alle Varianten nutzen dieselbe einfarbige Ebene `ic_launcher_monochrome`; das System färbt sie mit den Wallpaper-Farben (`preview-themed.png` zeigt Beispiele in Hell und Dunkel).
 - **Dunkelmodus im Web:** `favicon.svg` wechselt per `prefers-color-scheme` zwischen klassisch und Nacht.
 - **Start-Bildschirm (Android 12+):** Marken-Hintergrund `#0A2A5C` mit der Vordergrund-Ebene (`values-v31/themes.xml`).
-- **Benachrichtigungen:** `ic_stat_kiloquest` (weiß, Pin mit Stern-Ausschnitt).
+- **Benachrichtigungen (dynamisch, `preview-notifications.png`):** Android verlangt für das kleine Statusleisten-Symbol eine **einfarbige** Fläche. Deshalb ist es der Pin mit ausgeschnittenem Kreis und
+  einem **anlassabhängigen Zeichen** darin (`ic_stat_<zeichen>`: Stern, Pfeil, Pause, Klo, Kamera, Kalender, Warnung, Kreuz, Buch, Fahne, Mond, Schneeflocke, Sonne).
+  Das **große farbige Icon** (rechts in der Benachrichtigung) wird zur Laufzeit aus der Geometrie des App-Icons gezeichnet (`IconGeometry.kt`, erzeugt) und ändert seine Farbwelt:
+  Warnung/Notfall rot, nachts dunkel, Morgen-/Abenddämmerung Sonnenuntergang, tagsüber nördlich von 60° grün (Natur), sonst klassisch blau; dazu nachts Mond,
+  Winter im Norden Schneeflocke, Weihnachten und Silvester Stern. Regeln: `nav-core/.../NotificationIcons.kt` (getestet). In den Einstellungen abschaltbar
+  (dann immer Pin mit Stern in der Farbe des gewählten App-Icons).
 
 ## Formen
 `square`, `soft-square`, `rounded`, `squircle`, `circle`, `teardrop`, `pill`, `hexagon`, `cookie`: SVG in `svg/`, PNG in `png/<form>/` (`square`, `rounded`, `circle` in 16–1024 px, die übrigen in 48/96/192/512/1024 px).

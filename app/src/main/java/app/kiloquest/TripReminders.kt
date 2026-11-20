@@ -66,9 +66,13 @@ class TripReminderWorker(context: Context, params: WorkerParameters) : Coroutine
             val due = TripReminders.due(trips, LocalDate.now().toEpochDay().toInt(), sent)
             if (due.isNotEmpty()) ensureChannel(c)
             val open = PendingIntent.getActivity(c, 0, Intent(c, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
+            val dynamic = SettingsStore.load(prefs).dynamicNotifIcons
             for (r in due) {
+                val ev = if (r.kind == app.kiloquest.nav.ReminderKind.DEPARTURE_DAY) app.kiloquest.nav.NotifEvent.DEPARTURE else app.kiloquest.nav.NotifEvent.REMINDER
+                val spec = NotifIcons.spec(c, ev, null, dynamic)
                 val n = NotificationCompat.Builder(c, CHANNEL)
-                    .setSmallIcon(R.drawable.ic_stat_kiloquest)
+                    .setSmallIcon(NotifIcons.smallRes(spec.glyph))
+                    .setLargeIcon(NotifIcons.large(spec))
                     .setContentTitle(ReminderTexts.title(c, r))
                     .setContentText(ReminderTexts.body(c, r))
                     .setStyle(NotificationCompat.BigTextStyle().bigText(ReminderTexts.body(c, r)))

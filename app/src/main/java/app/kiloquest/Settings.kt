@@ -45,6 +45,8 @@ data class AppSettings(
     val powerSaver: PowerSaverMode = PowerSaverMode.AUTO,
     /** Spracherkennung auch ohne Offline-Paket ueber den normalen Dienst des Geraets (Audio kann an dessen Server gehen). Nur nach Warnhinweis. */
     val cloudSpeech: Boolean = false,
+    /** Benachrichtigungs-Icon wechselt je nach Anlass, Tageszeit und Ort; aus = immer Pin mit Stern in der Farbe des gewaehlten App-Icons. */
+    val dynamicNotifIcons: Boolean = true,
 )
 
 internal object SettingsStore {
@@ -74,6 +76,7 @@ internal object SettingsStore {
             dailyDriveHours = p.getInt(P + "daily_hours", d.dailyDriveHours).takeIf { it in setOf(4, 6, 8, 10) } ?: d.dailyDriveHours,
             tripReminders = p.getBoolean(P + "trip_reminders", d.tripReminders),
             cloudSpeech = p.getBoolean(P + "cloud_speech", d.cloudSpeech),
+            dynamicNotifIcons = p.getBoolean(P + "dyn_notif_icons", d.dynamicNotifIcons),
             powerSaver = runCatching { PowerSaverMode.valueOf(p.getString(P + "power_saver", null) ?: "") }.getOrDefault(d.powerSaver),
         )
     }
@@ -102,6 +105,7 @@ internal object SettingsStore {
             .putBoolean(P + "trip_reminders", s.tripReminders)
             .putString(P + "power_saver", s.powerSaver.name)
             .putBoolean(P + "cloud_speech", s.cloudSpeech)
+            .putBoolean(P + "dyn_notif_icons", s.dynamicNotifIcons)
             .apply()
     }
 }

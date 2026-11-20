@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="18 18 72 72">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="108" y2="108" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#1768E8"/><stop offset="1" stop-color="#0A2A5C"/></linearGradient>
+  <radialGradient id="glow" cx="30" cy="24" r="62" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
+  <linearGradient id="pin" x1="54" y1="25" x2="54" y2="83" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFC83A"/><stop offset="1" stop-color="#FF7A00"/></linearGradient>
+</defs><clipPath id="m"><path d="M18.0,54.0 a36.0,36.0 0 1 0 72.0,0 a36.0,36.0 0 1 0 -72.0,0 Z"/></clipPath><g clip-path="url(#m)">
+<rect x="-10" y="-10" width="128" height="128" fill="url(#bg)"/>
+<rect x="-10" y="-10" width="128" height="128" fill="url(#glow)"/>
+<path d="M-6,100 C26,86 22,66 54,64 S104,46 116,22" fill="none" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="13" stroke-linecap="round"/>
+<path d="M-6,100 C26,86 22,66 54,64 S104,46 116,22" fill="none" stroke="#FFFFFF" stroke-opacity="0.38" stroke-width="1.3" stroke-dasharray="3.2 3.6" stroke-linecap="round"/>
+<path d="M29,30 l1.2,3.2 3.2,1.2 -3.2,1.2 -1.2,3.2 -1.2,-3.2 -3.2,-1.2 3.2,-1.2z" fill="#FFFFFF" fill-opacity="0.6"/>
+<path d="M80,36 l0.9,2.4 2.4,0.9 -2.4,0.9 -0.9,2.4 -0.9,-2.4 -2.4,-0.9 2.4,-0.9z" fill="#FFFFFF" fill-opacity="0.45"/>
+
+<ellipse cx="54" cy="84.6" rx="12" ry="2.7" fill="#000000" fill-opacity="0.24"/>
+<path d="M54,83 C44,72 34,60 34,45 A20,20 0 0 1 74,45 C74,60 64,72 54,83 Z" fill="url(#pin)"/>
+<path d="M40.6,36.5 A15.4,15.4 0 0 1 51,29.4" fill="none" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="1.7" stroke-linecap="round"/>
+<circle cx="54" cy="45" r="12.2" fill="#0A2A5C"/>
+<path d="M47.4,41.6 H50.6 L51.8,39.6 H56.2 L57.4,41.6 H60.6 V50.6 H47.4 Z M50.9,46 a3.1,3.1 0 1 0 6.2,0 a3.1,3.1 0 1 0 -6.2,0 Z" fill="#FFD54A" fill-rule="evenodd" stroke="#FFD54A" stroke-width="0.8" stroke-linejoin="round"/></g></svg>

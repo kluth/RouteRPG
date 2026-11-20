@@ -241,3 +241,56 @@ class PowerPolicyTest {
         assertEquals(60, StorageUsage(10, 20, 30).totalBytes)
     }
 }
+
+class NotificationIconsTest {
+    private fun at(month: Int, day: Int, hour: Int, lat: Double? = null) =
+        IconContext(java.time.LocalDateTime.of(2026, month, day, hour, 30), lat)
+
+    @Test fun paletteFollowsTimeAndPlace() {
+        assertEquals(IconPalette.DAY, NotificationIcons.pick(NotifEvent.TRIP_RUNNING, at(7, 15, 13, 51.0)).palette)
+        assertEquals(IconPalette.FOREST, NotificationIcons.pick(NotifEvent.TRIP_RUNNING, at(7, 15, 13, 66.5)).palette)
+        assertEquals(IconPalette.DUSK, NotificationIcons.pick(NotifEvent.TRIP_RUNNING, at(7, 15, 19, 51.0)).palette)
+        assertEquals(IconPalette.DUSK, NotificationIcons.pick(NotifEvent.TRIP_RUNNING, at(7, 15, 6, 51.0)).palette)
+        assertEquals(IconPalette.NIGHT, NotificationIcons.pick(NotifEvent.TRIP_RUNNING, at(7, 15, 23, 51.0)).palette)
+        assertEquals(IconPalette.NIGHT, NotificationIcons.pick(NotifEvent.TRIP_RUNNING, at(7, 15, 3, 66.0)).palette)
+    }
+
+    @Test fun warningsAndEmergenciesAreAlwaysAlert() {
+        for (h in listOf(3, 12, 20)) {
+            assertEquals(IconSpec(Glyph.WARNING, IconPalette.ALERT), NotificationIcons.pick(NotifEvent.WARNING, at(7, 1, h)))
+            assertEquals(IconSpec(Glyph.CROSS, IconPalette.ALERT), NotificationIcons.pick(NotifEvent.EMERGENCY, at(7, 1, h)))
+        }
+    }
+
+    @Test fun glyphsFollowTheEvent() {
+        val c = at(7, 15, 13, 51.0)
+        assertEquals(Glyph.PAUSE, NotificationIcons.pick(NotifEvent.BREAK, c).glyph)
+        assertEquals(Glyph.WC, NotificationIcons.pick(NotifEvent.TOILET, c).glyph)
+        assertEquals(Glyph.CAMERA, NotificationIcons.pick(NotifEvent.PHOTO, c).glyph)
+        assertEquals(Glyph.CALENDAR, NotificationIcons.pick(NotifEvent.REMINDER, c).glyph)
+        assertEquals(Glyph.FLAG, NotificationIcons.pick(NotifEvent.DEPARTURE, c).glyph)
+        assertEquals(Glyph.BOOK, NotificationIcons.pick(NotifEvent.STORY, c).glyph)
+    }
+
+    @Test fun runningTripChangesWithNightSeasonNorthAndHolidays() {
+        assertEquals(Glyph.ARROW, NotificationIcons.pick(NotifEvent.TRIP_RUNNING, at(7, 15, 13, 51.0)).glyph)
+        assertEquals(Glyph.MOON, NotificationIcons.pick(NotifEvent.TRIP_RUNNING, at(7, 15, 23, 51.0)).glyph)
+        assertEquals(Glyph.SNOW, NotificationIcons.pick(NotifEvent.TRIP_RUNNING, at(1, 15, 13, 67.0)).glyph)
+        assertEquals(Glyph.ARROW, NotificationIcons.pick(NotifEvent.TRIP_RUNNING, at(1, 15, 13, 50.0)).glyph) // Winter, aber nicht im Norden
+        assertEquals(Glyph.STAR, NotificationIcons.pick(NotifEvent.TRIP_RUNNING, at(12, 24, 13, 51.0)).glyph)
+        assertEquals(Glyph.STAR, NotificationIcons.pick(NotifEvent.TRIP_RUNNING, at(12, 31, 13, 51.0)).glyph)
+        assertEquals(Glyph.STAR, NotificationIcons.pick(NotifEvent.LINK_ONLY, at(7, 15, 13, 51.0)).glyph)
+    }
+
+    @Test fun staticModeUsesTheChosenAppIconColour() {
+        val c = IconContext(java.time.LocalDateTime.of(2026, 7, 15, 23, 0), 70.0, IconPalette.FOREST)
+        assertEquals(IconSpec(Glyph.STAR, IconPalette.FOREST), NotificationIcons.pick(NotifEvent.TRIP_RUNNING, c, dynamic = false))
+        assertEquals(IconSpec(Glyph.PAUSE, IconPalette.FOREST), NotificationIcons.pick(NotifEvent.BREAK, c, dynamic = false))
+    }
+
+    @Test fun everyGlyphHasAnIdAndUnknownLatitudeIsNotNorth() {
+        assertEquals(Glyph.entries.size, Glyph.entries.map { it.id }.toSet().size)
+        assertEquals(IconPalette.DAY, NotificationIcons.pick(NotifEvent.TRIP_RUNNING, at(7, 15, 13, null)).palette)
+        assertTrue(NotificationIcons.isWeekend(java.time.LocalDateTime.of(2026, 11, 21, 10, 0)))
+    }
+}

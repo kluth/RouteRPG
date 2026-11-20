@@ -905,4 +905,6 @@
     <string name="icon_sunset">Sonnenuntergang</string>
     <string name="icon_forest">Wald</string>
     <string name="icon_mono">Graphit</string>
+    <string name="set_dyn_icons">Dynamisches Benachrichtigungs-Icon</string>
+    <string name="set_dyn_icons_hint">Das Icon wechselt je nach Anlass (Pause, Klo, Foto, Warnung …), Tageszeit, Jahreszeit und Ort. Aus: immer Pin mit Stern in der Farbe deines App-Icons.</string>
 </resources>

@@ -27,7 +27,7 @@ class AppIconTest {
         }
         for (n in listOf("default", "night", "sunset", "forest", "mono")) assertTrue(n, File(res, "drawable-nodpi/icon_preview_$n.png").exists())
         assertTrue(File(res, "drawable/ic_launcher_monochrome.xml").exists())
-        assertTrue(File(res, "drawable/ic_stat_kiloquest.xml").exists())
+        for (g in listOf("star", "arrow", "pause", "wc", "camera", "calendar", "warning", "cross", "book", "flag", "moon", "snow", "sun")) assertTrue(g, File(res, "drawable/ic_stat_$g.xml").exists())
         for (d in listOf("mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi")) assertTrue(File(res, "mipmap-$d/ic_launcher.png").exists())
     }
 

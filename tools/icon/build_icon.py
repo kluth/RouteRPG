@@ -83,6 +83,45 @@ DEFS, BACKGROUND, FOREGROUND, MONOCHROME = parts(PALETTES["default"])
 FULL = BACKGROUND + FOREGROUND
 
 
+
+# ---- Zeichen im Pin fuer dynamische Benachrichtigungs-Icons (Koordinaten im 108er-Raster, Mitte des Kreises bei 54,45)
+def _rect(x1, y1, x2, y2):
+    return f"M{x1},{y1} H{x2} V{y2} H{x1} Z"
+
+
+def _bar(cx, cy, r0, r1, w, ang):
+    """Balken von Radius r0 bis r1 (Breite w) in Richtung ang (Grad), als Polygon."""
+    a_ = math.radians(ang)
+    ux, uy = math.cos(a_), math.sin(a_)
+    nx, ny = -uy * w / 2, ux * w / 2
+    p = [(cx + ux * r0 + nx, cy + uy * r0 + ny), (cx + ux * r1 + nx, cy + uy * r1 + ny), (cx + ux * r1 - nx, cy + uy * r1 - ny), (cx + ux * r0 - nx, cy + uy * r0 - ny)]
+    return "M" + " L".join(f"{x:.2f},{y:.2f}" for x, y in p) + " Z"
+
+
+def _circle(cx, cy, r):
+    return f"M{cx - r},{cy} a{r},{r} 0 1 0 {2 * r},0 a{r},{r} 0 1 0 {-2 * r},0 Z"
+
+
+GLYPHS = {
+    "star": STAR,
+    "arrow": "M54,37.2 L60.2,52.2 L54,48.7 L47.8,52.2 Z",
+    "pause": _rect(49.2, 39.2, 52.6, 50.8) + " " + _rect(55.4, 39.2, 58.8, 50.8),
+    "wc": _circle(49.6, 39.8, 1.8) + " M47.7,42.4 H51.5 V48.8 H47.7 Z " + _circle(58.4, 39.8, 1.8) + " M58.4,42.4 L61.7,49.4 H55.1 Z",
+    "camera": "M47.4,41.6 H50.6 L51.8,39.6 H56.2 L57.4,41.6 H60.6 V50.6 H47.4 Z " + _circle(54, 46, 3.1),
+    "calendar": _rect(47.4, 39.2, 60.6, 51.6) + " " + _rect(49.1, 42.6, 58.9, 50) + " " + _rect(50.4, 37.6, 51.8, 40.6) + " " + _rect(56.2, 37.6, 57.6, 40.6)
+                + " " + _rect(50.6, 44.2, 52.6, 46.2) + " " + _rect(53, 44.2, 55, 46.2) + " " + _rect(55.4, 44.2, 57.4, 46.2),
+    "warning": "M54,37.4 L61.6,50.8 H46.4 Z " + _rect(53.2, 42.4, 54.8, 47.4) + " " + _circle(54, 49.1, 1.0),
+    "cross": "M52.3,38.4 H55.7 V43.3 H60.6 V46.7 H55.7 V51.6 H52.3 V46.7 H47.4 V43.3 H52.3 Z",
+    "book": "M53.4,40.6 C51.2,39.2 48.9,38.9 46.7,39.5 V50.7 C48.9,50.1 51.2,50.4 53.4,51.8 Z M54.6,40.6 C56.8,39.2 59.1,38.9 61.3,39.5 V50.7 C59.1,50.1 56.8,50.4 54.6,51.8 Z",
+    "flag": _rect(48.6, 37.8, 50.2, 52.4) + " M50.2,38.4 H60.4 L57.2,42.7 L60.4,47 H50.2 Z",
+    "moon": "M57,37.6 A8.2,8.2 0 1 0 57,52.4 A6.6,6.6 0 1 1 57,37.6 Z",
+    "snow": " ".join(_bar(54, 45.2, -7.6, 7.6, 1.9, ang) for ang in (0, 60, 120)),
+    "sun": _circle(54, 45.2, 3.3) + " " + " ".join(_bar(54, 45.2, 5.4, 8.3, 1.8, k * 45) for k in range(8)),
+}
+
+ALERT_PAL = dict(bg1="#E5483F", bg2="#7A0F12", pin1="#FFFFFF", pin2="#FFE3E0", navy="#7A0F12", star="#FFD54A", glow=0.22)
+NOTIF_PALETTES = {"DAY": PALETTES["default"], "DUSK": PALETTES["sunset"], "NIGHT": PALETTES["night"], "FOREST": PALETTES["forest"], "MONO": PALETTES["mono"], "ALERT": ALERT_PAL}
+
 VISIBLE = "18 18 72 72"  # der Bereich, den Launcher bei adaptiven Icons zeigen (72 von 108 dp)
 
 
@@ -231,14 +270,27 @@ def build_android():
     for d, px in {"mdpi": 48, "hdpi": 72, "xhdpi": 96, "xxhdpi": 144, "xxxhdpi": 192}.items():
         png(FULL, RES / f"mipmap-{d}/ic_launcher.png", px, "rounded")
         png(FULL, RES / f"mipmap-{d}/ic_launcher_round.png", px, "circle")
-    # Benachrichtigungs-Symbol (einfarbig, 24 dp): Pin mit Stern-Ausschnitt
-    write(RES / "drawable/ic_stat_kiloquest.xml",
-          '<?xml version="1.0" encoding="utf-8"?>\n<vector xmlns:android="http://schemas.android.com/apk/res/android"\n'
-          '    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">\n'
-          '    <group android:scaleX="0.4" android:scaleY="0.4" android:translateX="-9.6" android:translateY="-9.6">\n'
-          f'        <path android:pathData="{PIN} {CIRCLE}" android:fillColor="#FFFFFFFF" android:fillType="evenOdd"/>\n'
-          f'        <path android:pathData="{STAR}" android:fillColor="#FFFFFFFF" android:strokeColor="#FFFFFFFF" android:strokeWidth="1.5" android:strokeLineJoin="round"/>\n'
-          '    </group>\n</vector>\n')
+    # Benachrichtigungs-Symbole (einfarbig, 24 dp): Pin mit ausgeschnittenem Kreis und einem Zeichen darin, je Anlass ein anderes
+    for gid, gpath in GLYPHS.items():
+        write(RES / f"drawable/ic_stat_{gid}.xml",
+              '<?xml version="1.0" encoding="utf-8"?>\n<vector xmlns:android="http://schemas.android.com/apk/res/android"\n'
+              '    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">\n'
+              '    <group android:scaleX="0.4" android:scaleY="0.4" android:translateX="-9.6" android:translateY="-9.6">\n'
+              f'        <path android:pathData="{PIN} {CIRCLE}" android:fillColor="#FFFFFFFF" android:fillType="evenOdd"/>\n'
+              f'        <path android:pathData="{gpath}" android:fillColor="#FFFFFFFF" android:fillType="evenOdd" android:strokeColor="#FFFFFFFF" android:strokeWidth="0.5" android:strokeLineJoin="round"/>\n'
+              '    </group>\n</vector>\n')
+    # Gemeinsame Geometrie fuer das grosse Icon, das die App zur Laufzeit zeichnet (erzeugt, nicht von Hand aendern)
+    def kc(c): return "0xFF" + c[1:].upper() + ".toInt()"
+    pals = "\n".join(f'        "{n}" to Pal({kc(p["bg1"])}, {kc(p["bg2"])}, {kc(p["pin1"])}, {kc(p["pin2"])}, {kc(p["navy"])}, {kc(p["star"])}, {p["glow"]}f),' for n, p in NOTIF_PALETTES.items())
+    gl = "\n".join(f'        "{gid}" to "{gpath}",' for gid, gpath in GLYPHS.items())
+    write(ROOT / "app/src/main/java/app/kiloquest/IconGeometry.kt",
+          "package app.kiloquest\n\n// ERZEUGT von tools/icon/build_icon.py, nicht von Hand aendern.\n\n"
+          "/** Geometrie (108er-Raster) und Farben des App-Icons, genutzt fuer das dynamische grosse Benachrichtigungs-Icon. */\n"
+          "object IconGeometry {\n"
+          f'    const val PIN = "{PIN}"\n    const val CIRCLE_CX = {CX}f\n    const val CIRCLE_CY = {CY}f\n    const val CIRCLE_R = {R_IN}f\n    const val ROAD = "{ROAD}"\n\n'
+          "    class Pal(val bg1: Int, val bg2: Int, val pin1: Int, val pin2: Int, val navy: Int, val glyph: Int, val glow: Float)\n\n"
+          f"    val PALETTES: Map<String, Pal> = mapOf(\n{pals}\n    )\n\n"
+          f"    val GLYPHS: Map<String, String> = mapOf(\n{gl}\n    )\n}}\n")
     # Start-Bildschirm (Android 12+): Marken-Hintergrund und Vordergrund-Ebene
     write(RES / "values/themes.xml",
           '<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <style name="Theme.KiloQuest" parent="@android:style/Theme.Material.Light.NoActionBar" />\n</resources>\n')
@@ -295,6 +347,51 @@ def build_design():
     build_previews()
 
 
+def large_svg(gid, pal, size=192):
+    defs, bgs, _, _ = parts(pal)
+    body = bgs + f"""
+<ellipse cx="54" cy="84.6" rx="12" ry="2.7" fill="#000000" fill-opacity="0.24"/>
+<path d="{PIN}" fill="url(#pin)"/>
+<path d="M40.6,36.5 A15.4,15.4 0 0 1 51,29.4" fill="none" stroke="#FFFFFF" stroke-opacity="0.55" stroke-width="1.7" stroke-linecap="round"/>
+<circle cx="{CX}" cy="{CY}" r="{R_IN}" fill="{pal['navy']}"/>
+<path d="{GLYPHS[gid]}" fill="{pal['star']}" fill-rule="evenodd" stroke="{pal['star']}" stroke-width="0.8" stroke-linejoin="round"/>"""
+    return svg(body, VISIBLE, size, "circle", defs)
+
+
+def small_svg(gid, size=96, color="#FFFFFF"):
+    body = (f'<path d="{PIN} {CIRCLE}" fill="{color}" fill-rule="evenodd"/>'
+            f'<path d="{GLYPHS[gid]}" fill="{color}" fill-rule="evenodd" stroke="{color}" stroke-width="0.5" stroke-linejoin="round"/>')
+    return f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="30 21 48 66">{body}</svg>'
+
+
+def build_notification_previews():
+    scenarios = [  # (Beschriftung ohne Text; nur Bild) Zeichen, Palette
+        ("arrow", "DAY"), ("arrow", "FOREST"), ("snow", "FOREST"), ("arrow", "DUSK"), ("moon", "NIGHT"), ("star", "DAY"),
+        ("pause", "DAY"), ("wc", "DAY"), ("camera", "DUSK"), ("calendar", "DAY"), ("flag", "FOREST"), ("book", "NIGHT"), ("warning", "ALERT"), ("cross", "ALERT"),
+    ]
+    cell, pad = 120, 16
+    w = len(scenarios) * (cell + pad) + pad
+    sheet = Image.new("RGBA", (w, 2 * cell + 4 * pad), (232, 234, 238, 255))
+    for i, (g, pn) in enumerate(scenarios):
+        big = OUT / "png/notification/_tmp.png"
+        big.parent.mkdir(parents=True, exist_ok=True)
+        cairosvg.svg2png(bytestring=large_svg(g, NOTIF_PALETTES[pn], cell).encode(), write_to=str(big), output_width=cell, output_height=cell)
+        sheet.alpha_composite(Image.open(big).convert("RGBA"), (pad + i * (cell + pad), pad))
+        # kleines Symbol: weiss auf dunkler Statusleiste
+        bar = Image.new("RGBA", (cell, cell), (36, 40, 46, 255))
+        cairosvg.svg2png(bytestring=small_svg(g, cell // 2).encode(), write_to=str(big), output_width=int(cell * 0.45), output_height=int(cell * 0.62))
+        sm = Image.open(big).convert("RGBA")
+        bar.alpha_composite(sm, ((cell - sm.width) // 2, (cell - sm.height) // 2))
+        sheet.alpha_composite(bar, (pad + i * (cell + pad), 2 * pad + cell))
+    (OUT / "png/notification/_tmp.png").unlink()
+    sheet.save(OUT / "preview-notifications.png")
+    # einzelne Symbole als SVG
+    for gid in GLYPHS:
+        write(OUT / f"notification/small-{gid}.svg", small_svg(gid, 96, "#000000"))
+        for pn, pal in NOTIF_PALETTES.items():
+            write(OUT / f"notification/large-{gid}-{pn.lower()}.svg", large_svg(gid, pal, 256))
+
+
 def build_previews():
     """Uebersichtsbilder: alle Formen, alle Farbvarianten, Themed-Icon-Beispiele (Hell/Dunkel)."""
     cell, pad = 160, 20
@@ -335,6 +432,7 @@ def build_previews():
         tile.paste(fg, (0, 0), mask)
         sheet.alpha_composite(tile, (x, y))
     sheet.save(OUT / "preview-themed.png")
+    build_notification_previews()
 
 
 if __name__ == "__main__":

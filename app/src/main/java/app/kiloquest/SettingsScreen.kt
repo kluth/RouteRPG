@@ -84,6 +84,8 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 ) { dialog = Dlg.THEME }
                 SettingDivider()
                 SettingRow(stringResource(R.string.set_app_icon), stringResource(R.string.set_app_icon_hint), value = stringResource(AppIcon.current(ctx).labelRes)) { dialog = Dlg.APP_ICON }
+                SettingDivider()
+                SettingSwitch(stringResource(R.string.set_dyn_icons), stringResource(R.string.set_dyn_icons_hint), s.dynamicNotifIcons) { v -> nav.updateSettings { it.copy(dynamicNotifIcons = v) } }
             }
 
             SettingsSection(stringResource(R.string.sec_navigation)) {
