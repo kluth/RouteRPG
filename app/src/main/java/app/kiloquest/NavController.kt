@@ -1353,7 +1353,9 @@ class NavController(private val app: Application) : KidsActions {
         val s = _state.value
         val text = buildString {
             if (s.players > 1) append(app.getString(R.string.kids_turn, app.getString(R.string.kids_player, s.currentPlayer + 1))).append(' ')
-            append(app.stringByKey(q.textKey, q.args))
+            // Fuer die Kleinsten (die noch nicht lesen) liest Kilo bei Quizfragen auch die Antworten vor
+            val band = kidBands.getOrNull(s.currentPlayer) ?: s.ageBand
+            append(app.questSpeech(q, withOptions = band == AgeBand.MINI))
         }
         arbiter.offerQuest(text, System.currentTimeMillis(), tts?.isSpeaking == true)?.let(::speakQuest)
     }

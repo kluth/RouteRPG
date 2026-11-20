@@ -356,4 +356,8 @@
     <string name="mini_great">Great job!</string>
     <string name="mini_animals">Our animals</string>
     <string name="toilet_kid_active">Toilet coming up!</string>
+    <string name="shape_circle_blue">Blue circle</string>
+    <string name="shape_square_orange">Orange square</string>
+    <string name="shape_triangle_green">Green triangle</string>
+    <string name="mini_read_aloud">Read aloud</string>
 </resources>

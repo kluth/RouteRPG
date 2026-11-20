@@ -356,4 +356,8 @@
     <string name="mini_great">Toll gemacht!</string>
     <string name="mini_animals">Unsere Tiere</string>
     <string name="toilet_kid_active">Gleich gibt es eine Toilette!</string>
+    <string name="shape_circle_blue">Blauer Kreis</string>
+    <string name="shape_square_orange">Oranges Quadrat</string>
+    <string name="shape_triangle_green">Grünes Dreieck</string>
+    <string name="mini_read_aloud">Vorlesen</string>
 </resources>

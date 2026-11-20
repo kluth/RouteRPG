@@ -42,6 +42,7 @@ import app.kiloquest.R
 import app.kiloquest.UiState
 import app.kiloquest.game.QuestKind
 import app.kiloquest.game.StickerBook
+import app.kiloquest.questSpeech
 import app.kiloquest.stringByKey
 
 private val MiniFont get() = NunitoFamily
@@ -52,9 +53,23 @@ private fun miniStyle(size: Int, line: Int = size + 6) = TextStyle(fontFamily = 
  * Ansicht fuer die Kleinsten (4 bis 6): ein Gedanke pro Bildschirm, riesige Knoepfe, kein Lesen noetig.
  * "Ja!" heisst geschafft/gesehen, "Noch nicht" ueberspringt ohne Folgen. Antwortknoepfe bei Quizfragen sind gross und bunt.
  */
+/** Sprachausgabe dieses Geraets (fuer "Vorlesen" auf Kinder-Geraeten); wird beim Verlassen freigegeben. */
+@Composable
+private fun rememberSpeaker(): (String) -> Unit {
+    val ctx = LocalContext.current
+    val holder = remember { arrayOfNulls<android.speech.tts.TextToSpeech>(1) }
+    val ready = remember { booleanArrayOf(false) }
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        holder[0] = android.speech.tts.TextToSpeech(ctx) { status -> ready[0] = status == android.speech.tts.TextToSpeech.SUCCESS }
+        onDispose { holder[0]?.stop(); holder[0]?.shutdown(); holder[0] = null; ready[0] = false }
+    }
+    return { text -> if (ready[0]) holder[0]?.speak(text, android.speech.tts.TextToSpeech.QUEUE_FLUSH, null, "kq-mini-read") }
+}
+
 @Composable
 fun MiniKids(state: UiState, nav: KidsActions) {
     val ctx = LocalContext.current
+    val speak = rememberSpeaker()
     val c = KiloTheme.colors
     val q = state.quest
     val fb = state.feedback
@@ -95,6 +110,16 @@ fun MiniKids(state: UiState, nav: KidsActions) {
                                 Text(questEmoji(q), style = TextStyle(fontSize = 72.sp))
                             }
                             Text(ctx.stringByKey(q.textKey, q.args), style = miniStyle(30), textAlign = TextAlign.Center)
+                            // Kilo liest vor: Aufgabe und bei Quizfragen die Antworten mit Form und Farbe
+                            Surface(
+                                onClick = { speak(ctx.questSpeech(q, withOptions = true)) },
+                                shape = CircleShape, color = c.hintContainer, contentColor = c.onHintContainer, shadowElevation = 3.dp,
+                                modifier = Modifier.size(72.dp).semantics { contentDescription = ctx.getString(R.string.mini_read_aloud) },
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(painterResource(R.drawable.ic_volume_up), contentDescription = null, modifier = Modifier.size(40.dp))
+                                }
+                            }
                             if (q.kind == QuestKind.CHOICE) {
                                 // Kein Lesen noetig: jede Antwort hat Form und Farbe (Kreis, Quadrat, Dreieck)
                                 val shapes = listOf(R.drawable.ic_shape_circle, R.drawable.ic_shape_square, R.drawable.ic_shape_triangle)
