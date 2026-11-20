@@ -130,6 +130,24 @@ fun TripScreen(state: UiState, nav: NavController) {
             }
             state.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
 
+            Text(stringResource(R.string.packs_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.packs_hint), style = MaterialTheme.typography.bodySmall)
+            if (state.packs.isEmpty()) Text(stringResource(R.string.packs_empty), style = MaterialTheme.typography.bodyMedium)
+            state.packs.forEach { p ->
+                Surface(tonalElevation = 2.dp, modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(p.name, style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            stringResource(R.string.packs_info, stringResource(R.string.unit_km, p.lengthMeters / 1000.0), p.mapMb, p.quests, p.toilets),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Button(onClick = { nav.loadPack(p.id) }) { Text(stringResource(R.string.packs_navigate)) }
+                            TextButton(onClick = { nav.deletePack(p.id) }) { Text(stringResource(R.string.packs_delete)) }
+                        }
+                    }
+                }
+            }
             Text(stringResource(R.string.booked_title), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(R.string.booked_hint), style = MaterialTheme.typography.bodySmall)
             if (state.booked.isEmpty()) Text(stringResource(R.string.booked_empty), style = MaterialTheme.typography.bodyMedium)

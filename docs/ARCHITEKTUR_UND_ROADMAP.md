@@ -485,3 +485,8 @@ Siehe `docs/specs/002-naechste-features.md`: Mehrtagesreise, Offline-Paket, Hör
 Umgesetzt: Tagesaufteilung (`DayPlanner`), Favoriten, Unterkunftssuche (`LodgingFinder`), gebuchte Unterkünfte (`BookedPlanner`)
 und fest geplante Reisen mit Datum (`PlannedTrip`, `ItineraryPlanner`, Spec 003). Die Route führt als Mehrpunkt-Anfrage durch
 alle Buchungen. Offen: Erinnerungen vor Reisebeginn, Etappen-Übersicht im Eltern-Bildschirm, Quests pro Tag vorladen.
+
+## 42. Offline-Paket
+Pakete speichern Route, Tempolimits, Länder, Spuren, Rastplätze und aufgelöste Aufgaben dauerhaft (Spec 004) und lassen
+sich ohne Netz öffnen. Für geplante Reisen werden alle Etappen nacheinander gespeichert. Offen: Neuberechnung ohne Netz
+(Valhalla-Offline wäre ein eigenes Thema), Autobahn-Daten im Paket, Speicherverwaltung mit Größenanzeige der Karten.

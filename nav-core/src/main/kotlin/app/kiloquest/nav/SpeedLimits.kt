@@ -27,6 +27,9 @@ class SpeedProfile {
         coveredUntilMeters = maxOf(coveredUntilMeters, windowEndMeters)
     }
 
+    /** Alle Abschnitte (fuer das Offline-Paket). */
+    fun snapshot(): List<SpeedSegment> = segments.toList()
+
     /** Limit an der Streckenposition: Zahl in km/h, [UNLIMITED] oder null (unbekannt). */
     fun limitAt(alongMeters: Double): Int? {
         // Segmente sind nach Start sortiert; letztes mit from <= along
@@ -43,6 +46,10 @@ class SpeedProfile {
     }
 
     companion object {
+        /** Profil aus gespeicherten Abschnitten; [coveredUntilMeters] = bis wohin die Daten reichen. */
+        fun restore(segments: List<SpeedSegment>, coveredUntilMeters: Double): SpeedProfile =
+            SpeedProfile().also { if (segments.isNotEmpty()) it.addWindow(0.0, coveredUntilMeters, segments) }
+
         /** Valhalla/OSM: 255 = kein Tempolimit. */
         const val UNLIMITED = 255
 

@@ -75,6 +75,10 @@ import app.kiloquest.nav.Itinerary
 import app.kiloquest.nav.ItineraryPlanner
 import app.kiloquest.nav.PackItem
 import app.kiloquest.nav.PlanPlace
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.currentCoroutineContext
+import app.kiloquest.nav.OfflinePackMeta
+import app.kiloquest.nav.OfflinePackCodec
 import app.kiloquest.nav.TripOps
 import app.kiloquest.nav.PlanStay
 import app.kiloquest.nav.PlanStore
@@ -143,9 +147,9 @@ data class TripState(
 )
 
 /** Fortschritt des Offline-Reise-Pakets. */
-enum class PackagePhase { IDLE, MAP, LIMITS, COUNTRIES, READY, ERROR }
+enum class PackagePhase { IDLE, MAP, LIMITS, COUNTRIES, STOPS, QUESTS, READY, ERROR }
 
-data class PackageState(val phase: PackagePhase = PackagePhase.IDLE, val progress: Double = 0.0, val estimatedMb: Int = 0)
+data class PackageState(val phase: PackagePhase = PackagePhase.IDLE, val progress: Double = 0.0, val estimatedMb: Int = 0, val part: Int = 0, val parts: Int = 0)
 
 enum class ToiletPhase { SEARCHING, HEADING, ARRIVED, NONE }
 
@@ -177,6 +181,9 @@ data class PlanResult(
     val extraMinutes: Int? = null,
     /** Abstand jeder Buchung zur direkten Route in km. */
     val offRouteKm: List<Pair<String, Int>> = emptyList(),
+    /** Routen je Etappe (fuer das Offline-Paket) und geschaetzte Kartengroesse aller Etappen. */
+    val legRoutes: List<Route> = emptyList(),
+    val packMb: Int = 0,
 )
 
 private data class LoadedRoute(val route: Route, val lanes: List<LaneGuidance>)
@@ -242,6 +249,8 @@ data class UiState(
     /** Fest geplante Reisen mit Datum (auch Monate im Voraus). */
     val plans: List<PlannedTrip> = emptyList(),
     val plansScreen: Boolean = false,
+    /** Gespeicherte Offline-Pakete (Routen, die ohne Netz navigierbar sind). */
+    val packs: List<OfflinePackMeta> = emptyList(),
     val planOpenId: String? = null,
     val planResult: PlanResult? = null,
     /** Hinweise zur letzten Aufteilung (z. B. Umweg, lange Etappe). */
@@ -316,6 +325,7 @@ class NavController(private val app: Application) : KidsActions {
     private val usedRiddles = HashSet<String>()
     private val voice = VoiceAnswers(app)
     private val offline by lazy { OfflinePackage(app) }
+    private val packStore by lazy { OfflineStore(app) }
     private var countryTimeline: CountryTimeline? = null
     private var packageJob: Job? = null
     private var voiceJob: Job? = null
@@ -341,6 +351,7 @@ class NavController(private val app: Application) : KidsActions {
             favorites = loadPlaces("favorites"),
             booked = loadPlaces("booked"),
             plans = PlanStore.decode(prefs.getString("plans", null)),
+            packs = packStore.list(),
             riddles = loadRiddles(),
             voiceMode = prefs.getBoolean("voice_mode", false),
             voiceAvailable = VoiceAnswers.isAvailable(app),
@@ -485,6 +496,8 @@ class NavController(private val app: Application) : KidsActions {
         engine = GuidanceEngine(l.route)
         planner = AnnouncementPlanner(l.route)
         laneAnnouncer = LaneAnnouncer(l.lanes)
+        currentLanes = l.lanes
+        offlineToilets = emptyList()
         curveProfile = CurveProfile(l.route)
         speedProfile = SpeedProfile()
         speedFetching = false
@@ -507,6 +520,12 @@ class NavController(private val app: Application) : KidsActions {
             usage = loadUsage(),
             ageBandAt = if (kidBands.isEmpty()) null else { i -> kidBands.getOrNull(i % players) ?: _state.value.ageBand },
         )
+        adoptQuests(quests)
+    }
+
+    /** Uebernimmt einen fertigen Aufgabenplan (neu erzeugt oder aus einem Offline-Paket). */
+    private fun adoptQuests(quests: List<Quest>) {
+        val players = maxOf(_state.value.players, kidBands.size)
         tripStatics.clear()
         quests.forEach { q -> if (QuestCatalog.default.firstOrNull { it.id == q.templateId }?.dynamic == false) tripStatics.merge(q.templateId, 1, Int::plus) }
         questOffset = 0.0
@@ -1261,6 +1280,8 @@ class NavController(private val app: Application) : KidsActions {
                     itinerary = it,
                     nights = nights,
                     extraMinutes = direct?.let { r -> (ItineraryPlanner.extraSeconds(via.sumOf { v -> v.durationSeconds }, r.durationSeconds) / 60).toInt() },
+                    legRoutes = via,
+                    packMb = via.sumOf { v -> estimateMb(v) },
                     offRouteKm = direct?.let { r -> sorted.zip(ItineraryPlanner.offRouteMeters(r.line, sorted)).map { (s, m) -> s.name to (m / 1000).toInt() } }.orEmpty(),
                 )
             }.getOrElse { PlanResult(error = R.string.error_route) }
@@ -1527,47 +1548,191 @@ class NavController(private val app: Application) : KidsActions {
         return Corridor.estimateMegabytes(tiles).toInt().coerceAtLeast(1)
     }
 
-    /** Laedt Karte (Korridor), Tempolimits der ganzen Route und Laender entlang der Strecke vorab. */
+    /** Toiletten/Rastplaetze eines geladenen Offline-Pakets; Rueckfall, wenn Overpass nicht erreichbar ist. */
+    private var offlineToilets: List<ToiletStop> = emptyList()
+    private var currentLanes: List<LaneGuidance> = emptyList()
+
+    fun refreshPacks() = _state.update { it.copy(packs = packStore.list()) }
+
+    /** Speichert die aktuelle Route als Offline-Paket: Karte, Route, Tempolimits, Laender, Halte am Weg, Spuren und Aufgaben. */
     fun downloadPackage() {
         val route = _state.value.route ?: return
+        val dest = _state.value.destination?.name.orEmpty()
         packageJob?.cancel()
         packageJob = scope.launch {
-            val mb = estimateMb(route)
-            fun set(phase: PackagePhase, p: Double) = _state.update { it.copy(pkg = PackageState(phase, p, mb)) }
-            set(PackagePhase.MAP, 0.0)
-            val mapOk = kotlinx.coroutines.suspendCancellableCoroutine<Boolean> { cont ->
-                offline.download(
-                    Corridor.boxes(route), PACKAGE_MIN_ZOOM, PACKAGE_MAX_ZOOM,
-                    onProgress = { set(PackagePhase.MAP, it) },
-                    onFinished = { ok -> if (cont.isActive) cont.resume(ok, null) },
+            if (createPack(route, dest, dest, current = true, part = 0, parts = 0)) {
+                refreshPacks()
+                _state.update { it.copy(pkg = PackageState(PackagePhase.READY, 1.0, estimateMb(route))) }
+            }
+        }
+    }
+
+    /** Speichert alle Etappen der berechneten Reise nacheinander als Offline-Pakete. */
+    fun downloadPlanPackages() {
+        val s = _state.value
+        val plan = s.plans.firstOrNull { it.id == s.planOpenId } ?: return
+        val res = s.planResult ?: return
+        val legs = res.itinerary?.legs ?: return
+        if (res.legRoutes.size != legs.size) return
+        packageJob?.cancel()
+        packageJob = scope.launch {
+            val label = plan.name.ifBlank { plan.destination?.name.orEmpty() }
+            for ((i, r) in res.legRoutes.withIndex()) {
+                val leg = legs[i]
+                if (!createPack(r, "$label: ${leg.fromName} → ${leg.toName}", leg.toName, current = false, part = i + 1, parts = res.legRoutes.size)) return@launch
+            }
+            refreshPacks()
+            _state.update { it.copy(pkg = PackageState(PackagePhase.READY, 1.0, res.packMb)) }
+        }
+    }
+
+    private suspend fun createPack(route: Route, name: String, destName: String, current: Boolean, part: Int, parts: Int): Boolean {
+        val mb = estimateMb(route)
+        fun set(phase: PackagePhase, p: Double) = _state.update { it.copy(pkg = PackageState(phase, p, mb, part, parts)) }
+        set(PackagePhase.MAP, 0.0)
+        val mapOk = kotlinx.coroutines.suspendCancellableCoroutine<Boolean> { cont ->
+            offline.download(
+                Corridor.boxes(route), PACKAGE_MIN_ZOOM, PACKAGE_MAX_ZOOM,
+                onProgress = { set(PackagePhase.MAP, it) },
+                onFinished = { ok -> if (cont.isActive) cont.resume(ok, null) },
+            )
+        }
+        if (!mapOk) { set(PackagePhase.ERROR, 0.0); return false }
+
+        // Tempolimits der ganzen Route in 25-km-Fenstern (fuer die aktuelle Route direkt ins Live-Profil)
+        set(PackagePhase.LIMITS, 0.0)
+        val profile = if (current) speedProfile else SpeedProfile()
+        var m = 0.0
+        while (m < route.lengthMeters) {
+            currentCoroutineContext().ensureActive()
+            val end = minOf(route.lengthMeters, m + SPEED_WINDOW_METERS)
+            val ok = runCatching { fetchSpeedWindow(route, m, end, profile) }.isSuccess
+            if (!ok) { set(PackagePhase.ERROR, m / route.lengthMeters); return false }
+            m = end
+            set(PackagePhase.LIMITS, m / route.lengthMeters)
+        }
+
+        // Laender entlang der Strecke (Photon, hoefliche Abstaende)
+        set(PackagePhase.COUNTRIES, 0.0)
+        val samples = Corridor.samplePositions(route)
+        val found = ArrayList<Pair<Double, String>>()
+        for ((i, smp) in samples.withIndex()) {
+            currentCoroutineContext().ensureActive()
+            val code = fetchCountryCode(smp.second.lat, smp.second.lon)
+            if (code != null) found += smp.first to code
+            set(PackagePhase.COUNTRIES, (i + 1.0) / samples.size)
+            delay(400)
+        }
+        if (current && found.isNotEmpty() && _state.value.route === route) countryTimeline = CountryTimeline(found)
+
+        // Toiletten und Rastplaetze am Weg (Overpass, fensterweise; Luecken sind kein Abbruchgrund)
+        set(PackagePhase.STOPS, 0.0)
+        val stops = fetchStopsAlong(route) { set(PackagePhase.STOPS, it) }
+
+        // Aufgaben vorab aufloesen (Wikipedia, Natur, Routenfakten) und mitspeichern
+        set(PackagePhase.QUESTS, 0.0)
+        val offset = if (current) questOffset else 0.0
+        val quests = resolveQuestsFor(route, current) { set(PackagePhase.QUESTS, it) }
+            .filter { it.triggerMeters - offset >= 0.0 }
+            .map { PackQuests.toPack(it, offset) }
+
+        val lanes = if (current) currentLanes else runCatching {
+            LaneParser.parseOsrm(
+                fetchRoute(ValhallaApi.buildRouteRequest(route.line.points.first(), route.line.points.last(), Locale.getDefault().toLanguageTag(), osrm = true)),
+                route,
+            )
+        }.getOrDefault(emptyList())
+
+        val pack = OfflinePackCodec.build(
+            java.util.UUID.randomUUID().toString(), name.ifBlank { app.getString(R.string.plan_unnamed) }, destName,
+            java.time.LocalDate.now().toEpochDay().toInt(), route, profile, found, stops, lanes, quests, mb,
+        )
+        withContext(Dispatchers.IO) { packStore.save(pack) }
+        return true
+    }
+
+    /** Toiletten/Rastplaetze entlang der ganzen Route, 50-km-Fenster mit Abstand zwischen den Anfragen. */
+    private suspend fun fetchStopsAlong(route: Route, progress: (Double) -> Unit): List<ToiletStop> {
+        val corridor = maxOf(2_000, _state.value.settings.toiletCorridorKm * 1_000)
+        val all = ArrayList<ToiletStop>()
+        var m = 0.0
+        while (m < route.lengthMeters) {
+            currentCoroutineContext().ensureActive()
+            val end = minOf(route.lengthMeters, m + 50_000.0)
+            runCatching { ToiletFinder.parse(withContext(Dispatchers.IO) { fetchOverpass(ToiletFinder.buildRouteQuery(route, m, end, corridor)) }) }
+                .onSuccess { all += it }
+            m = end
+            progress(m / route.lengthMeters)
+            delay(1_200)
+        }
+        return ToiletFinder.merge(all, emptyList())
+    }
+
+    /**
+     * Aufgaben der Route mit allen Platzhaltern aufgeloest. Fuer die aktuelle Route wird der laufende Plan ersetzt
+     * (und angezeigt), fuer fremde Routen entsteht ein frischer Plan, ohne den laufenden Zustand zu aendern.
+     */
+    private suspend fun resolveQuestsFor(route: Route, current: Boolean, progress: (Double) -> Unit): List<Quest> {
+        val adv = if (current) adventure else null
+        val offset = if (current) questOffset else 0.0
+        val players = maxOf(_state.value.players, kidBands.size)
+        val base: List<Quest> = if (current) _state.value.plan else generator.generate(
+            routeLengthMeters = route.lengthMeters,
+            ageBand = _state.value.ageBand,
+            seed = System.nanoTime(),
+            avoidMeters = route.maneuvers.map { it.atMeters },
+            contextAt = { mm -> contextAt(route, mm) },
+            usage = loadUsage(),
+            ageBandAt = if (kidBands.isEmpty()) null else { i -> kidBands.getOrNull(i % players) ?: _state.value.ageBand },
+        )
+        val pending = setOf(RouteFacts.PENDING_KEY, WikiStories.PENDING_KEY, NatureSpotting.PENDING_KEY)
+        val out = base.toMutableList()
+        val todo = out.indices.filter { out[it].textKey in pending }
+        for ((n, i) in todo.withIndex()) {
+            currentCoroutineContext().ensureActive()
+            val q = out[i]
+            val along = q.triggerMeters - offset
+            if (along in 0.0..route.lengthMeters) {
+                val pos = route.line.points[route.line.indexAtMeters(along)]
+                val resolved = when (q.textKey) {
+                    RouteFacts.PENDING_KEY -> buildFact(q, pos)
+                    WikiStories.PENDING_KEY -> buildStory(q, pos)
+                    else -> buildNature(q, pos)
+                }
+                out[i] = resolved
+                if (adv != null && adv.replaceUpcoming(q, resolved)) publishPlan()
+            }
+            progress((n + 1.0) / todo.size)
+            delay(PRELOAD_GAP_MS)
+        }
+        return out
+    }
+
+    /** Laedt ein gespeichertes Paket ohne Netz: Route, Tempolimits, Laender, Halte, Spuren und Aufgaben. */
+    fun loadPack(id: String) {
+        scope.launch {
+            val p = withContext(Dispatchers.IO) { packStore.load(id) }
+            if (p == null) { _state.update { it.copy(error = R.string.pack_load_failed) }; return@launch }
+            val route = OfflinePackCodec.route(p)
+            installRoute(LoadedRoute(route, OfflinePackCodec.lanes(p)))
+            speedProfile = OfflinePackCodec.speedProfile(p)
+            countryTimeline = OfflinePackCodec.countryTimeline(p)
+            offlineToilets = OfflinePackCodec.toilets(p)
+            adoptQuests(p.quests.mapNotNull(PackQuests::fromPack))
+            _state.update {
+                it.copy(
+                    destination = Place(p.destinationName, route.line.points.last()), route = route, guidance = null, incidents = emptyList(),
+                    results = emptyList(), tripScreen = false, plansScreen = false, error = null,
+                    pkg = PackageState(PackagePhase.READY, 1.0, p.mapMb),
                 )
             }
-            if (!mapOk) { set(PackagePhase.ERROR, 0.0); return@launch }
-
-            // Tempolimits der ganzen Route in 25-km-Fenstern
-            set(PackagePhase.LIMITS, 0.0)
-            var m = 0.0
-            while (m < route.lengthMeters && isActive) {
-                val end = minOf(route.lengthMeters, m + SPEED_WINDOW_METERS)
-                val ok = runCatching { fetchSpeedWindow(route, m, end) }.isSuccess
-                if (!ok) { set(PackagePhase.ERROR, m / route.lengthMeters); return@launch }
-                m = end
-                set(PackagePhase.LIMITS, m / route.lengthMeters)
-            }
-
-            // Laender entlang der Strecke (Photon, hoefliche Abstaende)
-            set(PackagePhase.COUNTRIES, 0.0)
-            val samples = Corridor.samplePositions(route)
-            val found = ArrayList<Pair<Double, String>>()
-            for ((i, s) in samples.withIndex()) {
-                val code = fetchCountryCode(s.second.lat, s.second.lon)
-                if (code != null) found += s.first to code
-                set(PackagePhase.COUNTRIES, (i + 1.0) / samples.size)
-                delay(400)
-            }
-            if (found.isNotEmpty() && _state.value.route === route) countryTimeline = CountryTimeline(found)
-            set(PackagePhase.READY, 1.0)
+            scope.launch { refreshWeather(announce = false) }
         }
+    }
+
+    fun deletePack(id: String) {
+        packStore.delete(id)
+        refreshPacks()
     }
 
     fun clearOfflineMaps() {
@@ -1575,14 +1740,14 @@ class NavController(private val app: Application) : KidsActions {
     }
 
     /** Ein Tempolimit-Fenster laden und in den Cache eintragen (wirft bei Fehler). */
-    private suspend fun fetchSpeedWindow(route: Route, startM: Double, endM: Double) {
+    private suspend fun fetchSpeedWindow(route: Route, startM: Double, endM: Double, profile: SpeedProfile = speedProfile) {
         val last = route.line.points.size - 1
         val i0 = route.line.indexAtMeters(startM)
         val i1 = minOf(last, route.line.indexAtMeters(endM) + 1)
         if (i1 <= i0) return
         val body = fetchValhalla("trace_attributes", TraceAttributes.buildRequest(route, i0, i1))
         val segs = TraceAttributes.parse(body, route, i0)
-        speedProfile.addWindow(route.line.cumulative[i0], route.line.cumulative[i1], segs)
+        profile.addWindow(route.line.cumulative[i0], route.line.cumulative[i1], segs)
     }
 
     // ---------------------------------------------------------------- Tempolimit & Spuren
@@ -2014,7 +2179,7 @@ class NavController(private val app: Application) : KidsActions {
         for ((window, corridor) in tiers) {
             val w = minOf(window, route.lengthMeters - along)
             if (w < 300.0) break
-            val osm = runCatching { ToiletFinder.parse(fetchOverpass(ToiletFinder.buildRouteQuery(route, along, along + w, corridor.toInt()))) }.getOrDefault(emptyList())
+            val osm = runCatching { ToiletFinder.parse(fetchOverpass(ToiletFinder.buildRouteQuery(route, along, along + w, corridor.toInt()))) }.getOrNull() ?: offlineToilets
             // Betreiberdaten (Autobahn) und OpenStreetMap zusammen; faellt Overpass aus, reichen die Autobahn-Daten allein
             val cands = ToiletFinder.merge(osm, official)
             val top = ToiletFinder.ahead(cands, route, along, w, corridor).take(8)
@@ -2032,7 +2197,7 @@ class NavController(private val app: Application) : KidsActions {
 
     private suspend fun findToiletAround(pos: LatLon): ToiletChoice? {
         for (radius in listOf(6_000, 20_000)) {
-            val cands = runCatching { ToiletFinder.parse(fetchOverpass(ToiletFinder.buildQuery(pos, radius))) }.getOrDefault(emptyList())
+            val cands = runCatching { ToiletFinder.parse(fetchOverpass(ToiletFinder.buildQuery(pos, radius))) }.getOrNull() ?: offlineToilets
             val near = ToiletFinder.nearest(cands, pos, 8)
             if (near.isEmpty()) continue
             val seconds = runCatching {

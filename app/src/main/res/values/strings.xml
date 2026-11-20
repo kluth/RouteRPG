@@ -237,7 +237,7 @@
     <string name="pkg_phase_map">map</string>
     <string name="pkg_phase_limits">speed limits</string>
     <string name="pkg_phase_countries">countries</string>
-    <string name="pkg_ready">Offline package ready: map, speed limits and countries are saved.</string>
+    <string name="pkg_ready">Offline package ready: map, route, speed limits, countries, rest stops and quests are saved.</string>
     <string name="pkg_error">Offline package failed. Please try again with a network connection.</string>
     <string name="pkg_clear">Delete offline maps</string>
     <string name="car_simple_map">Simple map in the car</string>
@@ -576,4 +576,16 @@
     <string name="plan_return_prefix">Return:</string>
     <string name="plan_duplicate">Copy for next year</string>
     <string name="plan_copy_suffix">(copy)</string>
+    <string name="pkg_phase_stops">rest stops</string>
+    <string name="pkg_phase_quests">quests</string>
+    <string name="pkg_part_progress">Offline package %3$d/%4$d: %1$s %2$d%%</string>
+    <string name="packs_title">Saved offline routes</string>
+    <string name="packs_hint">Routes you saved offline can be started without a network connection. Rerouting needs a connection.</string>
+    <string name="packs_empty">No saved offline routes yet. Plan a route and tap the offline package button.</string>
+    <string name="packs_info">%1$s · map ~%2$d MB · %3$d quests · %4$d rest stops</string>
+    <string name="packs_navigate">Open offline</string>
+    <string name="packs_delete">Delete</string>
+    <string name="pack_load_failed">This offline package could not be opened.</string>
+    <string name="plan_save_offline">Save all stages offline (~%1$d MB)</string>
+    <string name="plan_save_offline_hint">Saves map, route, speed limits, rest stops and quests for every stage while you have a network.</string>
 </resources>

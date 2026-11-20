@@ -237,7 +237,7 @@
     <string name="pkg_phase_map">Karte</string>
     <string name="pkg_phase_limits">Tempolimits</string>
     <string name="pkg_phase_countries">Länder</string>
-    <string name="pkg_ready">Offline-Paket bereit: Karte, Tempolimits und Länder sind gespeichert.</string>
+    <string name="pkg_ready">Offline-Paket bereit: Karte, Route, Tempolimits, Länder, Rastplätze und Aufgaben sind gespeichert.</string>
     <string name="pkg_error">Offline-Paket fehlgeschlagen. Bitte mit Netz erneut versuchen.</string>
     <string name="pkg_clear">Offline-Karten löschen</string>
     <string name="car_simple_map">Einfache Karte im Auto</string>
@@ -576,4 +576,16 @@
     <string name="plan_return_prefix">Rückreise:</string>
     <string name="plan_duplicate">Kopie fürs nächste Jahr</string>
     <string name="plan_copy_suffix">(Kopie)</string>
+    <string name="pkg_phase_stops">Rastplätze</string>
+    <string name="pkg_phase_quests">Aufgaben</string>
+    <string name="pkg_part_progress">Offline-Paket %3$d/%4$d: %1$s %2$d%%</string>
+    <string name="packs_title">Gespeicherte Offline-Routen</string>
+    <string name="packs_hint">Offline gespeicherte Routen lassen sich ohne Netz starten. Für eine Neuberechnung der Route braucht es eine Verbindung.</string>
+    <string name="packs_empty">Noch keine Offline-Routen gespeichert. Plane eine Route und tippe auf den Offline-Paket-Knopf.</string>
+    <string name="packs_info">%1$s · Karte ~%2$d MB · %3$d Aufgaben · %4$d Rastplätze</string>
+    <string name="packs_navigate">Offline öffnen</string>
+    <string name="packs_delete">Löschen</string>
+    <string name="pack_load_failed">Dieses Offline-Paket konnte nicht geöffnet werden.</string>
+    <string name="plan_save_offline">Alle Etappen offline speichern (~%1$d MB)</string>
+    <string name="plan_save_offline_hint">Speichert Karte, Route, Tempolimits, Rastplätze und Aufgaben für jede Etappe, solange du Netz hast.</string>
 </resources>

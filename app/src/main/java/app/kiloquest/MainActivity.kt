@@ -341,17 +341,21 @@ internal fun PackageLine(pkg: PackageState, vm: NavController) {
         PackagePhase.IDLE -> androidx.compose.material3.TextButton(onClick = vm::downloadPackage) {
             Text(stringResource(R.string.pkg_button, pkg.estimatedMb))
         }
-        PackagePhase.MAP, PackagePhase.LIMITS, PackagePhase.COUNTRIES -> Text(
+        PackagePhase.MAP, PackagePhase.LIMITS, PackagePhase.COUNTRIES, PackagePhase.STOPS, PackagePhase.QUESTS -> Text(
             stringResource(
-                R.string.pkg_progress,
+                if (pkg.parts > 1) R.string.pkg_part_progress else R.string.pkg_progress,
                 stringResource(
                     when (pkg.phase) {
                         PackagePhase.MAP -> R.string.pkg_phase_map
                         PackagePhase.LIMITS -> R.string.pkg_phase_limits
+                        PackagePhase.STOPS -> R.string.pkg_phase_stops
+                        PackagePhase.QUESTS -> R.string.pkg_phase_quests
                         else -> R.string.pkg_phase_countries
                     },
                 ),
                 (pkg.progress * 100).toInt(),
+                pkg.part,
+                pkg.parts,
             ),
             style = MaterialTheme.typography.bodySmall,
         )

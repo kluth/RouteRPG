@@ -213,7 +213,7 @@ private fun PlanEditor(state: UiState, nav: NavController, plan: PlannedTrip) {
     }
 
     Button(onClick = nav::calculatePlan, modifier = Modifier.fillMaxWidth(), enabled = state.planResult?.loading != true) { Text(stringResource(R.string.plan_calculate)) }
-    state.planResult?.let { PlanResultView(it, nav) }
+    state.planResult?.let { PlanResultView(it, state.pkg, nav) }
 
     PackingSection(state, nav, plan)
     val ctx = LocalContext.current
@@ -229,7 +229,7 @@ private fun PlanEditor(state: UiState, nav: NavController, plan: PlannedTrip) {
 }
 
 @Composable
-private fun PlanResultView(res: PlanResult, nav: NavController) {
+private fun PlanResultView(res: PlanResult, pkg: PackageState, nav: NavController) {
     if (res.loading) { Text(stringResource(R.string.plan_loading)); return }
     res.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error); return }
     val it = res.itinerary ?: return
@@ -272,6 +272,12 @@ private fun PlanResultView(res: PlanResult, nav: NavController) {
         }
     }
     if (it.ok) Button(onClick = nav::usePlanAsTrip, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.plan_use_as_trip)) }
+    if (res.legRoutes.isNotEmpty()) {
+        Text(stringResource(R.string.plan_save_offline_hint), style = MaterialTheme.typography.bodySmall)
+        if (pkg.phase == PackagePhase.IDLE) {
+            OutlinedButton(onClick = nav::downloadPlanPackages, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.plan_save_offline, res.packMb)) }
+        } else PackageLine(pkg, nav)
+    }
 }
 
 @StringRes
