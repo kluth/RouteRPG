@@ -168,3 +168,39 @@ class TripTest {
         assertTrue(TripApi.parseLegs("""{"error":"x"}""").isEmpty())
     }
 }
+
+class RiddleTest {
+    private val ok = Riddle("r1", "Wie heißt unser Hund?", listOf("Bello", "Rex", "Luna"), 2, atKm = 30.0)
+
+    @Test
+    fun `valid riddle has no errors`() {
+        assertTrue(RiddleRules.validate(ok).isEmpty())
+        assertTrue(RiddleRules.validate(ok.copy(atKm = null, near = LatLon(51.0, 6.0), nearName = "Oma")).isEmpty())
+    }
+
+    @Test
+    fun `invalid riddles are reported`() {
+        assertTrue("question_empty" in RiddleRules.validate(ok.copy(question = " ")))
+        assertTrue("options_missing" in RiddleRules.validate(ok.copy(options = listOf("a", "b"))))
+        assertTrue("options_missing" in RiddleRules.validate(ok.copy(options = listOf("a", "", "c"))))
+        assertTrue("options_not_distinct" in RiddleRules.validate(ok.copy(options = listOf("Rex", "rex", "Luna"))))
+        assertTrue("correct_missing" in RiddleRules.validate(ok.copy(correctIndex = 5)))
+        assertTrue("trigger_missing" in RiddleRules.validate(ok.copy(atKm = null)))
+        assertTrue("question_too_long" in RiddleRules.validate(ok.copy(question = "x".repeat(200))))
+    }
+
+    @Test
+    fun `due by distance only after the km and only once`() {
+        val pos = LatLon(50.0, 8.0)
+        assertTrue(!RiddleRules.due(ok, 29_000.0, pos, emptySet()))
+        assertTrue(RiddleRules.due(ok, 30_100.0, pos, emptySet()))
+        assertTrue(!RiddleRules.due(ok, 40_000.0, pos, setOf("r1")))
+    }
+
+    @Test
+    fun `due by place within radius`() {
+        val r = ok.copy(atKm = null, near = LatLon(50.0, 8.0))
+        assertTrue(RiddleRules.due(r, 0.0, LatLon(50.005, 8.0), emptySet()))   // ca. 550 m
+        assertTrue(!RiddleRules.due(r, 0.0, LatLon(50.05, 8.0), emptySet()))   // ca. 5.5 km
+    }
+}

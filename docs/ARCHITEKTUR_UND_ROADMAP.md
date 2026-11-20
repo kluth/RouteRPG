@@ -389,3 +389,11 @@ Gebaut (Build/Lint/Tests grün; Flugzeug- und Kp-Antworten gegen echte Daten vom
 - **Quellen-Hinweis** („Daten: adsb.lol, NOAA SWPC") in der Kinderansicht.
 - **Nicht umgesetzt:** ISS-Überflüge (Datenquellen erreichbar, aber Sichtbarkeitsberechnung nicht gebaut), Sternbilder/Planeten, Mondhöhe über dem Horizont.
 - Hinweis zum Datenschutz: Für Flugzeuge, Tiere und Geschichten wird die aktuelle Position an die jeweiligen freien Dienste (adsb.lol, iNaturalist, Wikipedia, Overpass, Open-Meteo, Photon) gesendet; ohne Konto/Kennung, nur für den privaten Gebrauch gedacht.
+
+## 29. Stand Erweiterung 8a: Eigene Rätsel (Eltern)
+
+Gebaut (Build/Lint/Tests grün; nicht auf dem Gerät erprobt):
+- **Rätsel-Editor** („Eigene Rätsel" in der Kinderansicht, nur im Stand): Frage, drei Antworten, richtige Antwort, Auslöser nach X km Fahrstrecke **oder** in der Nähe eines gesuchten Ortes (Radius 1,5 km). Prüfregeln (leere Felder, doppelte Antworten, Längen, fehlender Auslöser) mit übersetzten Fehlermeldungen. Gespeichert nur lokal auf dem Gerät.
+- Im Spiel erscheint ein fälliges Rätsel einmal pro Fahrt als Quiz (20 Punkte), nicht in kurvigen Abschnitten und nur, wenn keine andere Aufgabe aktiv ist, mit Sprachansage.
+- **Community-Rätsel** (Teilen zwischen Nutzern) sind bewusst nicht gebaut: sie bräuchten Server, Konten und Moderation (Kinderschutz) und widersprechen dem Null-Budget-Ansatz.
+- **Offen: Sprachantworten** (Kinder antworten per Zuruf). Geplant nur mit Spracherkennung **auf dem Gerät** (kein Audio an Server), Abgleich der Antwort mit den Optionen; siehe nächster Schritt.

@@ -130,6 +130,11 @@ fun KidsScreen(state: UiState, nav: NavController) {
             Album(state.album)
             Text(stringResource(R.string.kids_total, state.totalPoints), style = MaterialTheme.typography.bodyMedium)
 
+            if (!state.navigating) {
+                OutlinedButton(onClick = { nav.showKids(false); nav.showRiddles(true) }, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.riddle_open))
+                }
+            }
             OutlinedButton(onClick = { nav.showKids(false) }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.kids_back))
             }

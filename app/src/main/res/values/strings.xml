@@ -206,4 +206,25 @@
     <string name="dir_sw">to the southwest</string>
     <string name="dir_w">to the west</string>
     <string name="dir_nw">to the northwest</string>
+    <string name="riddle_open">Own riddles</string>
+    <string name="riddle_title">Own riddles</string>
+    <string name="riddle_hint">Create questions for the trip. They appear on the way as quests for the kids.</string>
+    <string name="riddle_question">Question</string>
+    <string name="riddle_option">Answer %1$d</string>
+    <string name="riddle_correct">Correct answer</string>
+    <string name="riddle_at_km">Appears after … km (leave empty to use a place)</string>
+    <string name="riddle_place_hint">Or tap a place below to trigger it there</string>
+    <string name="riddle_save">Save riddle</string>
+    <string name="riddle_delete">Delete</string>
+    <string name="riddle_trigger_km">after %1$s km</string>
+    <string name="riddle_trigger_place">near %1$s</string>
+    <string name="riddle_err_question_empty">Please write a question.</string>
+    <string name="riddle_err_question_too_long">The question is too long.</string>
+    <string name="riddle_err_options_missing">Please fill in all three answers.</string>
+    <string name="riddle_err_option_too_long">An answer is too long.</string>
+    <string name="riddle_err_options_not_distinct">The answers must be different.</string>
+    <string name="riddle_err_correct_missing">Please choose the correct answer.</string>
+    <string name="riddle_err_trigger_missing">Set a distance or a place.</string>
+    <string name="riddle_err_km_negative">The distance must not be negative.</string>
+    <string name="riddle_none">No riddles yet.</string>
 </resources>

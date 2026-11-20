@@ -61,6 +61,8 @@ import app.kiloquest.nav.WeatherHazard
 import app.kiloquest.nav.WeatherSummary
 import app.kiloquest.nav.IncidentType
 import app.kiloquest.nav.RerouteAdvisor
+import app.kiloquest.nav.Riddle
+import app.kiloquest.nav.RiddleRules
 import app.kiloquest.nav.RouteIncident
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -156,6 +158,8 @@ data class UiState(
     val tripScreen: Boolean = false,
     /** Land der aktuellen Position (ISO-Code), falls erkannt. */
     val country: String? = null,
+    val riddles: List<Riddle> = emptyList(),
+    val riddleScreen: Boolean = false,
 )
 
 private const val TRAFFIC_REFRESH_MS = 5 * 60_000L
@@ -192,6 +196,7 @@ class NavController(private val app: Application) {
     private var weatherJob: Job? = null
     private var autoStartAfterRoute = false
     private var countryChecking = false
+    private val usedRiddles = HashSet<String>()
     private var lastCountryCheckAlong = -1e9
     private val taughtPhrases = HashSet<Phrase>()
     private val announcedHazards = HashSet<WeatherHazard>()
@@ -208,6 +213,7 @@ class NavController(private val app: Application) {
             recents = loadRecents(),
             sicknessMode = prefs.getBoolean("sickness_mode", true),
             trip = loadTrip(),
+            riddles = loadRiddles(),
         ),
     )
     val state: StateFlow<UiState> = _state
@@ -415,6 +421,7 @@ class NavController(private val app: Application) {
         if (_state.value.route == null) return
         _state.update { it.copy(navigating = true) }
         _state.value.route?.maneuvers?.firstOrNull()?.instruction?.let(::speak)
+        usedRiddles.clear()
         breakPlanner = BreakPlanner(intervalMs = breakIntervalMs(_state.value.ageBand))
         breakPlanning = false
         weatherJob?.cancel()
@@ -450,6 +457,7 @@ class NavController(private val app: Application) {
         weatherJob?.cancel()
         weatherJob = null
         taughtPhrases.clear()
+        usedRiddles.clear()
         lastCountryCheckAlong = -1e9
         announcedIncidents.clear()
         adventure = null
@@ -488,6 +496,7 @@ class NavController(private val app: Application) {
         checkCountry(pos, g.alongMeters)
         // Auf kurvigen Abschnitten keine neue Bildschirm-Aufgabe ausloesen; sie kommt auf gerader Strecke
         if (!curvy) adventure?.onProgress(questOffset + g.alongMeters)?.let { q -> onQuestTriggered(q, pos) }
+        if (!curvy && _state.value.quest == null) checkRiddles(g.alongMeters, pos)
         arbiter.poll(System.currentTimeMillis(), tts?.isSpeaking == true)?.let(::speakQuest)
         val now = System.currentTimeMillis()
         if (g.isOffRoute && now - lastReroute > 15_000) {
@@ -495,6 +504,69 @@ class NavController(private val app: Application) {
             speak(app.getString(R.string.rerouting))
             calculateRoute()
         }
+    }
+
+    // ---------------------------------------------------------------- Eigene Raetsel (Eltern)
+
+    private fun loadRiddles(): List<Riddle> = runCatching {
+        val arr = org.json.JSONArray(prefs.getString("riddles", "[]"))
+        (0 until arr.length()).map { i ->
+            val o = arr.getJSONObject(i)
+            val opts = o.getJSONArray("opts")
+            Riddle(
+                id = o.getString("id"), question = o.getString("q"),
+                options = (0 until opts.length()).map { opts.getString(it) },
+                correctIndex = o.getInt("c"),
+                atKm = if (o.has("km")) o.getDouble("km") else null,
+                near = if (o.has("lat")) LatLon(o.getDouble("lat"), o.getDouble("lon")) else null,
+                nearName = o.optString("place").takeIf { it.isNotBlank() },
+            )
+        }
+    }.getOrDefault(emptyList())
+
+    private fun saveRiddles(list: List<Riddle>) {
+        val arr = org.json.JSONArray()
+        list.forEach { r ->
+            val o = org.json.JSONObject().put("id", r.id).put("q", r.question).put("opts", org.json.JSONArray(r.options)).put("c", r.correctIndex)
+            r.atKm?.let { o.put("km", it) }
+            r.near?.let { o.put("lat", it.lat).put("lon", it.lon) }
+            r.nearName?.let { o.put("place", it) }
+            arr.put(o)
+        }
+        prefs.edit().putString("riddles", arr.toString()).apply()
+    }
+
+    fun showRiddles(show: Boolean) = _state.update { it.copy(riddleScreen = show) }
+
+    /** Speichert ein gueltiges Raetsel; gibt die Fehlerschluessel zurueck (leer = gespeichert). */
+    fun addRiddle(r: Riddle): List<String> {
+        val errors = RiddleRules.validate(r)
+        if (errors.isEmpty()) {
+            val list = _state.value.riddles + r
+            saveRiddles(list)
+            _state.update { it.copy(riddles = list, results = emptyList()) }
+        }
+        return errors
+    }
+
+    fun deleteRiddle(id: String) {
+        val list = _state.value.riddles.filterNot { it.id == id }
+        saveRiddles(list)
+        _state.update { it.copy(riddles = list) }
+    }
+
+    /** Faelliges Eltern-Raetsel als Quest zeigen und ansagen (hoechstens eines zugleich). */
+    private fun checkRiddles(along: Double, pos: LatLon) {
+        val r = _state.value.riddles.firstOrNull { RiddleRules.due(it, along, pos, usedRiddles) } ?: return
+        usedRiddles += r.id
+        val q = Quest(
+            templateId = "riddle:${r.id}", textKey = "=${r.question}", type = QuestType.QUIZ,
+            triggerMeters = questOffset + along, kind = QuestKind.CHOICE,
+            optionKeys = r.options.map { "=$it" }, correctIndex = r.correctIndex, points = 20,
+        )
+        adventure?.forceQuest(q)
+        _state.update { it.copy(quest = q, feedback = null, newSticker = null) }
+        announceQuest(q)
     }
 
     // ---------------------------------------------------------------- Himmel & Flugzeuge

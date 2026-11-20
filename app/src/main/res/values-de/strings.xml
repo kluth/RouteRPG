@@ -206,4 +206,25 @@
     <string name="dir_sw">im Südwesten</string>
     <string name="dir_w">im Westen</string>
     <string name="dir_nw">im Nordwesten</string>
+    <string name="riddle_open">Eigene Rätsel</string>
+    <string name="riddle_title">Eigene Rätsel</string>
+    <string name="riddle_hint">Legt Fragen für die Reise an. Sie erscheinen unterwegs als Aufgaben für die Kinder.</string>
+    <string name="riddle_question">Frage</string>
+    <string name="riddle_option">Antwort %1$d</string>
+    <string name="riddle_correct">Richtige Antwort</string>
+    <string name="riddle_at_km">Erscheint nach … km (leer lassen, wenn ein Ort gilt)</string>
+    <string name="riddle_place_hint">Oder unten einen Ort antippen, damit es dort erscheint</string>
+    <string name="riddle_save">Rätsel speichern</string>
+    <string name="riddle_delete">Löschen</string>
+    <string name="riddle_trigger_km">nach %1$s km</string>
+    <string name="riddle_trigger_place">bei %1$s</string>
+    <string name="riddle_err_question_empty">Bitte eine Frage eingeben.</string>
+    <string name="riddle_err_question_too_long">Die Frage ist zu lang.</string>
+    <string name="riddle_err_options_missing">Bitte alle drei Antworten ausfüllen.</string>
+    <string name="riddle_err_option_too_long">Eine Antwort ist zu lang.</string>
+    <string name="riddle_err_options_not_distinct">Die Antworten müssen verschieden sein.</string>
+    <string name="riddle_err_correct_missing">Bitte die richtige Antwort wählen.</string>
+    <string name="riddle_err_trigger_missing">Bitte eine Strecke oder einen Ort angeben.</string>
+    <string name="riddle_err_km_negative">Die Strecke darf nicht negativ sein.</string>
+    <string name="riddle_none">Noch keine Rätsel.</string>
 </resources>
