@@ -11,6 +11,13 @@ Nur freie Datenquellen. Stand: 2026-11-20.
 | Spielinhalt | Auto-generiert aus der Route · ortsbezogene Quizze/Geschichten · Spotting-Bingo/Alphabet-Spiele · Community-Rätsel |
 | Bedienung | Kinder spielen auf Companion-Handy/Tablet, im Auto Sprachausgabe; Android-Auto-Display zeigt nur minimale Spiel-Info |
 | Umfang | Gesamtplanung zuerst, dann iterativ bauen |
+| Region | Europaweit (Architektur von Anfang an), Rollout Land für Land |
+| Zielgruppe | Kinder 4–14, drei Altersstufen (4–6, 7–10, 11–14) |
+| Sprache | Deutsch zuerst, **Internationalisierung (i18n) von Tag 1** |
+| Blitzerwarnung | Nur rechtlich konform: ausschließlich fest installierte Anlagen, pro Land per Feature-Flag steuerbar (siehe 7a) |
+| Monetarisierung | Zunächst kostenlos, später Pro-Features (Freemium) |
+| Team | Solo-Entwicklung mit mehreren KI-Agenten |
+| Testgerät | Eigenes Auto mit Android Auto (plus DHU-Emulator für CI/Szenarien) |
 
 ## 2. Plattform-Randbedingungen (wichtig)
 
@@ -195,15 +202,64 @@ Erweiterungen:
 | Lizenz (ODbL, CC BY-SA, Attribution) | Lizenz-Audit in CI, Attribution im UI |
 | Aufwand des Gesamtprojekts | Phasen mit klarem MVP-Schnitt (Phase 2) |
 
-## 12. Offene Fragen (nächste Interviewrunde)
+## 12. Zusätzliche Entscheidungen aus Runde 2
 
-1. **Zielländer:** Nur Deutschland oder DACH/Europa von Anfang an? (Bestimmt Verkehrsfeeds, Sprachen, Tile-Umfang.)
-2. **Altersgruppen:** Welche Altersspanne sollen die Quests abdecken (z. B. 3–6, 6–10, 10+)?
-3. **Sprachen:** Nur Deutsch zum Start?
-4. **Blitzerwarnungen:** Gewünscht? (In DE rechtlich heikel für Fahrer; ggf. nur „Gefahrenstellen".)
-5. **Monetarisierung:** Kostenlos, Einmalkauf, Abo, Spenden? (Beeinflusst Backend-Budget.)
-6. **Hosting-Budget & Betrieb:** Eigener Server vorhanden oder Cloud?
-7. **Team/Zeit:** Entwickelst du allein oder im Team? Wie viel Zeit pro Woche?
-8. **Test-Setup:** Android-Auto-Fahrzeug oder Head-Unit zum Testen vorhanden (sonst nur DHU-Emulator)?
-9. **Name & Branding:** „RouteRPG" final?
-10. **iOS/CarPlay:** Später relevant?
+### 12.1 Internationalisierung ab Tag 1
+- Alle Texte in Android-String-Ressourcen (`values/`, `values-de/` …), keine Hardcodes; Lint-Regel `HardcodedText` als Fehler.
+- Quests sind **sprachneutrale Templates** (ID + Parameter) mit Textkatalogen pro Sprache (ICU MessageFormat für Plural/Genus). So kann später jede Sprache ergänzt werden, ohne den Generator anzufassen.
+- Wikipedia/Wikidata liefern Inhalte pro Sprache; Fallback-Kette (Nutzersprache → Englisch → Label ohne Story).
+- TTS-Stimmen: System-TTS pro Locale; Einheiten (km/mi), Datum, Zahlenformate über `java.time`/ICU.
+- Übersetzung: Weblate (frei) oder Crowdin-OSS-Plan, KI-Vorübersetzung mit menschlicher Prüfung für Kindertexte.
+- RTL-Unterstützung mitdenken (Layouts mit `start/end`).
+
+### 12.2 Altersstufen 4–14
+| Stufe | Alter | Spielform | Bedienung |
+|---|---|---|---|
+| Mini | 4–6 | Bildbasiert, Zählen, Farben, Tiere, Vorlesen per TTS | Große Buttons, kein Lesen nötig, Sprache/Icons |
+| Entdecker | 7–10 | Quiz, Spotting-Bingo, Alphabet, kurze Geschichten | Lesen, einfache Texteingabe optional |
+| Profi | 11–14 | Wissensfragen, Knobelaufgaben, Community-Rätsel, Rangliste, Karten-Lesen | Volle Komplexität, Mitgestalten von Rätseln |
+
+Jede Quest trägt Metadaten (`minAge`, `maxAge`, `difficulty`); der Generator mischt Stufen, wenn Geschwister gemeinsam spielen (Team-Modus).
+
+### 12.3 Europaweit
+- Datenbasis: Europa-Extrakt (Geofabrik), aber **Rollout pro Land/Region**. Start: DE, danach AT/CH, dann Nachbarländer. Routing-Tiles für ganz Europa brauchen viel Speicher/RAM; Anfangs nur DACH hosten.
+- Verkehrsdaten: pro Land ein eigener Ingest-Adapter (NAP/DATEX II), gemeinsame interne Schnittstelle `TrafficSource`. Neues Land = neuer Adapter + Mapping-Test.
+- Verkehrsregeln/Einheiten/Tempolimit-Defaults pro Land in einer Konfigurationsdatei.
+- Offline-Karten in Länderpaketen.
+
+### 12.4 Blitzerwarnung (rechtlich konform)
+Die Rechtslage ist je Land unterschiedlich. In Deutschland ist es nach § 23 Abs. 1c StVO dem Fahrer untersagt, ein Gerät zu betreiben oder betriebsbereit mitzuführen, das Verkehrsüberwachung anzeigt oder stört; die Schweiz verbietet Warnungen strikt, Frankreich erlaubt nur allgemeine „Gefahrenzonen" ohne genaue Position. „Nur feste Anlagen" macht es also **nicht automatisch überall legal**.
+
+Umsetzung:
+- Datenquelle: OSM (`highway=speed_camera`), nur feste Anlagen; keine Crowd-Meldungen mobiler Kontrollen.
+- Pro Land eine Policy (`OFF` / `DANGER_ZONE_ONLY` / `FIXED_CAMERAS`) per Remote-Config, Standard `OFF` bzw. `DANGER_ZONE_ONLY`, bis die Rechtslage geklärt ist.
+- Alternativ allgemein formulierte Hinweise („Streckenabschnitt mit Geschwindigkeitsüberwachung / Gefahrenstelle"), Tempolimit-Hinweise bleiben immer aktiv.
+- Vor Aktivierung in einem Land: rechtliche Kurzprüfung dokumentieren (`docs/legal/<land>.md`). Das ist keine Rechtsberatung; für den Launch lohnt sich eine kurze Prüfung durch einen Anwalt.
+
+### 12.5 Freemium-Vorbereitung
+- Abstraktion `Entitlements` (Feature-Flags, lokal + Google Play Billing), von Anfang an im Code.
+- Frei: Navigation, Basisverkehr, Basis-Schnitzeljagd, Android Auto.
+- Pro (später): erweiterte Quest-Pakete (Themenwelten), Mehrtagesreisen, Reisetagebuch-Export, unbegrenzte Offline-Regionen, Familienprofile/Sync, Kolonnenfahrt.
+- Keine Werbung, keine Tracking-SDKs (Familien-Compliance).
+
+### 12.6 Solo-Entwicklung mit KI-Agenten
+- **Monorepo**, klare Modulgrenzen und kleine Module, damit Agenten mit begrenztem Kontext sicher arbeiten können.
+- `AGENTS.md`/`CLAUDE.md` im Repo mit Architekturregeln, Build-/Testbefehlen, Code-Konventionen, „niemals tun"-Liste (z. B. keine neuen Abhängigkeiten ohne Lizenzprüfung, keine Hardcode-Strings).
+- Jede Funktion mit Tests; CI als Qualitätstor (Lint, Unit-Tests, Detekt/ktlint, Lizenz-Check). Pull-Requests pro Agent-Aufgabe, du reviewst.
+- Spezifikation vor Implementierung: kurze Specs in `docs/specs/NNN-*.md` pro Feature als Eingabe für Agenten.
+- Route-Replay-Tests (GPX) und DHU-Szenarien als Ersatz für aufwendige Fahrtests.
+- Realistische Planung: Gesamtumfang ist groß, Fokus auf einen **MVP nach Phase 2** (spielbar im eigenen Auto) und ab dann Nutzer-Feedback.
+
+### 12.7 Testen im eigenen Auto
+- Entwicklung: Handy per USB + **Desktop Head Unit** (DHU) für schnelle Iteration.
+- Im Auto: Android Auto mit Entwicklermodus aktivieren („Unbekannte Quellen"), Debug-Builds oder interner Testkanal in der Play Console.
+- Testprotokoll pro Fahrt: Triggerzeitpunkte, Audio-Ducking, Ablenkung, Akku/Daten.
+- Wichtig: Nur bei sicheren Bedingungen testen, eine zweite Person bedient das Handy.
+
+## 13. Noch offen
+
+1. **Name/Branding:** „RouteRPG" final? (Domain, Play-Store-Name, Marken-Check)
+2. **Hosting-Budget:** Euro/Monat für Server? Das entscheidet, ob DACH oder ganz Europa als Backend-Start möglich ist.
+3. **Rechtsform/Impressum/Datenschutz:** Privatperson oder Unternehmen? (Pflicht für Play Store und DSGVO.)
+4. **iOS/CarPlay:** Später relevant? (Bei Kotlin-Stack wäre das ein eigenes Projekt.)
+5. **Repo-Struktur:** Soll ich das Gradle-Projekt (Phase 0) jetzt aufsetzen?
