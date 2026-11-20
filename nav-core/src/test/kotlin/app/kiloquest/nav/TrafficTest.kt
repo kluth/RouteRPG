@@ -139,3 +139,32 @@ class AutobahnRealDataTest {
         assertTrue(list.all { it.type == IncidentType.CLOSURE && it.geometry.isNotEmpty() })
     }
 }
+
+class TripTest {
+    private fun res(name: String) = javaClass.classLoader.getResource(name)!!.readText()
+
+    @Test
+    fun `request contains start and every stop in order`() {
+        val req = TripApi.buildRequest(LatLon(51.0, 6.0), listOf(LatLon(52.0, 7.0), LatLon(53.0, 8.0)), "de-DE")
+        val lats = Regex("\"lat\":([0-9.]+)").findAll(req).map { it.groupValues[1].toDouble() }.toList()
+        assertEquals(listOf(51.0, 52.0, 53.0), lats)
+    }
+
+    @Test
+    fun `parses legs of a real three stop trip`() {
+        val legs = TripApi.parseLegs(res("valhalla_trip_3stops.json"))
+        assertEquals(2, legs.size)
+        assertEquals(24_794.0, legs[0].lengthMeters, 1.0)
+        assertEquals(37_641.0, legs[1].lengthMeters, 1.0)
+        val total = TripApi.totals(legs)
+        assertEquals(62_435.0, total.lengthMeters, 2.0)
+        assertTrue(total.durationSeconds > 3700)
+    }
+
+    @Test
+    fun `long stage detection and empty responses`() {
+        assertTrue(TripApi.isLongStage(LegSummary(700_000.0, 9 * 3600.0)))
+        assertTrue(!TripApi.isLongStage(LegSummary(300_000.0, 4 * 3600.0)))
+        assertTrue(TripApi.parseLegs("""{"error":"x"}""").isEmpty())
+    }
+}

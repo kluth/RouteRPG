@@ -159,4 +159,19 @@
     <string name="nature_bird">People often spot a %1$s around here. Can you see a bird?</string>
     <string name="nature_mammal">Animals living around here: %1$s. Maybe you will spot one!</string>
     <string name="nature_source">Data: iNaturalist community</string>
+    <string name="trip_open">Trip</string>
+    <string name="trip_title">Trip planner</string>
+    <string name="trip_hint">Add your stage destinations (e.g. overnight stops). Each stage becomes its own route and adventure.</string>
+    <string name="trip_total">%1$d stages · %2$s · %3$s</string>
+    <string name="trip_stage">Stage %1$d: %2$s</string>
+    <string name="trip_stage_info">%1$s · %2$s</string>
+    <string name="trip_stage_done_label">done · %1$d points</string>
+    <string name="trip_long_day">Long day – plan an extra break</string>
+    <string name="trip_start_stage">Start stage %1$d</string>
+    <string name="trip_remove">Remove</string>
+    <string name="trip_clear">Clear trip</string>
+    <string name="trip_add_hint">Add stage destination</string>
+    <string name="trip_stage_done_speech">Stage %1$d done! You collected %2$d points today.</string>
+    <string name="trip_finished">Trip complete – well done!</string>
+    <string name="trip_no_position">Planning needs your position. Please wait for GPS.</string>
 </resources>

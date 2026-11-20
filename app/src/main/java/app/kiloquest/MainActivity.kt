@@ -122,9 +122,10 @@ private fun AppScreen(vm: NavController) {
         }
 
         if (state.kidsScreen) KidsScreen(state, vm)
+        if (state.tripScreen) TripScreen(state, vm)
 
         val route = state.route
-        if (route != null && !state.kidsScreen) {
+        if (route != null && !state.kidsScreen && !state.tripScreen) {
             Surface(
                 tonalElevation = 6.dp,
                 modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = 24.dp, start = 12.dp, end = 12.dp),
@@ -152,7 +153,7 @@ private fun AppScreen(vm: NavController) {
                     }
                 }
             }
-        } else if (!state.kidsScreen) {
+        } else if (!state.kidsScreen && !state.tripScreen) {
             Text(
                 text = stringResource(R.string.map_attribution),
                 style = MaterialTheme.typography.labelSmall,
@@ -340,6 +341,9 @@ private fun SearchPanel(state: UiState, vm: NavController) {
                 )
                 Button(onClick = { vm.search(query) }, modifier = Modifier.padding(start = 8.dp), enabled = !state.busy) {
                     Text(stringResource(R.string.search_action))
+                }
+                androidx.compose.material3.OutlinedButton(onClick = { vm.showTrip(true) }, modifier = Modifier.padding(start = 8.dp)) {
+                    Text(stringResource(R.string.trip_open))
                 }
             }
             (if (state.results.isEmpty() && query.isBlank()) state.recents else state.results).forEach { place ->

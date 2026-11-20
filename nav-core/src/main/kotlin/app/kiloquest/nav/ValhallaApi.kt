@@ -24,6 +24,15 @@ object ValhallaApi {
         excludePolygons: List<List<LatLon>> = emptyList(),
         /** OSRM-kompatible Antwort (enthaelt Spurinformationen), siehe [LaneParser]. */
         osrm: Boolean = false,
+    ): String = buildRequest(listOf(from, to), languageTag, costing, excludePolygons, osrm)
+
+    /** Allgemeine Anfrage mit beliebig vielen Orten (Start, Zwischenziele, Ziel); jedes Teilstueck wird ein "leg". */
+    fun buildRequest(
+        locations: List<LatLon>,
+        languageTag: String,
+        costing: String = "auto",
+        excludePolygons: List<List<LatLon>> = emptyList(),
+        osrm: Boolean = false,
     ): String = buildJsonObject {
         put("costing", costing)
         if (osrm) {
@@ -31,8 +40,7 @@ object ValhallaApi {
             put("banner_instructions", true)
         }
         put("locations", buildJsonArray {
-            add(buildJsonObject { put("lat", from.lat); put("lon", from.lon) })
-            add(buildJsonObject { put("lat", to.lat); put("lon", to.lon) })
+            for (p in locations) add(buildJsonObject { put("lat", p.lat); put("lon", p.lon) })
         })
         if (excludePolygons.isNotEmpty()) {
             put("exclude_polygons", buildJsonArray {

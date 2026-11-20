@@ -159,4 +159,19 @@
     <string name="nature_bird">Hier in der Gegend sieht man oft: %1$s. Entdeckt ihr einen Vogel?</string>
     <string name="nature_mammal">Hier leben: %1$s. Vielleicht entdeckt ihr eins!</string>
     <string name="nature_source">Daten: iNaturalist-Community</string>
+    <string name="trip_open">Reise</string>
+    <string name="trip_title">Reiseplaner</string>
+    <string name="trip_hint">Fügt eure Etappenziele hinzu (z. B. Übernachtungen). Jede Etappe wird eine eigene Route mit eigenem Abenteuer.</string>
+    <string name="trip_total">%1$d Etappen · %2$s · %3$s</string>
+    <string name="trip_stage">Etappe %1$d: %2$s</string>
+    <string name="trip_stage_info">%1$s · %2$s</string>
+    <string name="trip_stage_done_label">erledigt · %1$d Punkte</string>
+    <string name="trip_long_day">Langer Tag – plant eine zusätzliche Pause ein</string>
+    <string name="trip_start_stage">Etappe %1$d starten</string>
+    <string name="trip_remove">Entfernen</string>
+    <string name="trip_clear">Reise löschen</string>
+    <string name="trip_add_hint">Etappenziel hinzufügen</string>
+    <string name="trip_stage_done_speech">Etappe %1$d geschafft! Ihr habt heute %2$d Punkte gesammelt.</string>
+    <string name="trip_finished">Reise geschafft – gut gemacht!</string>
+    <string name="trip_no_position">Für die Planung wird eure Position gebraucht. Bitte kurz auf GPS warten.</string>
 </resources>

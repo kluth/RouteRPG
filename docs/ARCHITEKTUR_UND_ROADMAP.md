@@ -365,3 +365,10 @@ Gebaut (Build/Lint/Tests grün; **Open-Meteo-Antwortformat nur nach Dokumentatio
 Gebaut (Build/Lint/Tests grün, gegen echte iNaturalist-Antwort für Kiruna getestet: Ren, Elch, Schneehase; Duisburg: Rotkehlchen, Stockente):
 - Platzhalter-Aufgaben werden unterwegs per iNaturalist `species_counts` (25 km Umkreis, nur „research grade", nur Vögel und Säugetiere, Namen in Gerätesprache, Rückfall Englisch) gefüllt: „Hier leben: Elch. Vielleicht entdeckt ihr eins!". Auswahl gewichtet nach Häufigkeit, Säugetiere doppelt. Ohne Netz/Treffer gibt es eine Rückfall-Aufgabe. Quelle „Daten: iNaturalist-Community" in der Kinderansicht.
 - Grenze: Es sind Beobachtungen der Umgebung, keine Garantie, dass man das Tier vom Auto aus sieht; Kinder-Tierbilder/Album mit Arten folgen ggf. später.
+
+## 26. Stand Erweiterung 5: Mehrtagesreise
+
+Gebaut (Build/Lint/Tests grün, Etappen-Parser gegen echte Valhalla-Antwort getestet; nicht auf dem Gerät erprobt):
+- **Reiseplaner** („Reise"-Button neben der Suche): Etappenziele selbst hinzufügen/entfernen. Eine Valhalla-Anfrage liefert Länge und Dauer je Etappe und die Summe; Etappen über 8 Stunden werden mit „Langer Tag – plant eine zusätzliche Pause ein" markiert.
+- **Jede Etappe = eigene Route mit eigenem Abenteuer:** „Etappe n starten" berechnet die Route von der aktuellen Position zum Etappenziel und startet die Navigation. Am Etappenziel werden die Punkte des Tages gespeichert, die nächste Etappe wird freigegeben und angesagt („Etappe 2 geschafft! … Punkte heute"). Die Reise bleibt über App-Neustarts und mehrere Tage erhalten (lokal gespeichert).
+- Grenzen: Übernachtungsvorschläge (Camping/Hotel) sind noch nicht eingebaut; die Etappenzeiten sind reine Fahrzeit ohne Pausen und Verkehr; Reihenfolge der Ziele ist vom Nutzer vorgegeben (keine Optimierung).

@@ -39,6 +39,8 @@ import app.kiloquest.nav.AutobahnApi
 import app.kiloquest.nav.ExclusionZones
 import app.kiloquest.nav.IncidentMatcher
 import app.kiloquest.nav.LaneAnnouncer
+import app.kiloquest.nav.LegSummary
+import app.kiloquest.nav.TripApi
 import app.kiloquest.nav.LaneGuidance
 import app.kiloquest.nav.LaneHint
 import app.kiloquest.nav.LaneParser
@@ -86,6 +88,16 @@ data class RerouteProposal(
     val incident: RouteIncident,
 )
 
+/** Mehrtagesreise: vom Nutzer gesetzte Etappenziele; jede Etappe ist eine eigene Route mit eigenem Abenteuer. */
+data class TripState(
+    val origin: LatLon?,
+    val stops: List<Place>,
+    val legs: List<LegSummary> = emptyList(),
+    val currentStage: Int = 0,
+    val stagePoints: List<Int> = emptyList(),
+    val loading: Boolean = false,
+)
+
 /** Vorgeschlagene Pause voraus. */
 data class BreakProposal(val stop: RestStop, val aheadMeters: Double)
 
@@ -129,6 +141,8 @@ data class UiState(
     val breakTarget: RestStop? = null,
     val breakAheadMeters: Double = 0.0,
     val weather: WeatherSummary? = null,
+    val trip: TripState? = null,
+    val tripScreen: Boolean = false,
 )
 
 private const val TRAFFIC_REFRESH_MS = 5 * 60_000L
@@ -162,6 +176,7 @@ class NavController(private val app: Application) {
     private var breakPlanner = BreakPlanner(intervalMs = 75 * 60_000L)
     private var breakPlanning = false
     private var weatherJob: Job? = null
+    private var autoStartAfterRoute = false
     private val announcedHazards = HashSet<WeatherHazard>()
     /** Meter, die auf frueheren Routen schon gefahren wurden (Quest-Positionen gelten fuer die Gesamtfahrt). */
     private var questOffset = 0.0
@@ -175,6 +190,7 @@ class NavController(private val app: Application) {
             totalPoints = prefs.getInt("total_points", 0),
             recents = loadRecents(),
             sicknessMode = prefs.getBoolean("sickness_mode", true),
+            trip = loadTrip(),
         ),
     )
     val state: StateFlow<UiState> = _state
@@ -267,7 +283,9 @@ class NavController(private val app: Application) {
                 _state.update { it.copy(route = route, busy = false, guidance = null, incidents = emptyList()) }
                 if (_state.value.navigating) scope.launch { refreshTraffic() }
                 scope.launch { refreshWeather(announce = false) }
+                if (autoStartAfterRoute) { autoStartAfterRoute = false; startNavigation() }
             }.onFailure {
+                autoStartAfterRoute = false
                 _state.update { it.copy(busy = false, error = R.string.error_route) }
             }
         }
@@ -417,7 +435,8 @@ class NavController(private val app: Application) {
         val g = eng.update(pos)
         _state.update { it.copy(guidance = g) }
         if (g.arrived) {
-            speak(app.getString(R.string.arrived))
+            val stageMessage = onStageArrived()
+            speak(stageMessage ?: app.getString(R.string.arrived))
             stopNavigation()
             return
         }
@@ -444,6 +463,102 @@ class NavController(private val app: Application) {
             speak(app.getString(R.string.rerouting))
             calculateRoute()
         }
+    }
+
+    // ---------------------------------------------------------------- Mehrtagesreise
+
+    private fun loadTrip(): TripState? = runCatching {
+        val o = org.json.JSONObject(prefs.getString("trip", null) ?: return null)
+        val arr = o.getJSONArray("stops")
+        val stops = (0 until arr.length()).map { i ->
+            val p = arr.getJSONObject(i)
+            Place(p.getString("n"), LatLon(p.getDouble("lat"), p.getDouble("lon")))
+        }
+        val pts = o.optJSONArray("points")
+        val origin = if (o.has("olat")) LatLon(o.getDouble("olat"), o.getDouble("olon")) else null
+        TripState(
+            origin = origin, stops = stops,
+            currentStage = o.optInt("stage", 0).coerceIn(0, stops.size),
+            stagePoints = (0 until (pts?.length() ?: 0)).map { pts!!.getInt(it) },
+        )
+    }.getOrNull()
+
+    private fun saveTrip(t: TripState?) {
+        if (t == null || t.stops.isEmpty()) { prefs.edit().remove("trip").apply(); return }
+        val o = org.json.JSONObject()
+        o.put("stops", org.json.JSONArray().also { a ->
+            t.stops.forEach { a.put(org.json.JSONObject().put("n", it.name).put("lat", it.position.lat).put("lon", it.position.lon)) }
+        })
+        o.put("stage", t.currentStage)
+        o.put("points", org.json.JSONArray(t.stagePoints))
+        t.origin?.let { o.put("olat", it.lat).put("olon", it.lon) }
+        prefs.edit().putString("trip", o.toString()).apply()
+    }
+
+    fun showTrip(show: Boolean) = _state.update { it.copy(tripScreen = show) }
+
+    fun addTripStop(place: Place) {
+        val cur = _state.value.trip ?: TripState(origin = _state.value.position, stops = emptyList())
+        if (cur.origin == null && _state.value.position == null) {
+            _state.update { it.copy(error = R.string.trip_no_position) }
+            return
+        }
+        val updated = cur.copy(origin = cur.origin ?: _state.value.position, stops = cur.stops + place)
+        _state.update { it.copy(trip = updated, results = emptyList()) }
+        saveTrip(updated)
+        planTrip()
+    }
+
+    fun removeTripStop(index: Int) {
+        val cur = _state.value.trip ?: return
+        if (index < cur.currentStage || index !in cur.stops.indices) return // erledigte Etappen bleiben
+        val updated = cur.copy(stops = cur.stops.filterIndexed { i, _ -> i != index })
+        _state.update { it.copy(trip = updated) }
+        saveTrip(updated)
+        planTrip()
+    }
+
+    fun clearTrip() {
+        saveTrip(null)
+        _state.update { it.copy(trip = null) }
+    }
+
+    /** Etappenlaengen/-dauern der ganzen Reise (eine Valhalla-Anfrage). */
+    private fun planTrip() {
+        val t = _state.value.trip ?: return
+        val start = (if (t.currentStage > 0) t.stops.getOrNull(t.currentStage - 1)?.position else null) ?: t.origin ?: return
+        val remaining = t.stops.drop(t.currentStage)
+        if (remaining.isEmpty() || BuildConfig.VALHALLA_URL.isBlank()) return
+        scope.launch {
+            _state.update { it.copy(trip = it.trip?.copy(loading = true)) }
+            val legs = runCatching {
+                TripApi.parseLegs(fetchRoute(TripApi.buildRequest(start, remaining.map { it.position }, Locale.getDefault().toLanguageTag())))
+            }.getOrDefault(emptyList())
+            _state.update { it.copy(trip = it.trip?.copy(legs = legs, loading = false)) }
+        }
+    }
+
+    /** Startet Etappe [stage]: Route von der aktuellen Position zum Etappenziel, dann Navigation. */
+    fun startStage(stage: Int) {
+        val t = _state.value.trip ?: return
+        val stop = t.stops.getOrNull(stage) ?: return
+        autoStartAfterRoute = true
+        _state.update { it.copy(destination = stop, results = emptyList(), tripScreen = false, kidsScreen = false) }
+        calculateRoute()
+    }
+
+    /** Beim Ankommen am Etappenziel: Punkte der Etappe merken, naechste Etappe freigeben. Gibt den Ansagetext zurueck. */
+    private fun onStageArrived(): String? {
+        val s = _state.value
+        val t = s.trip ?: return null
+        val stop = t.stops.getOrNull(t.currentStage) ?: return null
+        if (s.destination?.name != stop.name) return null
+        val updated = t.copy(currentStage = t.currentStage + 1, stagePoints = t.stagePoints + s.points)
+        _state.update { it.copy(trip = updated) }
+        saveTrip(updated)
+        if (updated.currentStage < updated.stops.size) planTrip()
+        val done = app.getString(R.string.trip_stage_done_speech, t.currentStage + 1, s.points)
+        return if (updated.currentStage >= updated.stops.size) done + " " + app.getString(R.string.trip_finished) else done
     }
 
     // ---------------------------------------------------------------- Wetter
