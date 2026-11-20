@@ -227,4 +227,9 @@
     <string name="riddle_err_trigger_missing">Bitte eine Strecke oder einen Ort angeben.</string>
     <string name="riddle_err_km_negative">Die Strecke darf nicht negativ sein.</string>
     <string name="riddle_none">Noch keine Rätsel.</string>
+    <string name="voice_mode">Sprachantworten</string>
+    <string name="voice_unavailable">Braucht Spracherkennung auf dem Gerät (Android 12+ mit Offline-Sprachpaket). Es wird nichts an Server gesendet.</string>
+    <string name="voice_listening">Ich höre zu … sagt eure Antwort</string>
+    <string name="voice_done_words">gefunden,fertig,ja,geschafft,gesehen</string>
+    <string name="voice_ordinals">eins,erste,erster,1;zwei,zweite,zweiter,2;drei,dritte,dritter,3</string>
 </resources>

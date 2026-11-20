@@ -13,6 +13,8 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +33,9 @@ import app.kiloquest.game.StickerBook
 @Composable
 fun KidsScreen(state: UiState, nav: NavController) {
     val ctx = LocalContext.current
+    val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) nav.setVoiceMode(true)
+    }
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         Column(
             Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
@@ -56,6 +61,21 @@ fun KidsScreen(state: UiState, nav: NavController) {
                     Switch(checked = state.sicknessMode, onCheckedChange = nav::setSicknessMode)
                     Text(stringResource(R.string.kids_sickness_mode), style = MaterialTheme.typography.titleMedium)
                 }
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Switch(
+                        checked = state.voiceMode,
+                        enabled = state.voiceAvailable,
+                        onCheckedChange = { on ->
+                            if (!on) nav.setVoiceMode(false)
+                            else if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) ==
+                                android.content.pm.PackageManager.PERMISSION_GRANTED
+                            ) nav.setVoiceMode(true)
+                            else micPermission.launch(android.Manifest.permission.RECORD_AUDIO)
+                        },
+                    )
+                    Text(stringResource(R.string.voice_mode), style = MaterialTheme.typography.titleMedium)
+                }
+                if (!state.voiceAvailable) Text(stringResource(R.string.voice_unavailable), style = MaterialTheme.typography.bodySmall)
                 AgePicker(state.ageBand, nav::setAgeBand)
                 PlayerPicker(state.players, nav::setPlayers)
             }
@@ -80,6 +100,7 @@ fun KidsScreen(state: UiState, nav: NavController) {
                         )
                     }
                     Text(ctx.stringByKey(q.textKey, q.args), style = MaterialTheme.typography.headlineMedium)
+                    if (state.listening) Text(stringResource(R.string.voice_listening), color = MaterialTheme.colorScheme.primary)
                     if (q.type == app.kiloquest.game.QuestType.SKY && q.args.isNotEmpty() && q.textKey != app.kiloquest.game.PlaneSpotting.MOON_KEY) {
                         Text(stringResource(R.string.sky_source), style = MaterialTheme.typography.labelMedium)
                     }

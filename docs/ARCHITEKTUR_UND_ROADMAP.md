@@ -397,3 +397,10 @@ Gebaut (Build/Lint/Tests grün; nicht auf dem Gerät erprobt):
 - Im Spiel erscheint ein fälliges Rätsel einmal pro Fahrt als Quiz (20 Punkte), nicht in kurvigen Abschnitten und nur, wenn keine andere Aufgabe aktiv ist, mit Sprachansage.
 - **Community-Rätsel** (Teilen zwischen Nutzern) sind bewusst nicht gebaut: sie bräuchten Server, Konten und Moderation (Kinderschutz) und widersprechen dem Null-Budget-Ansatz.
 - **Offen: Sprachantworten** (Kinder antworten per Zuruf). Geplant nur mit Spracherkennung **auf dem Gerät** (kein Audio an Server), Abgleich der Antwort mit den Optionen; siehe nächster Schritt.
+
+## 30. Stand Erweiterung 8b: Sprachantworten
+
+Gebaut (Build/Lint/Tests grün; Abgleichslogik ausführlich getestet, die Spracherkennung selbst **nicht auf dem Gerät erprobt**):
+- Kinder antworten per Zuruf statt Tippen: Bei Multiple-Choice-Aufgaben wird die gesprochene Antwort der Option zugeordnet (Groß-/Kleinschreibung, Umlaute, kleine Erkennungsfehler, „die zweite", mehrere Hypothesen; mehrdeutige Antworten zählen nicht). Bei „Gefunden"-Aufgaben genügen Wörter wie „gefunden/fertig/ja". Bis zu 3 Versuche; Tippen geht weiter.
+- **Datenschutz:** Nur Spracherkennung **auf dem Gerät** (`createOnDeviceSpeechRecognizer`, Android 12+, Offline-Sprachpaket). Ohne diese ist der Schalter deaktiviert; es gibt **keinen Rückfall auf Cloud-Erkennung**. Das Mikrofon hört erst nach Ende der Sprachansage zu, nur während einer aktiven Aufgabe und nur bei eingeschaltetem Schalter. Berechtigung RECORD_AUDIO wird beim Einschalten angefragt.
+- Grenzen: Erkennungsqualität hängt vom Offline-Sprachpaket und der Fahrgeräuschkulisse ab; Wörter in Fremdsprachen (Sprachkurs) werden mit der Gerätesprache erkannt und daher oft schlecht getroffen.

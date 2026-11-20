@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import android.content.Context
 import app.kiloquest.game.AdventureSession
 import app.kiloquest.game.AgeBand
+import app.kiloquest.game.AnswerMatcher
 import app.kiloquest.game.Quest
 import app.kiloquest.game.QuestCatalog
 import app.kiloquest.game.QuestGenerator
@@ -160,6 +161,9 @@ data class UiState(
     val country: String? = null,
     val riddles: List<Riddle> = emptyList(),
     val riddleScreen: Boolean = false,
+    val voiceMode: Boolean = false,
+    val voiceAvailable: Boolean = false,
+    val listening: Boolean = false,
 )
 
 private const val TRAFFIC_REFRESH_MS = 5 * 60_000L
@@ -167,6 +171,7 @@ private const val MAX_TRAFFIC_ROADS = 10
 private const val ANNOUNCE_AHEAD_METERS = 100_000.0
 private const val MIN_SAVED_MINUTES = 5
 private const val MAX_RECENTS = 5
+private const val VOICE_ATTEMPTS = 3
 private const val COUNTRY_CHECK_METERS = 10_000.0
 private const val WEATHER_REFRESH_MS = 30 * 60_000L
 private const val BREAK_ARRIVAL_METERS = 400.0
@@ -197,6 +202,8 @@ class NavController(private val app: Application) {
     private var autoStartAfterRoute = false
     private var countryChecking = false
     private val usedRiddles = HashSet<String>()
+    private val voice = VoiceAnswers(app)
+    private var voiceJob: Job? = null
     private var lastCountryCheckAlong = -1e9
     private val taughtPhrases = HashSet<Phrase>()
     private val announcedHazards = HashSet<WeatherHazard>()
@@ -214,9 +221,24 @@ class NavController(private val app: Application) {
             sicknessMode = prefs.getBoolean("sickness_mode", true),
             trip = loadTrip(),
             riddles = loadRiddles(),
+            voiceMode = prefs.getBoolean("voice_mode", false),
+            voiceAvailable = VoiceAnswers.isAvailable(app),
         ),
     )
     val state: StateFlow<UiState> = _state
+
+    init {
+        // Bei jeder neuen Aufgabe (Sprachantworten an): nach der Ansage zuhoeren
+        scope.launch {
+            var lastQuest: Quest? = null
+            _state.collect { st ->
+                if (st.quest !== lastQuest) {
+                    lastQuest = st.quest
+                    onQuestForVoice(st.quest)
+                }
+            }
+        }
+    }
 
     private val locationManager = app.getSystemService(LocationManager::class.java)
     private val mainHandler = android.os.Handler(Looper.getMainLooper())
@@ -452,6 +474,8 @@ class NavController(private val app: Application) {
                 curvy = false, breakProposal = null, breakTarget = null, weather = null, country = null,
             )
         }
+        voiceJob?.cancel()
+        voice.stop()
         trafficJob?.cancel()
         trafficJob = null
         weatherJob?.cancel()
@@ -504,6 +528,66 @@ class NavController(private val app: Application) {
             speak(app.getString(R.string.rerouting))
             calculateRoute()
         }
+    }
+
+    // ---------------------------------------------------------------- Sprachantworten (nur auf dem Geraet)
+
+    fun setVoiceMode(on: Boolean) {
+        val allowed = on && VoiceAnswers.isAvailable(app)
+        prefs.edit().putBoolean("voice_mode", allowed).apply()
+        _state.update { it.copy(voiceMode = allowed, voiceAvailable = VoiceAnswers.isAvailable(app)) }
+        if (!allowed) { voiceJob?.cancel(); voice.stop(); _state.update { it.copy(listening = false) } }
+    }
+
+    private fun hasMicPermission() = ContextCompat.checkSelfPermission(app, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
+
+    private fun onQuestForVoice(q: Quest?) {
+        voiceJob?.cancel()
+        voice.stop()
+        _state.update { if (it.listening) it.copy(listening = false) else it }
+        if (q == null || !_state.value.voiceMode || !_state.value.navigating || !hasMicPermission()) return
+        if (q.textKey == RouteFacts.PENDING_KEY || q.textKey == WikiStories.PENDING_KEY || q.textKey == NatureSpotting.PENDING_KEY ||
+            q.textKey == PlaneSpotting.PENDING_KEY || q.textKey == LanguageCourses.PENDING_KEY
+        ) return // Platzhalter: erst zuhoeren, wenn die konkrete Aufgabe da ist (Quest-Objekt wechselt dann erneut)
+        voiceJob = scope.launch {
+            // erst zuhoeren, wenn die Ansage fertig ist (sonst hoert die App sich selbst)
+            delay(1500)
+            var waited = 0
+            while (tts?.isSpeaking == true && waited < 40) { delay(500); waited++ }
+            delay(500)
+            repeat(VOICE_ATTEMPTS) {
+                if (_state.value.quest !== q) return@launch
+                val heard = listenOnce()
+                if (_state.value.quest !== q) return@launch
+                if (handleSpoken(q, heard)) return@launch
+                delay(800)
+            }
+        }
+    }
+
+    private suspend fun listenOnce(): List<String> = kotlinx.coroutines.suspendCancellableCoroutine { cont ->
+        _state.update { it.copy(listening = true) }
+        cont.invokeOnCancellation { voice.stop() }
+        voice.listen { heard ->
+            _state.update { it.copy(listening = false) }
+            if (cont.isActive) cont.resume(heard, null)
+        }
+    }
+
+    /** Gibt true zurueck, wenn die Antwort erkannt und abgegeben wurde. */
+    private fun handleSpoken(q: Quest, heard: List<String>): Boolean {
+        if (heard.isEmpty()) return false
+        if (q.kind == QuestKind.CHOICE) {
+            val options = q.optionKeys.map { app.stringByKey(it) }
+            val ordinals = app.getString(R.string.voice_ordinals).split(';').map { g -> g.split(',').map { it.trim() } }
+            val idx = AnswerMatcher.matchOption(heard, options, ordinals) ?: return false
+            answerQuest(idx)
+            return true
+        }
+        val done = app.getString(R.string.voice_done_words).split(',').map { it.trim() }
+        if (!AnswerMatcher.isDone(heard, done)) return false
+        answerQuest()
+        return true
     }
 
     // ---------------------------------------------------------------- Eigene Raetsel (Eltern)

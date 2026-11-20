@@ -227,4 +227,9 @@
     <string name="riddle_err_trigger_missing">Set a distance or a place.</string>
     <string name="riddle_err_km_negative">The distance must not be negative.</string>
     <string name="riddle_none">No riddles yet.</string>
+    <string name="voice_mode">Voice answers</string>
+    <string name="voice_unavailable">Needs on-device speech recognition (Android 12+ with an offline language pack). Nothing is sent to servers.</string>
+    <string name="voice_listening">Listening… say your answer</string>
+    <string name="voice_done_words">found,done,yes,got it,ready</string>
+    <string name="voice_ordinals">one,first,1;two,second,2;three,third,3</string>
 </resources>
