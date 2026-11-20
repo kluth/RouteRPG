@@ -2,7 +2,11 @@ package app.kiloquest.nav
 
 import java.util.Locale
 
-enum class VoiceCommand { TOILET, BREAK, STORY, MUTE, UNMUTE, ETA, NEXT_TURN, SPEED_LIMIT, DESTINATION, STOP_NAVIGATION, HELP }
+enum class VoiceCommand {
+    TOILET, BREAK, STORY, MUTE, UNMUTE, ETA, NEXT_TURN, SPEED_LIMIT, DESTINATION, STOP_NAVIGATION, HELP,
+    /** Audio-Spiele (ohne Bildschirm), Hoerserie. */
+    GAME_MENU, GAME_WORD_CHAIN, GAME_LETTERS, GAME_RHYME, GAME_STORY, GAME_STOP, SERIES,
+}
 
 /**
  * Sprachbefehle fuer die Freisprech-Bedienung (Deutsch und Englisch). Die Spracherkennung laeuft nur auf dem Geraet; hier wird nur der erkannte
@@ -13,6 +17,13 @@ object VoiceCommands {
 
     // Reihenfolge zaehlt: spezifischere Befehle zuerst (z. B. "ansagen an" vor "ansagen aus")
     private val phrases: List<Pair<VoiceCommand, List<String>>> = listOf(
+        VoiceCommand.GAME_STOP to listOf("spiel beenden", "spiel stoppen", "spiel aus", "hör auf zu spielen", "hoer auf zu spielen", "stop game", "end game", "stop playing", "quit the game"),
+        VoiceCommand.GAME_WORD_CHAIN to listOf("wortkette", "word chain", "word game"),
+        VoiceCommand.GAME_LETTERS to listOf("buchstabenspiel", "tier abc", "tier-abc", "abc spiel", "abc-spiel", "letter game", "alphabet game"),
+        VoiceCommand.GAME_RHYME to listOf("reimspiel", "reime", "reim", "rhyme", "rhymes", "rhyming game"),
+        VoiceCommand.GAME_STORY to listOf("geschichte weiterspinnen", "gemeinsame geschichte", "erfinde eine geschichte", "story game", "make up a story", "invent a story"),
+        VoiceCommand.SERIES to listOf("hörserie", "hoerserie", "serie", "fortsetzung", "nächste folge", "naechste folge", "series", "next episode", "continue the series"),
+        VoiceCommand.GAME_MENU to listOf("lass uns spielen", "wir wollen spielen", "hörspiel", "hoerspiel", "spielen", "spiel", "play a game", "let's play", "lets play", "game", "games"),
         VoiceCommand.UNMUTE to listOf("ansagen an", "ansagen ein", "ansagen wieder", "sprachansagen an", "stimme an", "unmute", "voice on", "announcements on", "turn the voice on"),
         VoiceCommand.MUTE to listOf("ansagen aus", "sprachansagen aus", "stumm", "sei still", "ruhe bitte", "mute", "be quiet", "voice off", "announcements off", "stop talking"),
         VoiceCommand.STOP_NAVIGATION to listOf("navigation beenden", "navigation stoppen", "navigation abbrechen", "fahrt beenden", "stop navigation", "end navigation", "cancel navigation"),

@@ -147,6 +147,7 @@ private fun KidsContent(state: UiState, nav: KidsActions, onOpenMap: () -> Unit,
             app.kiloquest.ui.QuestPreview(state.plan)
             Album(state.album)
             Text(stringResource(R.string.kids_total, state.totalPoints), style = MaterialTheme.typography.bodyMedium)
+            state.teamGoal?.let { app.kiloquest.ui.TeamGoalBar(it) }
 
     }
     val backButton: @Composable () -> Unit = {

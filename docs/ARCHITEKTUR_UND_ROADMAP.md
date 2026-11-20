@@ -521,3 +521,7 @@ Hauptgerät, Test auf echten Geräten (gleichzeitige Kameras), Video-Story.
 Umgesetzt (Spec 008): Gemini/Assistant-Intents (`geo:`, `geo.action:`, `google.navigation:`) im Handy und in Android Auto, Sprachbefehle auf dem Gerät
 („Kilo, …“, Knopf im Beifahrer-Menü), Routenwünsche (Maut, Autobahn, Fähre), eigene Deep Links. Offen: Zwischenstopps, Meldungen, Navigationsstatus
 für Gemini, Test auf echten Geräten und im DHU, Betrieb im Hintergrund.
+
+## 49. Hörspiele, Teamziel, Hörserie
+Umgesetzt (Spec 010): vier Audio-Spiele, gemeinsames Teamziel mit Meilensteinen, sechsteilige Hörserie, adaptive Schwierigkeit (`FrustrationGuard`).
+Offen: Tests im Auto mit Kinderstimmen, größere Wortlisten, aufgenommene Kilo-Stimme für die Spielzeilen, weitere Folgen/Serien.

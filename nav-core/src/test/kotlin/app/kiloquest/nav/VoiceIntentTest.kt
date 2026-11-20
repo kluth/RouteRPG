@@ -131,4 +131,20 @@ class VoiceIntentTest {
         assertNull(VoiceCommands.parse("das Wetter ist schön", false))
         assertEquals(VoiceCommand.TOILET, VoiceCommands.parseAny(listOf("Kilo xyz", "Kilo Klo"), true))
     }
+
+    @Test fun gameAndSeriesCommands() {
+        assertEquals(VoiceCommand.GAME_WORD_CHAIN, VoiceCommands.parse("Kilo, lass uns Wortkette spielen", true))
+        assertEquals(VoiceCommand.GAME_LETTERS, VoiceCommands.parse("kilo tier abc", true))
+        assertEquals(VoiceCommand.GAME_RHYME, VoiceCommands.parse("Kilo Reimspiel bitte", true))
+        assertEquals(VoiceCommand.GAME_STORY, VoiceCommands.parse("Kilo, gemeinsame Geschichte", true))
+        assertEquals(VoiceCommand.STORY, VoiceCommands.parse("Kilo, eine Geschichte", true))
+        assertEquals(VoiceCommand.SERIES, VoiceCommands.parse("Kilo, nächste Folge", true))
+        assertEquals(VoiceCommand.SERIES, VoiceCommands.parse("hey kilo next episode", true))
+        assertEquals(VoiceCommand.GAME_MENU, VoiceCommands.parse("Kilo, wir wollen spielen", true))
+        assertEquals(VoiceCommand.GAME_MENU, VoiceCommands.parse("kilo let's play", true))
+        assertEquals(VoiceCommand.GAME_STOP, VoiceCommands.parse("Kilo, Spiel beenden", true))
+        assertEquals(VoiceCommand.GAME_STOP, VoiceCommands.parse("stop game", false))
+        assertNull(VoiceCommands.parse("das Spiel war gestern spannend", true)) // ohne Anrede
+        assertNull(VoiceCommands.parse("Kilo, Spielzeug", true)) // ganzes Wort
+    }
 }

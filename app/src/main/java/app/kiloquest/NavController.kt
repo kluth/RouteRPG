@@ -13,6 +13,12 @@ import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import android.content.Context
 import app.kiloquest.game.AdventureSession
+import app.kiloquest.game.AudioGameType
+import app.kiloquest.game.FrustrationGuard
+import app.kiloquest.game.KiloSeries
+import app.kiloquest.game.TeamGoal
+import app.kiloquest.game.TeamGoals
+import app.kiloquest.game.QuestTemplate
 import app.kiloquest.game.Avatars
 import app.kiloquest.nav.AutobahnRestAreas
 import app.kiloquest.nav.StopFeature
@@ -269,6 +275,12 @@ data class UiState(
     /** Reisetagebuch (lokal) und seine Ansicht. */
     val diary: List<DiaryEntry> = emptyList(),
     val diaryScreen: Boolean = false,
+    /** Laufendes Audio-Spiel (AudioGameType-Name) und gemeinsames Teamziel der Familie. */
+    val audioGame: String? = null,
+    val teamGoal: TeamGoal? = null,
+    /** Hoerserie: naechste freigeschaltete Folge (null = heute nichts Neues) und Zahl gehoerter Folgen. */
+    val seriesNext: Int? = null,
+    val seriesHeard: Int = 0,
     /** Hoergeschichte auf Wunsch (Wikipedia, wird vorgelesen). */
     val storyCard: StoryCard? = null,
     /** Gespeicherte Offline-Pakete (Routen, die ohne Netz navigierbar sind). */
@@ -391,6 +403,9 @@ class NavController(private val app: Application) : KidsActions {
             plans = PlanStore.decode(prefs.getString("plans", null)),
             packs = packStore.list(),
             diary = TravelDiary.decode(prefs.getString("diary", null)),
+            teamGoal = TeamGoals.decode(prefs.getString("team_goal", null)),
+            seriesNext = seriesNextNow(),
+            seriesHeard = KiloSeries.decode(prefs.getString("series_heard", null)).size,
             riddles = loadRiddles(),
             voiceMode = prefs.getBoolean("voice_mode", false),
             voiceAvailable = VoiceAnswers.isAvailable(app),
@@ -697,6 +712,8 @@ class NavController(private val app: Application) : KidsActions {
             )
         }
         speakFeedback(r.correct, sticker != null)
+        addTeamPoints(r.pointsAwarded)
+        recordOutcome(if (q.kind != QuestKind.CHOICE) FrustrationGuard.Outcome.DONE else if (r.correct) FrustrationGuard.Outcome.RIGHT else FrustrationGuard.Outcome.WRONG)
     }
 
     /** Kilo lobt oder tröstet mit einer wechselnden Zeile; Navigationsansagen werden dabei nie gestört. */
@@ -709,6 +726,7 @@ class NavController(private val app: Application) : KidsActions {
     }
 
     override fun skipQuest() {
+        if (adventure?.active != null) recordOutcome(FrustrationGuard.Outcome.SKIPPED)
         adventure?.skip()
         kiloClips.stop()
         arbiter.cancelQuest()
@@ -724,6 +742,8 @@ class NavController(private val app: Application) : KidsActions {
         photoPrompter.start(System.currentTimeMillis())
         startScenicJob()
         if (_state.value.settings.voiceCommands) startCommandListening()
+        ensureTeamGoal()
+        guard.reset()
         // Navigation laeuft auch im Hintergrund/bei gesperrtem Bildschirm weiter (Vordergrunddienst)
         KeepAliveService.start(app)
         _state.value.route?.maneuvers?.firstOrNull()?.instruction?.let(::speak)
@@ -761,6 +781,7 @@ class NavController(private val app: Application) : KidsActions {
             )
         }
         toiletJob?.cancel(); toiletJob = null; toiletResume = null
+        stopAudioGame()
         voiceJob?.cancel()
         voice.stop()
         trafficJob?.cancel()
@@ -850,7 +871,7 @@ class NavController(private val app: Application) : KidsActions {
         voiceJob?.cancel()
         voice.stop()
         _state.update { if (it.listening) it.copy(listening = false) else it }
-        if (q == null || !_state.value.voiceMode || !_state.value.navigating || !hasMicPermission()) return
+        if (q == null || !_state.value.voiceMode || !_state.value.navigating || !hasMicPermission() || gameActive) return
         if (q.textKey == RouteFacts.PENDING_KEY || q.textKey == WikiStories.PENDING_KEY || q.textKey == NatureSpotting.PENDING_KEY ||
             q.textKey == PlaneSpotting.PENDING_KEY || q.textKey == LanguageCourses.PENDING_KEY
         ) return // Platzhalter: erst zuhoeren, wenn die konkrete Aufgabe da ist (Quest-Objekt wechselt dann erneut)
@@ -1384,6 +1405,13 @@ class NavController(private val app: Application) : KidsActions {
             VoiceCommand.DESTINATION -> sayDestination()
             VoiceCommand.STOP_NAVIGATION -> customAction(NavIntent.Action("exit_navigation", emptyMap()))
             VoiceCommand.HELP -> say(app.getString(R.string.cmd_help))
+            VoiceCommand.GAME_MENU -> openGameMenu()
+            VoiceCommand.GAME_WORD_CHAIN -> startAudioGame(AudioGameType.WORD_CHAIN)
+            VoiceCommand.GAME_LETTERS -> startAudioGame(AudioGameType.LETTER_CATEGORY)
+            VoiceCommand.GAME_RHYME -> startAudioGame(AudioGameType.RHYME)
+            VoiceCommand.GAME_STORY -> startAudioGame(AudioGameType.STORY_RELAY)
+            VoiceCommand.GAME_STOP -> stopAudioGame()
+            VoiceCommand.SERIES -> tellSeries()
         }
     }
 
@@ -1413,7 +1441,7 @@ class NavController(private val app: Application) : KidsActions {
         commandJob = scope.launch {
             var quiet = 0
             while (isActive && _state.value.navigating && _state.value.settings.voiceCommands) {
-                if (tts?.isSpeaking == true || kiloClips.isPlaying || (_state.value.voiceMode && _state.value.quest != null)) { delay(1000); continue }
+                if (gameActive || tts?.isSpeaking == true || kiloClips.isPlaying || (_state.value.voiceMode && _state.value.quest != null)) { delay(1000); continue }
                 val heard = listenOnce()
                 val cmd = VoiceCommands.parseAny(heard, requireWake = true)
                 if (cmd != null) { quiet = 0; executeCommand(cmd); delay(1500); continue }
@@ -1428,6 +1456,182 @@ class NavController(private val app: Application) : KidsActions {
         commandJob?.cancel(); commandJob = null
         voice.stop()
         _state.update { if (it.listening) it.copy(listening = false) else it }
+    }
+
+
+    // ---------------------------------------------------------------- Audio-Spiele, Teamziel, Hoerserie, Anpassung
+
+    private var gameJob: Job? = null
+    private var lastNavSpokenAt = 0L
+    private var milestoneLine: String? = null
+    private val guard = FrustrationGuard()
+    private var pendingAdapt: QuestTemplate? = null
+    val gameActive: Boolean get() = gameJob?.isActive == true
+
+    /** Spricht immer (auch wenn "Kilo liest vor" aus ist), aber erst nach einer Ruhepause nach Navigationsansagen; kehrt nach dem Sprechen zurueck. */
+    private suspend fun gameSay(text: String) {
+        while (System.currentTimeMillis() - lastNavSpokenAt < 6_000 || tts?.isSpeaking == true) delay(400)
+        if (!kiloClips.play(text)) tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "kq-game-${System.nanoTime()}")
+        delay(500)
+        var waited = 0
+        while ((tts?.isSpeaking == true || kiloClips.isPlaying) && waited < 240) { delay(250); waited++ }
+        milestoneLine?.let { milestoneLine = null; gameSay(it) }
+    }
+
+    private suspend fun gameListen(): List<String> {
+        while (System.currentTimeMillis() - lastNavSpokenAt < 4_000 || tts?.isSpeaking == true || kiloClips.isPlaying) delay(300)
+        val heard = listenOnce()
+        // "Spiel beenden" gilt auch mitten im Spiel
+        if (VoiceCommands.parseAny(heard, requireWake = false) == VoiceCommand.GAME_STOP) throw kotlinx.coroutines.CancellationException("stop")
+        return heard
+    }
+
+    private val gameIo = object : AudioGameRunner.Io {
+        override suspend fun say(text: String) = gameSay(text)
+        override suspend fun listen(): List<String> = gameListen()
+        override fun reward(points: Int) = addTeamPoints(points)
+        override val canListen: Boolean get() = VoiceAnswers.isAvailable(app) && hasMicPermission()
+    }
+
+    /** Startet ein Audio-Spiel. Die Spiele ausser der Geschichte brauchen Spracherkennung auf dem Geraet und das Mikrofon. */
+    fun startAudioGame(type: AudioGameType) {
+        if (type != AudioGameType.STORY_RELAY && !gameIo.canListen) { say(app.getString(R.string.game_need_voice)); return }
+        beginGame {
+            _state.update { it.copy(audioGame = type.name) }
+            AudioGameRunner(app, gameIo).run(type)
+            type
+        }
+    }
+
+    private fun beginGame(body: suspend () -> AudioGameType?) {
+        stopAudioGame()
+        stopCommandListening(); voiceJob?.cancel(); voice.stop()
+        arbiter.cancelQuest()
+        gameJob = scope.launch {
+            try {
+                body()
+            } finally {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                    voice.stop()
+                    _state.update { it.copy(audioGame = null, listening = false) }
+                    if (_state.value.navigating && _state.value.settings.voiceCommands) startCommandListening()
+                }
+            }
+        }
+    }
+
+    /** "Kilo, spielen": fragt nach dem Spiel und startet die genannte Auswahl. */
+    fun openGameMenu() {
+        if (!gameIo.canListen) { startAudioGame(AudioGameType.STORY_RELAY); return }
+        beginGame {
+            gameSay(app.getString(R.string.game_menu))
+            val choice = VoiceCommands.parseAny(gameListen(), requireWake = false)
+            val type = when (choice) {
+                VoiceCommand.GAME_WORD_CHAIN -> AudioGameType.WORD_CHAIN
+                VoiceCommand.GAME_LETTERS -> AudioGameType.LETTER_CATEGORY
+                VoiceCommand.GAME_RHYME -> AudioGameType.RHYME
+                VoiceCommand.GAME_STORY -> AudioGameType.STORY_RELAY
+                else -> null
+            }
+            if (type == null) gameSay(app.getString(R.string.game_giveup)) else {
+                _state.update { it.copy(audioGame = type.name) }
+                AudioGameRunner(app, gameIo).run(type)
+            }
+            type
+        }
+    }
+
+    fun stopAudioGame() {
+        val was = gameActive
+        gameJob?.cancel(); gameJob = null
+        if (was) { tts?.stop(); kiloClips.stop(); voice.stop() }
+        _state.update { if (it.audioGame != null || it.listening) it.copy(audioGame = null, listening = false) else it }
+    }
+
+    // --- Teamziel
+
+    private fun ensureTeamGoal() {
+        val g = _state.value.teamGoal
+        if (g != null && !g.reached) return
+        val km = (_state.value.route?.lengthMeters ?: return) / 1000.0
+        val goal = TeamGoal(TeamGoals.targetFor(km))
+        prefs.edit().putString("team_goal", TeamGoals.encode(goal)).apply()
+        _state.update { it.copy(teamGoal = goal) }
+    }
+
+    /** Punkte aus Aufgaben und Spielen zaehlen fuer das gemeinsame Ziel; Meilensteine spricht Kilo an. */
+    private fun addTeamPoints(points: Int) {
+        val goal = _state.value.teamGoal ?: return
+        if (goal.reached || points <= 0) return
+        val u = TeamGoals.add(goal, points, _state.value.ageBand)
+        prefs.edit().putString("team_goal", TeamGoals.encode(u.goal)).apply()
+        _state.update { it.copy(teamGoal = u.goal) }
+        val m = u.milestone ?: return
+        val line = app.stringByKey("team_goal_$m")
+        if (gameActive) milestoneLine = line else speakQuest(line)
+        if (m == 100) {
+            logDiary(DiaryKind.QUEST, line.take(90))
+            book.award(Random.Default)?.let {
+                prefs.edit().putStringSet("album", book.collected.toSet()).apply()
+                _state.update { st -> st.copy(album = book.collected.toSet(), newSticker = it) }
+            }
+        }
+    }
+
+    fun resetTeamGoal() {
+        prefs.edit().remove("team_goal").apply()
+        _state.update { it.copy(teamGoal = null) }
+        ensureTeamGoal()
+    }
+
+    // --- Adaptive Schwierigkeit (nur diese Fahrt, nichts wird gespeichert)
+
+    private fun recordOutcome(o: FrustrationGuard.Outcome) {
+        val age = _state.value.ageBand
+        val (line, template) = when (guard.record(o)) {
+            FrustrationGuard.Adjust.NONE -> return
+            FrustrationGuard.Adjust.EASIER -> R.string.kilo_adapt_easier to adaptTemplate(FrustrationGuard.easier(age), choice = false)
+            FrustrationGuard.Adjust.HARDER -> R.string.kilo_adapt_harder to adaptTemplate(FrustrationGuard.harder(age), choice = true)
+            FrustrationGuard.Adjust.CALM -> R.string.kilo_adapt_calm to adaptTemplate(FrustrationGuard.easier(age), choice = false)
+        }
+        if (template != null) pendingAdapt = template
+        speakQuest(app.getString(line))
+    }
+
+    private fun adaptTemplate(age: AgeBand, choice: Boolean): QuestTemplate? =
+        QuestCatalog.default.filter { age in it.ageBands && !it.dynamic && it.type != QuestType.BREAK && (it.kind == QuestKind.CHOICE) == choice }.randomOrNull()
+
+    // --- Hoerserie
+
+    private fun seriesNextNow(): Int? {
+        val heard = KiloSeries.decode(prefs.getString("series_heard", null))
+        val first = prefs.getInt("series_first_day", Int.MIN_VALUE).takeIf { it != Int.MIN_VALUE }
+        val today = java.time.LocalDate.now().toEpochDay().toInt()
+        return KiloSeries.next(heard, KiloSeries.available(first, today))
+    }
+
+    /** Spielt die naechste freigeschaltete Folge der Kilo-Hoerserie (eine neue Folge pro Tag). */
+    fun tellSeries() {
+        val heard = KiloSeries.decode(prefs.getString("series_heard", null))
+        val ep = seriesNextNow()
+        if (ep == null) {
+            gameSpeakNow(app.getString(if (heard.size >= KiloSeries.EPISODES) R.string.series_done else R.string.series_wait))
+            return
+        }
+        if (!prefs.contains("series_first_day")) prefs.edit().putInt("series_first_day", java.time.LocalDate.now().toEpochDay().toInt()).apply()
+        val place = _state.value.destination?.name ?: app.getString(R.string.series_default_place)
+        val text = app.stringByKey(KiloSeries.key(ep), listOf(place))
+        prefs.edit().putString("series_heard", KiloSeries.encode(heard + ep)).apply()
+        logDiary(DiaryKind.STORY, app.getString(R.string.series_diary, ep), text)
+        stopAudioGame()
+        gameSpeakNow(text)
+        _state.update { it.copy(seriesNext = seriesNextNow(), seriesHeard = heard.size + 1) }
+        addTeamPoints(5)
+    }
+
+    private fun gameSpeakNow(text: String) {
+        kiloClips.stop()
+        if (!kiloClips.play(text)) tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "kq-series-${System.nanoTime()}")
     }
 
     // --- Roadtrip-Fotostory
@@ -2289,11 +2493,12 @@ class NavController(private val app: Application) : KidsActions {
         kiloClips.stop() // Navigationsansagen haben Vorrang vor Kilos Aufnahmen
         if (foreignActive) endForeign()
         arbiter.navSpoken(System.currentTimeMillis())
+        lastNavSpokenAt = System.currentTimeMillis()
         tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "kq-nav-${System.nanoTime()}")
     }
 
     private fun speakQuest(text: String, utteranceId: String = "kq-quest-${System.nanoTime()}") {
-        if (!_state.value.settings.kiloVoice) return
+        if (!_state.value.settings.kiloVoice || gameActive) return
         // Passt der Text zu einer Aufnahme, spricht Kilo mit der aufgenommenen Stimme, sonst die Sprachausgabe
         if (kiloClips.play(text)) return
         tts?.speak(text, TextToSpeech.QUEUE_ADD, null, utteranceId)
@@ -2414,8 +2619,18 @@ class NavController(private val app: Application) : KidsActions {
 
     /** Zusaetzliche Live-Aufgabe einplanen (siehe BonusPlanner); wird gleich danach regulaer ausgeloest. */
     private fun maybeAddBonus(along: Double, metersToManeuver: Double) {
-        if (!_state.value.settings.liveQuests) return
         val adv = adventure ?: return
+        // Angepasste Aufgabe (leichter/schwerer) nur unter denselben Sicherheitsbedingungen wie Live-Aufgaben
+        pendingAdapt?.let { t ->
+            val nextAt = adv.upcoming().firstOrNull()?.triggerMeters
+            if (adv.active == null && metersToManeuver >= 600.0 && (nextAt == null || nextAt - along >= 1_500.0)) {
+                pendingAdapt = null
+                adv.insertBonus(t.toQuest(along).copy(templateId = "adapt_" + t.id))
+                publishPlan()
+                return
+            }
+        }
+        if (!_state.value.settings.liveQuests) return
         val planner = bonusPlanner ?: return
         val q = planner.next(along, adv.active != null, adv.lastTriggerMeters, adv.upcoming().firstOrNull()?.triggerMeters, metersToManeuver) ?: return
         adv.insertBonus(q)
