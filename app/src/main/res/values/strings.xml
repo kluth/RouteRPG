@@ -588,4 +588,15 @@
     <string name="pack_load_failed">This offline package could not be opened.</string>
     <string name="plan_save_offline">Save all stages offline (~%1$d MB)</string>
     <string name="plan_save_offline_hint">Saves map, route, speed limits, rest stops and quests for every stage while you have a network.</string>
+    <!-- Kilo spricht Lob und Trost (Aufnahmen in assets/kilo_voice, siehe tools/voice) -->
+    <string name="kilo_praise_1">Super job!</string>
+    <string name="kilo_praise_2">Exactly right!</string>
+    <string name="kilo_praise_3">Great, that was correct!</string>
+    <string name="kilo_praise_4">You are a real explorer!</string>
+    <string name="kilo_praise_5">Awesome! Keep it up!</string>
+    <string name="kilo_praise_6">Wow, you did that really well!</string>
+    <string name="kilo_retry_1">Almost! You will get it next time.</string>
+    <string name="kilo_retry_2">Not quite, but good try!</string>
+    <string name="kilo_retry_3">That was a tricky one!</string>
+    <string name="kilo_retry_4">Good thinking! Now we know.</string>
 </resources>

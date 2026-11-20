@@ -588,4 +588,15 @@
     <string name="pack_load_failed">Dieses Offline-Paket konnte nicht geöffnet werden.</string>
     <string name="plan_save_offline">Alle Etappen offline speichern (~%1$d MB)</string>
     <string name="plan_save_offline_hint">Speichert Karte, Route, Tempolimits, Rastplätze und Aufgaben für jede Etappe, solange du Netz hast.</string>
+    <!-- Kilo spricht Lob und Trost (Aufnahmen in assets/kilo_voice, siehe tools/voice) -->
+    <string name="kilo_praise_1">Super gemacht!</string>
+    <string name="kilo_praise_2">Genau richtig!</string>
+    <string name="kilo_praise_3">Toll, das war richtig!</string>
+    <string name="kilo_praise_4">Du bist ein echter Entdecker!</string>
+    <string name="kilo_praise_5">Klasse! Weiter so!</string>
+    <string name="kilo_praise_6">Wow, das hast du richtig gut gemacht!</string>
+    <string name="kilo_retry_1">Fast! Beim nächsten Mal klappt es bestimmt.</string>
+    <string name="kilo_retry_2">Nicht ganz, aber gut versucht!</string>
+    <string name="kilo_retry_3">Das war knifflig!</string>
+    <string name="kilo_retry_4">Gut überlegt! Jetzt wissen wir es.</string>
 </resources>

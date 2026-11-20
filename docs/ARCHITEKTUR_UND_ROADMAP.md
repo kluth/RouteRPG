@@ -490,3 +490,7 @@ alle Buchungen. Offen: Erinnerungen vor Reisebeginn, Etappen-Übersicht im Elter
 Pakete speichern Route, Tempolimits, Länder, Spuren, Rastplätze und aufgelöste Aufgaben dauerhaft (Spec 004) und lassen
 sich ohne Netz öffnen. Für geplante Reisen werden alle Etappen nacheinander gespeichert. Offen: Neuberechnung ohne Netz
 (Valhalla-Offline wäre ein eigenes Thema), Autobahn-Daten im Paket, Speicherverwaltung mit Größenanzeige der Karten.
+
+## 43. Kilo-Stimme
+Feste Kilo-Sätze (Quest-Texte, Antworten für die Kleinsten, Lob/Trost, Sticker) sind vorab aufgenommen und werden offline abgespielt
+(Spec 005). Offen: englische Aufnahmen vervollständigen, weitere Sprachen, Lob für Navigationsmeilensteine, Geschichten als Audio.

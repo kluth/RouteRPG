@@ -115,7 +115,7 @@ fun MiniKids(state: UiState, nav: KidsActions, onOpenMap: () -> Unit = {}, onPic
                             Text(ctx.stringByKey(q.textKey, q.args), style = miniStyle(30), textAlign = TextAlign.Center)
                             // Kilo liest vor: Aufgabe und bei Quizfragen die Antworten mit Form und Farbe
                             Surface(
-                                onClick = { speak(ctx.questSpeech(q, withOptions = true)) },
+                                onClick = { ctx.questSpeech(q, withOptions = true).let { t -> if (!nav.speakAloud(t)) speak(t) } },
                                 shape = CircleShape, color = c.hintContainer, contentColor = c.onHintContainer, shadowElevation = 3.dp,
                                 modifier = Modifier.size(72.dp).semantics { contentDescription = ctx.getString(R.string.mini_read_aloud) },
                             ) {

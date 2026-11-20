@@ -12,4 +12,6 @@ interface KidsActions {
     fun setAvatar(emoji: String)
     /** Kinderkarte: echte Kacheln (true) oder schematisch (false); Einstellung dieses Geraets. */
     fun setRealMap(on: Boolean)
+    /** Spielt eine Kilo-Aufnahme zum Text ab; false, wenn es keine gibt (dann liest die Sprachausgabe des Geraets vor). */
+    fun speakAloud(text: String): Boolean = false
 }

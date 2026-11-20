@@ -9,3 +9,7 @@
 
 ## Bibliotheken (Ergänzung)
 - AndroidX WorkManager 2.9.1: Apache-2.0, für Reise-Erinnerungen (lokal, keine Server, kein Tracking).
+
+## Sprachaufnahmen (Ergänzung)
+- `app/src/main/assets/kilo_voice/`: vorab erzeugte synthetische Sprache (ElevenLabs, Stimme „Finn Fable – Children's Stories DE/EN“),
+  siehe `tools/voice/README.md`. Nutzungsrechte richten sich nach dem ElevenLabs-Tarif des Projektinhabers (vor einer Veröffentlichung prüfen).

@@ -26,6 +26,7 @@ import app.kiloquest.game.QuestFit
 import app.kiloquest.game.BonusPlanner
 import app.kiloquest.game.AgeBand
 import app.kiloquest.game.AnswerMatcher
+import app.kiloquest.game.KiloPraise
 import app.kiloquest.game.Quest
 import app.kiloquest.game.QuestCatalog
 import app.kiloquest.game.QuestGenerator
@@ -307,6 +308,9 @@ class NavController(private val app: Application) : KidsActions {
     private var kidBands: List<AgeBand> = emptyList()
 
     private val arbiter = SpeechArbiter()
+    private val kiloClips = KiloVoicePlayer(app)
+    private var lastPraise = 0
+    private var lastRetry = 0
     private val advisor = RerouteAdvisor()
     private val announcedIncidents = HashSet<String>()
     private var trafficJob: Job? = null
@@ -617,6 +621,12 @@ class NavController(private val app: Application) : KidsActions {
 
     override fun showKids(show: Boolean) = _state.update { it.copy(kidsScreen = show) }
 
+    override fun speakAloud(text: String): Boolean {
+        if (!_state.value.settings.kiloVoice) return false
+        kiloClips.stop()
+        return kiloClips.play(text)
+    }
+
     override fun answerQuest(choice: Int?) = answerQuestFrom(choice, null)
 
     /** [player]: Spieler eines gekoppelten Geraets, der antwortet (bekommt die Punkte); null = aktueller Spieler. */
@@ -625,6 +635,7 @@ class NavController(private val app: Application) : KidsActions {
         val adv = adventure ?: return
         val before = adv.stickers
         val r = adv.answer(choice, player) ?: return
+        kiloClips.stop() // die Frage nicht mehr weitersprechen
         val correctKey = q.optionKeys.getOrNull(r.correctIndex)
         val total = _state.value.totalPoints + r.pointsAwarded
         var sticker: Sticker? = null
@@ -643,10 +654,21 @@ class NavController(private val app: Application) : KidsActions {
                 newSticker = sticker, album = book.collected.toSet(),
             )
         }
+        speakFeedback(r.correct, sticker != null)
+    }
+
+    /** Kilo lobt oder tröstet mit einer wechselnden Zeile; Navigationsansagen werden dabei nie gestört. */
+    private fun speakFeedback(correct: Boolean, newSticker: Boolean) {
+        if (tts?.isSpeaking == true) return
+        val n = KiloPraise.pick(correct, if (correct) lastPraise else lastRetry, Random.Default)
+        if (correct) lastPraise = n else lastRetry = n
+        speakQuest(app.stringByKey(KiloPraise.key(correct, n)))
+        if (newSticker) speakQuest(app.getString(R.string.kids_new_sticker))
     }
 
     override fun skipQuest() {
         adventure?.skip()
+        kiloClips.stop()
         arbiter.cancelQuest()
         _state.update { it.copy(quest = null) }
     }
@@ -707,6 +729,7 @@ class NavController(private val app: Application) : KidsActions {
         engine = null
         planner = null
         tts?.stop()
+        kiloClips.stop()
     }
 
     private fun onLocation(loc: Location) {
@@ -751,7 +774,7 @@ class NavController(private val app: Application) : KidsActions {
             adventure?.onProgress(questOffset + g.alongMeters)?.let { q -> onQuestTriggered(contextualize(q, pos), pos); publishPlan() }
         }
         if (!curvy && _state.value.quest == null) checkRiddles(g.alongMeters, pos)
-        arbiter.poll(System.currentTimeMillis(), tts?.isSpeaking == true)?.let(::speakQuest)
+        arbiter.poll(System.currentTimeMillis(), tts?.isSpeaking == true || kiloClips.isPlaying)?.let(::speakQuest)
         val now = System.currentTimeMillis()
         if (g.isOffRoute && now - lastReroute > 15_000) {
             lastReroute = now
@@ -1888,6 +1911,7 @@ class NavController(private val app: Application) : KidsActions {
     /** Navigationsansage: hat Vorrang und unterbricht Quest-Ansagen. */
     private fun speak(text: String) {
         if (!_state.value.settings.naviVoice) return
+        kiloClips.stop() // Navigationsansagen haben Vorrang vor Kilos Aufnahmen
         if (foreignActive) endForeign()
         arbiter.navSpoken(System.currentTimeMillis())
         tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "kq-nav-${System.nanoTime()}")
@@ -1895,6 +1919,8 @@ class NavController(private val app: Application) : KidsActions {
 
     private fun speakQuest(text: String, utteranceId: String = "kq-quest-${System.nanoTime()}") {
         if (!_state.value.settings.kiloVoice) return
+        // Passt der Text zu einer Aufnahme, spricht Kilo mit der aufgenommenen Stimme, sonst die Sprachausgabe
+        if (kiloClips.play(text)) return
         tts?.speak(text, TextToSpeech.QUEUE_ADD, null, utteranceId)
     }
 
@@ -1936,7 +1962,7 @@ class NavController(private val app: Application) : KidsActions {
             val band = kidBands.getOrNull(s.currentPlayer) ?: s.ageBand
             append(app.questSpeech(q, withOptions = band == AgeBand.MINI))
         }
-        arbiter.offerQuest(text, System.currentTimeMillis(), tts?.isSpeaking == true)?.let(::speakQuest)
+        arbiter.offerQuest(text, System.currentTimeMillis(), tts?.isSpeaking == true || kiloClips.isPlaying)?.let(::speakQuest)
     }
 
 

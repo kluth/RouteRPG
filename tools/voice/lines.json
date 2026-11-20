@@ -1,0 +1,638 @@
+[
+  {
+    "id": "quest_windmill",
+    "group": "quest",
+    "text": {
+      "en": "Find a wind turbine! Tap when you see one.",
+      "de": "Findet ein Windrad! Tippt, wenn ihr eins seht."
+    },
+    "hash": {
+      "en": "9695b23f218b",
+      "de": "6a1cfa2bbab6"
+    }
+  },
+  {
+    "id": "quest_cow",
+    "group": "quest",
+    "text": {
+      "en": "Spot a cow, a horse or a sheep in a field!",
+      "de": "Entdeckt eine Kuh, ein Pferd oder ein Schaf auf der Weide!"
+    },
+    "hash": {
+      "en": "47fd1c6c943b",
+      "de": "3307dfcd0260"
+    }
+  },
+  {
+    "id": "quest_bridge",
+    "group": "quest",
+    "text": {
+      "en": "Spot a bridge. Does it go over water?",
+      "de": "Entdeckt eine Brücke. Führt sie über Wasser?"
+    },
+    "hash": {
+      "en": "4951c02eaf57",
+      "de": "20a291c64dce"
+    }
+  },
+  {
+    "id": "quest_church",
+    "group": "quest",
+    "text": {
+      "en": "Find a church tower.",
+      "de": "Findet einen Kirchturm."
+    },
+    "hash": {
+      "en": "8ab3e42afc02",
+      "de": "fa2e8f05dc29"
+    }
+  },
+  {
+    "id": "quest_ship",
+    "group": "quest",
+    "text": {
+      "en": "Spot a ship or a boat.",
+      "de": "Entdeckt ein Schiff oder ein Boot."
+    },
+    "hash": {
+      "en": "a262d727f315",
+      "de": "20d6b3a20bad"
+    }
+  },
+  {
+    "id": "quest_red_cars",
+    "group": "quest",
+    "text": {
+      "en": "Count the red cars until the next quest!",
+      "de": "Zählt die roten Autos bis zur nächsten Aufgabe!"
+    },
+    "hash": {
+      "en": "6f6fe0d1c7c4",
+      "de": "50bf827c65b7"
+    }
+  },
+  {
+    "id": "quest_trucks",
+    "group": "quest",
+    "text": {
+      "en": "How many trucks can you count?",
+      "de": "Wie viele Lastwagen könnt ihr zählen?"
+    },
+    "hash": {
+      "en": "dc62cc59efa3",
+      "de": "f8dcbe07c585"
+    }
+  },
+  {
+    "id": "quest_plates",
+    "group": "quest",
+    "text": {
+      "en": "Find licence plates from three different countries.",
+      "de": "Findet Nummernschilder aus drei verschiedenen Ländern."
+    },
+    "hash": {
+      "en": "c2202201e519",
+      "de": "92d97ffc74e6"
+    }
+  },
+  {
+    "id": "quest_alphabet",
+    "group": "quest",
+    "text": {
+      "en": "Alphabet game: find a sign with an A, then a B, then a C… How far do you get?",
+      "de": "Alphabet-Spiel: Findet ein Schild mit A, dann B, dann C … Wie weit kommt ihr?"
+    },
+    "hash": {
+      "en": "630d12580f11",
+      "de": "fbfb62ac947a"
+    }
+  },
+  {
+    "id": "quest_quiz_spider",
+    "group": "quest",
+    "text": {
+      "en": "How many legs does a spider have?",
+      "de": "Wie viele Beine hat eine Spinne?"
+    },
+    "hash": {
+      "en": "37198331747b",
+      "de": "c71a77894d33"
+    }
+  },
+  {
+    "id": "quest_quiz_spider.opts",
+    "group": "quest_opts",
+    "text": {
+      "en": "How many legs does a spider have? Blue circle: 6. Orange square: 8. Green triangle: 10",
+      "de": "Wie viele Beine hat eine Spinne? Blauer Kreis: 6. Oranges Quadrat: 8. Grünes Dreieck: 10"
+    },
+    "hash": {
+      "en": "8693a738d436",
+      "de": "b96a80c8c0f3"
+    }
+  },
+  {
+    "id": "quest_quiz_green",
+    "group": "quest",
+    "text": {
+      "en": "What colour do you get when you mix blue and yellow?",
+      "de": "Welche Farbe entsteht, wenn man Blau und Gelb mischt?"
+    },
+    "hash": {
+      "en": "3b0e9e5532de",
+      "de": "f54e3b6f300b"
+    }
+  },
+  {
+    "id": "quest_quiz_green.opts",
+    "group": "quest_opts",
+    "text": {
+      "en": "What colour do you get when you mix blue and yellow? Blue circle: Green. Orange square: Orange. Green triangle: Purple",
+      "de": "Welche Farbe entsteht, wenn man Blau und Gelb mischt? Blauer Kreis: Grün. Oranges Quadrat: Orange. Grünes Dreieck: Lila"
+    },
+    "hash": {
+      "en": "876b3ba5a26c",
+      "de": "6be410cd6264"
+    }
+  },
+  {
+    "id": "quest_quiz_reindeer",
+    "group": "quest",
+    "text": {
+      "en": "Which animal pulls the sleigh in Lapland?",
+      "de": "Welches Tier zieht in Lappland den Schlitten?"
+    },
+    "hash": {
+      "en": "72c1072d0313",
+      "de": "1502d0fafe59"
+    }
+  },
+  {
+    "id": "quest_quiz_reindeer.opts",
+    "group": "quest_opts",
+    "text": {
+      "en": "Which animal pulls the sleigh in Lapland? Blue circle: Reindeer. Orange square: Camel. Green triangle: Penguin",
+      "de": "Welches Tier zieht in Lappland den Schlitten? Blauer Kreis: Rentier. Oranges Quadrat: Kamel. Grünes Dreieck: Pinguin"
+    },
+    "hash": {
+      "en": "d1c7afb3bbd5",
+      "de": "1bfc8d4fcd13"
+    }
+  },
+  {
+    "id": "quest_quiz_capital_dk",
+    "group": "quest",
+    "text": {
+      "en": "What is the capital of Denmark?",
+      "de": "Wie heißt die Hauptstadt von Dänemark?"
+    },
+    "hash": {
+      "en": "d98603a22105",
+      "de": "50685272665e"
+    }
+  },
+  {
+    "id": "quest_quiz_capital_dk.opts",
+    "group": "quest_opts",
+    "text": {
+      "en": "What is the capital of Denmark? Blue circle: Copenhagen. Orange square: Oslo. Green triangle: Stockholm",
+      "de": "Wie heißt die Hauptstadt von Dänemark? Blauer Kreis: Kopenhagen. Oranges Quadrat: Oslo. Grünes Dreieck: Stockholm"
+    },
+    "hash": {
+      "en": "d646e82067ec",
+      "de": "441bb9f077cc"
+    }
+  },
+  {
+    "id": "quest_quiz_week",
+    "group": "quest",
+    "text": {
+      "en": "How many days does a week have?",
+      "de": "Wie viele Tage hat eine Woche?"
+    },
+    "hash": {
+      "en": "3a30046543ec",
+      "de": "dd0c1e23b2ef"
+    }
+  },
+  {
+    "id": "quest_quiz_week.opts",
+    "group": "quest_opts",
+    "text": {
+      "en": "How many days does a week have? Blue circle: 5. Orange square: 7. Green triangle: 10",
+      "de": "Wie viele Tage hat eine Woche? Blauer Kreis: 5. Oranges Quadrat: 7. Grünes Dreieck: 10"
+    },
+    "hash": {
+      "en": "23b045c897e8",
+      "de": "f39c356095e7"
+    }
+  },
+  {
+    "id": "quest_quiz_elephant",
+    "group": "quest",
+    "text": {
+      "en": "Which is the biggest land animal?",
+      "de": "Welches ist das größte Landtier?"
+    },
+    "hash": {
+      "en": "43b0ddb6aa05",
+      "de": "6fef564aa4ea"
+    }
+  },
+  {
+    "id": "quest_quiz_elephant.opts",
+    "group": "quest_opts",
+    "text": {
+      "en": "Which is the biggest land animal? Blue circle: Elephant. Orange square: Giraffe. Green triangle: Bear",
+      "de": "Welches ist das größte Landtier? Blauer Kreis: Elefant. Oranges Quadrat: Giraffe. Grünes Dreieck: Bär"
+    },
+    "hash": {
+      "en": "cdf5f42a0b6f",
+      "de": "f79e66639270"
+    }
+  },
+  {
+    "id": "quest_quiz_planet",
+    "group": "quest",
+    "text": {
+      "en": "Which planet is closest to the sun?",
+      "de": "Welcher Planet ist der Sonne am nächsten?"
+    },
+    "hash": {
+      "en": "fe12ab8de02b",
+      "de": "e2ee6a138ca0"
+    }
+  },
+  {
+    "id": "quest_quiz_planet.opts",
+    "group": "quest_opts",
+    "text": {
+      "en": "Which planet is closest to the sun? Blue circle: Mercury. Orange square: Venus. Green triangle: Mars",
+      "de": "Welcher Planet ist der Sonne am nächsten? Blauer Kreis: Merkur. Oranges Quadrat: Venus. Grünes Dreieck: Mars"
+    },
+    "hash": {
+      "en": "4f3861c5ae62",
+      "de": "b0c0c058e3a4"
+    }
+  },
+  {
+    "id": "quest_quiz_oresund",
+    "group": "quest",
+    "text": {
+      "en": "The Öresund Bridge connects Denmark with…?",
+      "de": "Die Öresundbrücke verbindet Dänemark mit …?"
+    },
+    "hash": {
+      "en": "30955a83aef6",
+      "de": "34253866715f"
+    }
+  },
+  {
+    "id": "quest_quiz_oresund.opts",
+    "group": "quest_opts",
+    "text": {
+      "en": "The Öresund Bridge connects Denmark with…? Blue circle: Sweden. Orange square: Norway. Green triangle: Finland",
+      "de": "Die Öresundbrücke verbindet Dänemark mit …? Blauer Kreis: Schweden. Oranges Quadrat: Norwegen. Grünes Dreieck: Finnland"
+    },
+    "hash": {
+      "en": "18004768961d",
+      "de": "126e8882b71b"
+    }
+  },
+  {
+    "id": "quest_night_stars",
+    "group": "quest",
+    "text": {
+      "en": "Look up: can you find a star or the moon?",
+      "de": "Schaut nach oben: Findet ihr einen Stern oder den Mond?"
+    },
+    "hash": {
+      "en": "3b1152bcabd6",
+      "de": "e9b225266e89"
+    }
+  },
+  {
+    "id": "quest_night_tail",
+    "group": "quest",
+    "text": {
+      "en": "Count the red tail lights you can see ahead!",
+      "de": "Zählt die roten Rücklichter, die ihr vor euch seht!"
+    },
+    "hash": {
+      "en": "9d805337ecd1",
+      "de": "ddeb7a2a5f83"
+    }
+  },
+  {
+    "id": "quest_day_clouds",
+    "group": "quest",
+    "text": {
+      "en": "Find a cloud that looks like an animal.",
+      "de": "Findet eine Wolke, die wie ein Tier aussieht."
+    },
+    "hash": {
+      "en": "8565b6497728",
+      "de": "a2ad5227a4e4"
+    }
+  },
+  {
+    "id": "quest_quiz_capital_de",
+    "group": "quest",
+    "text": {
+      "en": "What is the capital of Germany?",
+      "de": "Wie heißt die Hauptstadt von Deutschland?"
+    },
+    "hash": {
+      "en": "36187fe0c062",
+      "de": "7a378032c92e"
+    }
+  },
+  {
+    "id": "quest_quiz_capital_de.opts",
+    "group": "quest_opts",
+    "text": {
+      "en": "What is the capital of Germany? Blue circle: Berlin. Orange square: Vienna. Green triangle: Zurich",
+      "de": "Wie heißt die Hauptstadt von Deutschland? Blauer Kreis: Berlin. Oranges Quadrat: Wien. Grünes Dreieck: Zürich"
+    },
+    "hash": {
+      "en": "93738712d04a",
+      "de": "fc92f0094c9b"
+    }
+  },
+  {
+    "id": "quest_quiz_capital_se",
+    "group": "quest",
+    "text": {
+      "en": "What is the capital of Sweden?",
+      "de": "Wie heißt die Hauptstadt von Schweden?"
+    },
+    "hash": {
+      "en": "7b8121f24473",
+      "de": "33abaa93df9e"
+    }
+  },
+  {
+    "id": "quest_quiz_capital_se.opts",
+    "group": "quest_opts",
+    "text": {
+      "en": "What is the capital of Sweden? Blue circle: Stockholm. Orange square: Helsinki. Green triangle: Oslo",
+      "de": "Wie heißt die Hauptstadt von Schweden? Blauer Kreis: Stockholm. Oranges Quadrat: Helsinki. Grünes Dreieck: Oslo"
+    },
+    "hash": {
+      "en": "1ae78e453644",
+      "de": "57f6099c62ee"
+    }
+  },
+  {
+    "id": "quest_flag_dk",
+    "group": "quest",
+    "text": {
+      "en": "Find the Danish flag: red with a white cross!",
+      "de": "Findet die dänische Flagge: rot mit weißem Kreuz!"
+    },
+    "hash": {
+      "en": "47d790eb418a",
+      "de": "204ef171b988"
+    }
+  },
+  {
+    "id": "quest_moose_sign",
+    "group": "quest",
+    "text": {
+      "en": "Spot a yellow moose warning sign by the road.",
+      "de": "Entdeckt ein gelbes Elch-Warnschild am Straßenrand."
+    },
+    "hash": {
+      "en": "e6c96d51e4a2",
+      "de": "3ff1d8f8bba2"
+    }
+  },
+  {
+    "id": "quest_quiz_sami",
+    "group": "quest",
+    "text": {
+      "en": "Which people have lived in Lapland for thousands of years?",
+      "de": "Welches Volk lebt seit Tausenden von Jahren in Lappland?"
+    },
+    "hash": {
+      "en": "9671ecc85c84",
+      "de": "a230e00a2e76"
+    }
+  },
+  {
+    "id": "quest_quiz_sami.opts",
+    "group": "quest_opts",
+    "text": {
+      "en": "Which people have lived in Lapland for thousands of years? Blue circle: The Sámi. Orange square: The Romans. Green triangle: The Maya",
+      "de": "Welches Volk lebt seit Tausenden von Jahren in Lappland? Blauer Kreis: Die Samen. Oranges Quadrat: Die Römer. Grünes Dreieck: Die Maya"
+    },
+    "hash": {
+      "en": "6722c5bd55d5",
+      "de": "86d93fbe5c71"
+    }
+  },
+  {
+    "id": "quest_break_stretch",
+    "group": "quest",
+    "text": {
+      "en": "Stretch time! Everyone stretches their arms up high.",
+      "de": "Dehnzeit! Alle strecken die Arme hoch in die Luft."
+    },
+    "hash": {
+      "en": "0189349e23a4",
+      "de": "6e02bab5e5d7"
+    }
+  },
+  {
+    "id": "quest_break_sing",
+    "group": "quest",
+    "text": {
+      "en": "Sing the first line of a song together!",
+      "de": "Singt gemeinsam die erste Zeile eines Liedes!"
+    },
+    "hash": {
+      "en": "189e12c0aea4",
+      "de": "55860079d79a"
+    }
+  },
+  {
+    "id": "quest_break_count",
+    "group": "quest",
+    "text": {
+      "en": "Count to 20 together – in a funny voice!",
+      "de": "Zählt gemeinsam bis 20 – mit einer lustigen Stimme!"
+    },
+    "hash": {
+      "en": "80d937ea96ec",
+      "de": "9857f8c73a78"
+    }
+  },
+  {
+    "id": "kilo_intro",
+    "group": "fixed",
+    "text": {
+      "en": "Look outside!",
+      "de": "Schaut mal raus!"
+    },
+    "hash": {
+      "en": "24894845dce6",
+      "de": "c569db97910c"
+    }
+  },
+  {
+    "id": "kids_new_sticker",
+    "group": "fixed",
+    "text": {
+      "en": "New sticker!",
+      "de": "Neuer Sticker!"
+    },
+    "hash": {
+      "en": "145c88d123de",
+      "de": "bce285c0ad2b"
+    }
+  },
+  {
+    "id": "mini_great",
+    "group": "fixed",
+    "text": {
+      "en": "Great job!",
+      "de": "Toll gemacht!"
+    },
+    "hash": {
+      "en": "80d99dffe965",
+      "de": "e2f20622bfcc"
+    }
+  },
+  {
+    "id": "kids_waiting",
+    "group": "fixed",
+    "text": {
+      "en": "No quest right now – enjoy the ride!",
+      "de": "Gerade keine Aufgabe – genießt die Fahrt!"
+    },
+    "hash": {
+      "en": "a4c52718a28f",
+      "de": "2ab6c45e7bb0"
+    }
+  },
+  {
+    "id": "kilo_praise_1",
+    "group": "fixed",
+    "text": {
+      "en": "Super job!",
+      "de": "Super gemacht!"
+    },
+    "hash": {
+      "en": "6d4db499f7df",
+      "de": "b9eb27a13d0c"
+    }
+  },
+  {
+    "id": "kilo_praise_2",
+    "group": "fixed",
+    "text": {
+      "en": "Exactly right!",
+      "de": "Genau richtig!"
+    },
+    "hash": {
+      "en": "0919ba2ddfd3",
+      "de": "6c15a7a4484d"
+    }
+  },
+  {
+    "id": "kilo_praise_3",
+    "group": "fixed",
+    "text": {
+      "en": "Great, that was correct!",
+      "de": "Toll, das war richtig!"
+    },
+    "hash": {
+      "en": "1013af44af21",
+      "de": "19c87ab18ed2"
+    }
+  },
+  {
+    "id": "kilo_praise_4",
+    "group": "fixed",
+    "text": {
+      "en": "You are a real explorer!",
+      "de": "Du bist ein echter Entdecker!"
+    },
+    "hash": {
+      "en": "26590d2286a7",
+      "de": "45bc986e47d5"
+    }
+  },
+  {
+    "id": "kilo_praise_5",
+    "group": "fixed",
+    "text": {
+      "en": "Awesome! Keep it up!",
+      "de": "Klasse! Weiter so!"
+    },
+    "hash": {
+      "en": "4b1253c31d30",
+      "de": "93bee04d028a"
+    }
+  },
+  {
+    "id": "kilo_praise_6",
+    "group": "fixed",
+    "text": {
+      "en": "Wow, you did that really well!",
+      "de": "Wow, das hast du richtig gut gemacht!"
+    },
+    "hash": {
+      "en": "ebb12986b518",
+      "de": "5d88830f9395"
+    }
+  },
+  {
+    "id": "kilo_retry_1",
+    "group": "fixed",
+    "text": {
+      "en": "Almost! You will get it next time.",
+      "de": "Fast! Beim nächsten Mal klappt es bestimmt."
+    },
+    "hash": {
+      "en": "2eace54ed7e1",
+      "de": "787fdc265f06"
+    }
+  },
+  {
+    "id": "kilo_retry_2",
+    "group": "fixed",
+    "text": {
+      "en": "Not quite, but good try!",
+      "de": "Nicht ganz, aber gut versucht!"
+    },
+    "hash": {
+      "en": "4d9885e35db9",
+      "de": "a10633061064"
+    }
+  },
+  {
+    "id": "kilo_retry_3",
+    "group": "fixed",
+    "text": {
+      "en": "That was a tricky one!",
+      "de": "Das war knifflig!"
+    },
+    "hash": {
+      "en": "45ce55232999",
+      "de": "57cc80057688"
+    }
+  },
+  {
+    "id": "kilo_retry_4",
+    "group": "fixed",
+    "text": {
+      "en": "Good thinking! Now we know.",
+      "de": "Gut überlegt! Jetzt wissen wir es."
+    },
+    "hash": {
+      "en": "51acbfc6d6f1",
+      "de": "3cefe89ae2cd"
+    }
+  }
+]
