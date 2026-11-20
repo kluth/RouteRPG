@@ -3,6 +3,7 @@ package app.kiloquest.link
 import android.app.Application
 import app.kiloquest.KeepAliveService
 import app.kiloquest.NavController
+import app.kiloquest.game.AudioGameType
 import app.kiloquest.nav.LatLon
 import app.kiloquest.nav.PolylineCodec
 import app.kiloquest.nav.Route
@@ -47,6 +48,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
     private val lastRouteSent = HashMap<String, Long>()
     private val lastPosSent = HashMap<String, Pair<Long, PosDto?>>()
     private val lastDriveSent = HashMap<String, Pair<Long, DriveDto?>>()
+    private val lastExtrasSent = HashMap<String, Pair<Long, ExtrasDto>>()
 
     init {
         applyKidBands()
@@ -84,7 +86,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
     fun stopHosting() {
         pushJob?.cancel(); pushJob = null
         host.stop()
-        lastSent.clear(); lastRouteSent.clear(); lastPosSent.clear(); lastDriveSent.clear()
+        lastSent.clear(); lastRouteSent.clear(); lastPosSent.clear(); lastDriveSent.clear(); lastExtrasSent.clear()
         _state.update { it.copy(hosting = false, devices = devicesUi()) }
     }
 
@@ -109,7 +111,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
     fun remove(address: String) {
         roster.remove(address); saveDevices(); applyKidBands()
         host.disconnect(address)
-        lastSent.remove(address); lastRouteSent.remove(address); lastPosSent.remove(address); lastDriveSent.remove(address)
+        lastSent.remove(address); lastRouteSent.remove(address); lastPosSent.remove(address); lastDriveSent.remove(address); lastExtrasSent.remove(address)
         refresh()
     }
 
@@ -117,7 +119,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
 
     override fun onConnected(address: String) { scope.launch { refresh() } }
 
-    override fun onDisconnected(address: String) { scope.launch { lastSent.remove(address); lastRouteSent.remove(address); lastPosSent.remove(address); lastDriveSent.remove(address); refresh() } }
+    override fun onDisconnected(address: String) { scope.launch { lastSent.remove(address); lastRouteSent.remove(address); lastPosSent.remove(address); lastDriveSent.remove(address); lastExtrasSent.remove(address); refresh() } }
 
     override fun onMessage(address: String, msg: ClientMsg) {
         scope.launch { handle(address, msg) }
@@ -152,9 +154,36 @@ class LinkController(private val app: Application, private val nav: NavControlle
             ClientMsg.ToiletResume -> nav.resumeAfterToilet()
             ClientMsg.ToiletDismiss -> nav.dismissToiletRequest()
             ClientMsg.ToiletRequest -> nav.toiletRequested(dev.name)
+            is ClientMsg.Cmd -> runCmd(msg, st)
             is ClientMsg.Age -> { roster.setAge(address, msg.band); saveDevices(); applyKidBands(); refresh() }
             else -> Unit
         }
+    }
+
+    /** Befehle des Beifahrer-Geraets: das Hauptgeraet fuehrt sie aus (Sprache, Zuhoeren, Navigation). */
+    private fun runCmd(m: ClientMsg.Cmd, st: UiState) {
+        when (m.name) {
+            Cmds.FIND_SPOTS -> nav.findSpots()
+            Cmds.GO_SPOT -> m.index?.let { st.spots.getOrNull(it) }?.let(nav::goToSpot)
+            Cmds.RESUME_STOPOVER -> nav.resumeAfterStopover()
+            Cmds.GAME -> runCatching { AudioGameType.valueOf(m.arg ?: "") }.getOrNull()?.let(nav::startAudioGame)
+            Cmds.STOP_GAME -> nav.stopAudioGame()
+            Cmds.SERIES -> nav.tellSeries()
+            Cmds.EMERGENCY -> nav.openEmergency()
+            Cmds.EMERGENCY_CLOSE -> nav.closeEmergency()
+            Cmds.TOLLS -> nav.sayTolls()
+        }
+    }
+
+    /** Reise-Extras nur an Beifahrer-Geraete, hoechstens alle 2 s und nur bei Aenderung. */
+    private fun sendExtras(d: Device, st: UiState) {
+        if (d.role != Role.COPILOT) return
+        val dto = st.toExtrasDto()
+        val now = System.currentTimeMillis()
+        val prev = lastExtrasSent[d.address]
+        if (prev != null && (prev.second == dto || now - prev.first < 2_000)) return
+        lastExtrasSent[d.address] = now to dto
+        host.send(d.address, HostMsg.ExtrasMsg(dto))
     }
 
     /** Antworten darf der Besitzer der Aufgabe; ist dessen Geraet nicht verbunden, jedes Kinder-Geraet. */
@@ -215,6 +244,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
         if (d.address !in host.connectedAddresses()) return
         sendMap(d, st)
         sendDrive(d, st)
+        sendExtras(d, st)
         val snap = st.toSnapshot(d.role, d.player, ++seq) { nav.stopText(it) }
         // Nur senden, wenn sich etwas geaendert hat (ohne die laufende Nummer verglichen)
         val key = snap.copy(seq = 0).toString()

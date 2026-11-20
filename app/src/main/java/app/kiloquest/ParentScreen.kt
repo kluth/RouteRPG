@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import app.kiloquest.link.toDriveDto
+import app.kiloquest.link.toExtrasDto
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -75,12 +76,7 @@ fun ParentScreen(state: UiState, nav: NavController) {
             if (state.navigating) {
                 OutlinedButton(onClick = { shooting = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.photo_now)) }
             }
-            app.kiloquest.ui.StopoverCard(state, nav)
-            app.kiloquest.ui.DashExtras(state, nav)
-            OutlinedButton(onClick = nav::openEmergency, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.emergency_open)) }
-            app.kiloquest.ui.SpotsCard(state, nav)
-            app.kiloquest.ui.TripInfoCard(state)
-            app.kiloquest.ui.GamesCard(state, nav)
+            app.kiloquest.ui.ExtrasPanel(state.toExtrasDto(), app.kiloquest.link.HostExtrasActions(nav), state.navigating, micOnThisDevice = true)
             app.kiloquest.link.KidsStatusCard(
                 state.points, state.stickers, state.questsDone, state.questsTotal,
                 state.quest?.let { ctx.stringByKey(it.textKey, it.args).take(160) },

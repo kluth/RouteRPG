@@ -73,6 +73,47 @@ data class DriveDto(
     )
 }
 
+/** Zwischenstopp-Vorschlag fuer das Beifahrer-Geraet (Texte baut das Geraet aus Art und Name selbst). [kind]: SpotKind-Name, [open]: OpenState-Name. */
+@Serializable
+data class SpotDto(val kind: String, val name: String? = null, val aheadMeters: Double = 0.0, val detourMinutes: Int = 1, val open: String = "UNKNOWN")
+
+/** Lange Strecke ohne Ortschaften in Kilometern ab Routenstart. */
+@Serializable
+data class RemoteDto(val fromKm: Int, val toKm: Int)
+
+@Serializable
+data class HospitalDto(val name: String, val km: Int)
+
+/** Notfall-Karte (nur gesetzt, solange sie geoeffnet ist). Die Saetze fuer Eltern baut das Geraet aus [country] selbst. */
+@Serializable
+data class EmergencyDto(val number: String, val location: String, val hospitals: List<HospitalDto> = emptyList(), val loading: Boolean = false, val country: String? = null)
+
+/**
+ * Reise-Extras fuer das Beifahrer-Geraet (leicht, nur bei Aenderung gesendet): Maut-Laender, Strecken ohne Orte, Teamziel, naechste Pause,
+ * Zielwetter, Stopps fuer Kinder, Zwischenstopp, Spiele/Hoerserie und die Notfall-Karte. Nur Schluessel und Zahlen, keine uebersetzten Texte.
+ */
+@Serializable
+data class ExtrasDto(
+    val tolls: List<String> = emptyList(),
+    val remote: List<RemoteDto> = emptyList(),
+    val goalCollected: Int = 0,
+    val goalTarget: Int = 0,
+    val nextBreakMin: Int? = null,
+    val powerSaving: Boolean = false,
+    val destTempC: Int? = null,
+    val destCondition: String? = null,
+    val spots: List<SpotDto> = emptyList(),
+    val spotsLoading: Boolean = false,
+    val spotsSearched: Boolean = false,
+    val stopoverLabel: String? = null,
+    val stopoverArrived: Boolean = false,
+    val stopoverStory: String? = null,
+    val game: String? = null,
+    val seriesNext: Int? = null,
+    val seriesHeard: Int = 0,
+    val emergency: EmergencyDto? = null,
+)
+
 /** Alles, was ein gekoppeltes Geraet zum Darstellen braucht. */
 @Serializable
 data class Snapshot(
@@ -121,7 +162,23 @@ sealed interface ClientMsg {
     @Serializable @SerialName("break_request") data object BreakRequest : ClientMsg
     /** Beifahrer: Antwort auf eine Foto-Bitte ([taken] = Foto gemacht, sonst "Spaeter"); die Bitte hat die Nummer [id]. */
     @Serializable @SerialName("photo_answer") data class PhotoAnswer(val id: String, val taken: Boolean) : ClientMsg
+    /** Beifahrer: Befehl an das Hauptgeraet (Name siehe [Cmds]), optional mit Nummer (z. B. Stopp Nr. 2). Das Hauptgeraet spricht und hoert zu. */
+    @Serializable @SerialName("cmd") data class Cmd(val name: String, val index: Int? = null, val arg: String? = null) : ClientMsg
     @Serializable @SerialName("ping") data object Ping : ClientMsg
+}
+
+/** Befehlsnamen von Beifahrer-Geraeten. */
+object Cmds {
+    const val FIND_SPOTS = "find_spots"
+    const val GO_SPOT = "go_spot"
+    const val RESUME_STOPOVER = "resume_stopover"
+    const val GAME = "game"
+    const val STOP_GAME = "stop_game"
+    const val SERIES = "series"
+    const val EMERGENCY = "emergency"
+    const val EMERGENCY_CLOSE = "emergency_close"
+    const val TOLLS = "tolls"
+    val all = setOf(FIND_SPOTS, GO_SPOT, RESUME_STOPOVER, GAME, STOP_GAME, SERIES, EMERGENCY, EMERGENCY_CLOSE, TOLLS)
 }
 
 /** Nachrichten Hauptgeraet -> Geraet. */
@@ -135,6 +192,8 @@ sealed interface HostMsg {
     /** Fahrtstatus (nur fuer Beifahrer-Geraete); null = keine Fahrt. */
     @Serializable @SerialName("drive") data class DriveMsg(val drive: DriveDto?) : HostMsg
     /** Roadtrip-Foto-Bitte an den Beifahrer ([reason]: SCENIC, RANDOM; [place] = schoener Ort, falls bekannt). Der Fahrer wird nie gefragt. */
+    /** Reise-Extras (nur fuer Beifahrer-Geraete). */
+    @Serializable @SerialName("extras") data class ExtrasMsg(val extras: ExtrasDto) : HostMsg
     @Serializable @SerialName("photo_request") data class PhotoRequest(val id: String, val reason: String, val place: String? = null) : HostMsg
     @Serializable @SerialName("bye") data object Bye : HostMsg
 }

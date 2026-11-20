@@ -36,3 +36,8 @@ Zeilenweises JSON (UTF-8, eine Nachricht pro Zeile, höchstens 256 KB). Version 
 - Neue Beifahrer-Aktion `break_request` („Pause jetzt vorschlagen“); Kinder dürfen sie nicht senden.
 - Beifahrer-Bildschirm: Fahrtstatus-Karte, Klo-Alarm, Entscheidungen (Umfahrung, Pause), Pause-Knopf, Karte „Die Kinder“ (Punkte, Sticker,
   Fortschritt, aktuelle Aufgabe). Dieselben Karten zeigt das Beifahrer-Menü auf dem Hauptgerät.
+
+## Nachtrag: Reise-Extras auf dem Beifahrer-Gerät (Protokoll bleibt Version 1, nur neue optionale Nachrichten)
+- Hauptgerät → Beifahrer: `extras` (`ExtrasDto`): Maut-Länder, Strecken ohne Orte, Teamziel, nächste Pause, Zielwetter, Stopps für Kinder, laufender Zwischenstopp, Spiel/Hörserie, Notfall-Karte. Nur Schlüssel und Zahlen; die Texte baut das Beifahrer-Gerät in seiner Sprache. Gesendet höchstens alle 2 s und nur bei Änderung, nur an Beifahrer-Geräte.
+- Beifahrer → Hauptgerät: `cmd` (Name aus `Cmds`, optional Nummer/Argument): Stopps suchen/anfahren, Pause beenden, Hörspiel starten/stoppen, Serie, Notfall, Maut vorlesen. Nur Beifahrer-Rolle, unbekannte Namen werden abgelehnt. Spiele sprechen und hören auf dem **Hauptgerät** (dort Mikrofon und Lautsprecher).
+- Beifahrer-Bildschirm zeigt zusätzlich eine Karte mit Route und Position (Kartenansicht der Kinder).

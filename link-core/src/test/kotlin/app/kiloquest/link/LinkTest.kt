@@ -159,4 +159,19 @@ class LinkTest {
         assertTrue(r.allows(Role.COPILOT, ans))
         assertFalse(r.allows(Role.KID, ans), "nur der Beifahrer beantwortet Foto-Bitten")
     }
+
+    @Test fun extrasAndCommandsRoundTripAndRoles() {
+        val ex = ExtrasDto(
+            tolls = listOf("DK", "SE"), remote = listOf(RemoteDto(450, 620)), goalCollected = 40, goalTarget = 400, nextBreakMin = 25,
+            spots = listOf(SpotDto("ICE_CREAM", "Eis Rossi", 12_000.0, 4, "OPEN")), stopoverLabel = "Burg", emergency = EmergencyDto("112", "A40\n51.4, 6.7", listOf(HospitalDto("Klinik", 5))),
+        )
+        val back = Wire.decodeHost(Wire.encode(HostMsg.ExtrasMsg(ex)))
+        assertEquals(HostMsg.ExtrasMsg(ex), back)
+        val cmd = ClientMsg.Cmd(Cmds.GO_SPOT, 2)
+        assertEquals(cmd, Wire.decodeClient(Wire.encode(cmd)))
+        val r = DeviceRoster()
+        assertTrue(r.allows(Role.COPILOT, cmd))
+        assertFalse(r.allows(Role.KID, cmd), "Kinder duerfen keine Befehle geben")
+        assertFalse(r.allows(Role.COPILOT, ClientMsg.Cmd("rm_rf")), "unbekannte Befehle werden abgelehnt")
+    }
 }

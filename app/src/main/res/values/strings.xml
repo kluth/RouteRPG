@@ -884,4 +884,5 @@
     <string name="storage_warn">A lot of space is used. You can delete single photo entries in the diary and travel packages in the map settings.</string>
     <string name="storage_clear_cache">Clear temporary files</string>
     <string name="dash_power_saving">Battery saver is on</string>
+    <string name="toll_speak">Read aloud</string>
 </resources>

@@ -82,3 +82,27 @@ fun UiState.toDriveDto(): DriveDto? {
         nextInstruction = next?.instruction, nextMeters = if (next != null) g.metersToNextManeuver else null,
     )
 }
+
+/** Reise-Extras fuer Beifahrer-Geraete (nur Schluessel und Zahlen; die Texte baut das Geraet in seiner Sprache). */
+fun UiState.toExtrasDto(): ExtrasDto = ExtrasDto(
+    tolls = tolls.map { it.country },
+    remote = remoteStretches.take(6).map { RemoteDto((it.startMeters / 1000).toInt(), (it.endMeters / 1000).toInt()) },
+    goalCollected = teamGoal?.collected ?: 0,
+    goalTarget = teamGoal?.target ?: 0,
+    nextBreakMin = nextBreakMin?.takeIf { navigating },
+    powerSaving = powerSaving,
+    destTempC = weather?.destination?.tempC?.let { Math.round(it).toInt() },
+    destCondition = weather?.destination?.condition?.name,
+    spots = spots.map { SpotDto(it.kind.name, it.name, it.alongMeters - (guidance?.alongMeters ?: 0.0), it.detourMinutes, it.open.name) },
+    spotsLoading = spotsLoading,
+    spotsSearched = spotsSearched,
+    stopoverLabel = stopover?.label,
+    stopoverArrived = stopover?.phase == app.kiloquest.StopoverPhase.ARRIVED,
+    stopoverStory = stopover?.story?.let { (it.title + ". " + it.text).take(700) },
+    game = audioGame,
+    seriesNext = seriesNext,
+    seriesHeard = seriesHeard,
+    emergency = emergency?.let { e ->
+        EmergencyDto(e.number, e.location, e.hospitals.map { HospitalDto(it.name, Math.round(it.distanceMeters / 1000.0).toInt()) }, e.loading, country)
+    },
+)

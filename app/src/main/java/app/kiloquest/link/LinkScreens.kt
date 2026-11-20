@@ -28,6 +28,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.fillMaxSize
 import app.kiloquest.ui.screenColumn
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -179,7 +181,7 @@ fun LinkClientCard(ageBand: AgeBand) {
 
 /** Beifahrer-Geraet: Umfahrung und Pause entscheiden, sonst nur Status. */
 @Composable
-fun CopilotRemoteScreen(snapshot: Snapshot?, drive: DriveDto?, photoRequest: HostMsg.PhotoRequest?, pos: PosDto?, onMenu: () -> Unit) {
+fun CopilotRemoteScreen(snapshot: Snapshot?, drive: DriveDto?, extras: ExtrasDto?, photoRequest: HostMsg.PhotoRequest?, pos: PosDto?, mapState: app.kiloquest.UiState?, onMenu: () -> Unit) {
     val ctx = LocalContext.current
     val client = (ctx.applicationContext as KiloQuestApp).linkClient
     val gallery = (ctx.applicationContext as KiloQuestApp).nav.state.collectAsState().value.settings.photosToGallery
@@ -196,6 +198,12 @@ fun CopilotRemoteScreen(snapshot: Snapshot?, drive: DriveDto?, photoRequest: Hos
         Column(Modifier.screenColumn().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.parent_title), style = MaterialTheme.typography.headlineMedium)
             DriveCard(if (snapshot?.navigating == true) drive else null)
+            // Karte mit Route und Position (Kartenansicht der Kinder, hier fuer den Beifahrer)
+            if (snapshot?.navigating == true && mapState?.route != null) {
+                androidx.compose.foundation.layout.Box(Modifier.fillMaxWidth().heightIn(min = 220.dp, max = 260.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(24.dp))) {
+                    app.kiloquest.ui.KidMapView(mapState, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize())
+                }
+            }
             if (photoRequest != null) {
                 app.kiloquest.PhotoRequestCard(
                     reasonScenic = photoRequest.reason == "SCENIC", place = photoRequest.place,
@@ -251,9 +259,37 @@ fun CopilotRemoteScreen(snapshot: Snapshot?, drive: DriveDto?, photoRequest: Hos
             if (snapshot?.navigating == true && snapshot.breakProposal == null && snapshot.toilet == null) {
                 OutlinedButton(onClick = { client.send(ClientMsg.BreakRequest) }, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.copilot_break_now)) }
             }
+            extras?.let {
+                app.kiloquest.ui.ExtrasPanel(it, CopilotExtrasActions(client), snapshot?.navigating == true, micOnThisDevice = false)
+                it.emergency?.let { e -> app.kiloquest.ui.EmergencyView(e) { client.send(ClientMsg.Cmd(Cmds.EMERGENCY_CLOSE)) } }
+            }
             snapshot?.let { KidsStatusCard(it.points, it.stickers, it.questsDone, it.questsTotal, questLine(it.quest)) }
             if (rr == null && bp == null && td == null) Text(stringResource(R.string.link_copilot_idle), style = MaterialTheme.typography.bodyLarge)
             OutlinedButton(onClick = onMenu, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.link_menu)) }
         }
     }
+}
+
+/** Aktionen auf dem Hauptgeraet: direkt an die Navigation. */
+class HostExtrasActions(private val nav: app.kiloquest.NavController) : app.kiloquest.ui.ExtrasActions {
+    override fun findSpots() = nav.findSpots()
+    override fun goToSpot(index: Int) { nav.state.value.spots.getOrNull(index)?.let(nav::goToSpot) }
+    override fun resumeStopover() = nav.resumeAfterStopover()
+    override fun startGame(type: app.kiloquest.game.AudioGameType) = nav.startAudioGame(type)
+    override fun stopGame() = nav.stopAudioGame()
+    override fun series() = nav.tellSeries()
+    override fun emergency() = nav.openEmergency()
+    override fun tolls() = nav.sayTolls()
+}
+
+/** Aktionen auf einem gekoppelten Beifahrer-Geraet: Bluetooth-Befehle an das Hauptgeraet (dort sprechen und hoeren die Spiele). */
+class CopilotExtrasActions(private val client: BtClient) : app.kiloquest.ui.ExtrasActions {
+    override fun findSpots() = client.send(ClientMsg.Cmd(Cmds.FIND_SPOTS))
+    override fun goToSpot(index: Int) = client.send(ClientMsg.Cmd(Cmds.GO_SPOT, index))
+    override fun resumeStopover() = client.send(ClientMsg.Cmd(Cmds.RESUME_STOPOVER))
+    override fun startGame(type: app.kiloquest.game.AudioGameType) = client.send(ClientMsg.Cmd(Cmds.GAME, arg = type.name))
+    override fun stopGame() = client.send(ClientMsg.Cmd(Cmds.STOP_GAME))
+    override fun series() = client.send(ClientMsg.Cmd(Cmds.SERIES))
+    override fun emergency() = client.send(ClientMsg.Cmd(Cmds.EMERGENCY))
+    override fun tolls() = client.send(ClientMsg.Cmd(Cmds.TOLLS))
 }

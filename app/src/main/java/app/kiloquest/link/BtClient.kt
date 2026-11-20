@@ -32,6 +32,8 @@ data class ClientState(
     val route: RouteDto? = null,
     val pos: PosDto? = null,
     val drive: DriveDto? = null,
+    /** Reise-Extras (Maut, Stopps, Teamziel, Spiele, Notfall ...), nur Beifahrer. */
+    val extras: ExtrasDto? = null,
     /** Offene Foto-Bitte des Hauptgeraets (nur Beifahrer). */
     val photoRequest: HostMsg.PhotoRequest? = null,
     val hostName: String? = null,
@@ -149,6 +151,7 @@ class BtClient(private val ctx: Context, private val scope: CoroutineScope) {
             is HostMsg.RouteMsg -> _state.update { it.copy(route = m.route) }
             is HostMsg.PositionMsg -> _state.update { it.copy(pos = m.pos) }
             is HostMsg.DriveMsg -> _state.update { it.copy(drive = m.drive) }
+            is HostMsg.ExtrasMsg -> _state.update { it.copy(extras = m.extras) }
             is HostMsg.PhotoRequest -> _state.update { it.copy(photoRequest = m) }
             HostMsg.Bye -> { wanted = false; _state.update { ClientState() } }
         }

@@ -884,4 +884,5 @@
     <string name="storage_warn">Es ist viel Platz belegt. Einzelne Foto-Einträge lassen sich im Tagebuch löschen, Reise-Pakete in den Karteneinstellungen.</string>
     <string name="storage_clear_cache">Temporäres löschen</string>
     <string name="dash_power_saving">Akku-Sparmodus ist an</string>
+    <string name="toll_speak">Vorlesen</string>
 </resources>

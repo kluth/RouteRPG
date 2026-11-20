@@ -16,53 +16,34 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.kiloquest.NavController
+
 import app.kiloquest.R
 import app.kiloquest.UiState
-import app.kiloquest.nav.TollGuide
 import app.kiloquest.stringByKey
-
-/** Maut/Vignetten der Route und lange Strecken ohne Ortschaften (Hinweis auf moegliche Funklocher). */
-@Composable
-fun TripInfoCard(state: UiState) {
-    if (state.tolls.isEmpty() && state.remoteStretches.isEmpty()) return
-    val ctx = LocalContext.current
-    KiloCard(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (state.tolls.isNotEmpty()) {
-                Text(stringResource(R.string.toll_title), style = MaterialTheme.typography.titleMedium)
-                state.tolls.forEach { r ->
-                    Text(ctx.stringByKey(TollGuide.textKey(r.country)), style = MaterialTheme.typography.bodyMedium)
-                    r.url?.let { url ->
-                        TextButton(onClick = { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }, modifier = Modifier.heightIn(min = 48.dp)) {
-                            Text(stringResource(R.string.toll_open) + " (" + r.country + ")")
-                        }
-                    }
-                }
-                Text(stringResource(R.string.toll_asof, TollGuide.AS_OF), style = MaterialTheme.typography.bodySmall)
-            }
-            if (state.remoteStretches.isNotEmpty()) {
-                Text(stringResource(R.string.remote_title), style = MaterialTheme.typography.titleMedium)
-                state.remoteStretches.take(6).forEach {
-                    Text(stringResource(R.string.remote_item, (it.startMeters / 1000).toInt(), (it.endMeters / 1000).toInt(), (it.lengthMeters / 1000).toInt()), style = MaterialTheme.typography.bodyMedium)
-                }
-                Text(stringResource(R.string.remote_note), style = MaterialTheme.typography.bodySmall)
-            }
-        }
-    }
-}
 
 /** Notfall-Karte: Nummer, Standort (teilbar), naechste Krankenhaeuser. Waehlt nie selbst, oeffnet nur das Telefon. */
 @Composable
 fun EmergencyDialog(state: UiState, nav: NavController) {
     val e = state.emergency ?: return
+    EmergencyView(
+        app.kiloquest.link.EmergencyDto(e.number, e.location, e.hospitals.map { app.kiloquest.link.HospitalDto(it.name, Math.round(it.distanceMeters / 1000.0).toInt()) }, e.loading, state.country),
+        nav::closeEmergency,
+    )
+}
+
+/** Dieselbe Karte fuer Hauptgeraet und Beifahrer-Geraet (Daten + Schliessen). */
+@Composable
+fun EmergencyView(e: app.kiloquest.link.EmergencyDto, onClose: () -> Unit) {
     val ctx = LocalContext.current
+    val phrases = remember(e.country) { app.kiloquest.game.ParentPhrases.forCountry(e.country)?.toList().orEmpty() }
     AlertDialog(
-        onDismissRequest = nav::closeEmergency,
+        onDismissRequest = onClose,
         title = { Text(stringResource(R.string.emergency_title)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -73,12 +54,12 @@ fun EmergencyDialog(state: UiState, nav: NavController) {
                 when {
                     e.loading -> Text(stringResource(R.string.emergency_searching))
                     e.hospitals.isEmpty() -> Text(stringResource(R.string.emergency_none))
-                    else -> e.hospitals.forEach { Text(stringResource(R.string.emergency_hospital_line, it.name, Math.round(it.distanceMeters / 1000.0).toInt())) }
+                    else -> e.hospitals.forEach { Text(stringResource(R.string.emergency_hospital_line, it.name, it.km)) }
                 }
                 Text(stringResource(R.string.emergency_disclaimer, e.number), style = MaterialTheme.typography.bodySmall)
-                if (e.phrases.isNotEmpty()) {
+                if (phrases.isNotEmpty()) {
                     Text(stringResource(R.string.parentphrase_title), style = MaterialTheme.typography.titleSmall)
-                    e.phrases.forEach { (ph, text) ->
+                    phrases.forEach { (ph, text) ->
                         Text(ctx.stringByKey(ph.textKey), style = MaterialTheme.typography.bodySmall)
                         Text(text, style = MaterialTheme.typography.titleMedium)
                     }
@@ -98,6 +79,6 @@ fun EmergencyDialog(state: UiState, nav: NavController) {
                 ) { Text(stringResource(R.string.emergency_share)) }
             }
         },
-        confirmButton = { TextButton(onClick = nav::closeEmergency) { Text(stringResource(R.string.dlg_close)) } },
+        confirmButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.dlg_close)) } },
     )
 }
