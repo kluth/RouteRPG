@@ -64,7 +64,13 @@ import app.kiloquest.nav.IncidentMatcher
 import app.kiloquest.nav.LaneAnnouncer
 import app.kiloquest.nav.LegSummary
 import app.kiloquest.nav.TripApi
+import app.kiloquest.nav.BookedPlanner
+import app.kiloquest.nav.BookedStay
+import app.kiloquest.nav.DayEnd
+import app.kiloquest.nav.haversine
 import app.kiloquest.nav.DayPlanner
+import app.kiloquest.nav.LodgingFinder
+import app.kiloquest.nav.LodgingOption
 import app.kiloquest.nav.LaneGuidance
 import app.kiloquest.nav.LaneHint
 import app.kiloquest.nav.LaneParser
@@ -141,6 +147,9 @@ data class ToiletState(val phase: ToiletPhase, val label: String = "", val secon
 data class BreakProposal(val stop: RestStop, val aheadMeters: Double)
 
 /** Route samt Spurinformation. */
+/** Unterkunftssuche fuer die Uebernachtung am Ende von Etappe [stopIndex]. */
+data class LodgingUi(val stopIndex: Int, val loading: Boolean = true, val options: List<LodgingOption> = emptyList(), val failed: Boolean = false)
+
 private data class LoadedRoute(val route: Route, val lanes: List<LaneGuidance>)
 
 data class UiState(
@@ -196,6 +205,13 @@ data class UiState(
     val weather: WeatherSummary? = null,
     val trip: TripState? = null,
     val tripScreen: Boolean = false,
+    /** Gespeicherte Lieblingsorte (Zuhause, Hotels, Campingplaetze ...). */
+    val favorites: List<Place> = emptyList(),
+    /** Bereits gebuchte Unterkuenfte; die Aufteilung der Route richtet sich danach. */
+    val booked: List<Place> = emptyList(),
+    val lodging: LodgingUi? = null,
+    /** Hinweise zur letzten Aufteilung (z. B. Umweg, lange Etappe). */
+    val tripNotes: List<String> = emptyList(),
     /** Land der aktuellen Position (ISO-Code), falls erkannt. */
     val country: String? = null,
     val riddles: List<Riddle> = emptyList(),
@@ -288,6 +304,8 @@ class NavController(private val app: Application) : KidsActions {
             recents = loadRecents(),
             sicknessMode = prefs.getBoolean("sickness_mode", true),
             trip = loadTrip(),
+            favorites = loadPlaces("favorites"),
+            booked = loadPlaces("booked"),
             riddles = loadRiddles(),
             voiceMode = prefs.getBoolean("voice_mode", false),
             voiceAvailable = VoiceAnswers.isAvailable(app),
@@ -980,36 +998,131 @@ class NavController(private val app: Application) : KidsActions {
         planTrip()
     }
 
-    /** Teilt die aktuelle Route nach der Tagesfahrzeit in Etappen; Uebernachtungsorte werden per Reverse-Geocoding benannt. */
+    // --- Favoriten und gebuchte Unterkuenfte (lokal gespeichert)
+
+    private fun loadPlaces(key: String): List<Place> = runCatching {
+        val a = org.json.JSONArray(prefs.getString(key, null) ?: return emptyList())
+        (0 until a.length()).map { i ->
+            val p = a.getJSONObject(i)
+            Place(p.getString("n"), LatLon(p.getDouble("lat"), p.getDouble("lon")))
+        }
+    }.getOrDefault(emptyList())
+
+    private fun savePlaces(key: String, places: List<Place>) {
+        val a = org.json.JSONArray()
+        places.forEach { a.put(org.json.JSONObject().put("n", it.name).put("lat", it.position.lat).put("lon", it.position.lon)) }
+        prefs.edit().putString(key, a.toString()).apply()
+    }
+
+    private fun sameSpot(a: Place, b: Place) = a.name == b.name && haversine(a.position, b.position) < 100.0
+
+    fun addFavorite(place: Place) {
+        val cur = _state.value.favorites
+        if (cur.any { sameSpot(it, place) }) return
+        val next = (cur + place).takeLast(60)
+        savePlaces("favorites", next)
+        _state.update { it.copy(favorites = next) }
+    }
+
+    fun removeFavorite(place: Place) {
+        val next = _state.value.favorites.filterNot { sameSpot(it, place) }
+        savePlaces("favorites", next)
+        _state.update { it.copy(favorites = next) }
+    }
+
+    fun addBooked(place: Place) {
+        val cur = _state.value.booked
+        if (cur.any { sameSpot(it, place) }) return
+        val next = cur + place
+        savePlaces("booked", next)
+        _state.update { it.copy(booked = next, results = emptyList()) }
+    }
+
+    fun removeBooked(place: Place) {
+        val next = _state.value.booked.filterNot { sameSpot(it, place) }
+        savePlaces("booked", next)
+        _state.update { it.copy(booked = next) }
+    }
+
+    /**
+     * Teilt die aktuelle Route nach der Tagesfahrzeit in Etappen. Gebuchte Unterkuenfte sind feste Tagesenden;
+     * andere Uebernachtungsorte werden per Reverse-Geocoding benannt.
+     */
     fun splitRouteIntoDays() {
         val s = _state.value
         val route = s.route ?: return
         val dest = s.destination ?: return
         val origin = s.position ?: return
-        val cuts = DayPlanner.split(route, s.settings.dailyDriveHours * 3600.0)
-        if (cuts.size <= 1) {
+        val days = BookedPlanner.plan(route, s.booked.map { BookedStay(it.name, it.position) }, s.settings.dailyDriveHours * 3600.0)
+        if (days.size <= 1) {
             _state.update { it.copy(error = R.string.trip_split_one_day) }
             return
         }
         scope.launch {
             val lang = Locale.getDefault().language
-            val stops = cuts.map { c ->
-                if (c.isFinal) dest
-                else {
-                    val n = fetchPlaceName(c.point.lat, c.point.lon, lang) ?: app.getString(R.string.trip_day_label, c.day)
-                    Place(app.getString(R.string.trip_overnight_near, n), c.point)
+            val notes = ArrayList<String>()
+            val stops = days.map { d ->
+                when (d.end) {
+                    DayEnd.FINAL -> dest
+                    DayEnd.BOOKED -> {
+                        if (d.offRouteMeters > BookedPlanner.FAR_OFF_ROUTE_METERS) {
+                            notes += app.getString(R.string.trip_note_far, d.name.orEmpty(), (d.offRouteMeters / 1000).toInt())
+                        }
+                        Place(d.name.orEmpty(), d.point)
+                    }
+                    DayEnd.COMPUTED -> {
+                        val n = fetchPlaceName(d.point.lat, d.point.lon, lang) ?: app.getString(R.string.trip_day_label, d.day)
+                        Place(app.getString(R.string.trip_overnight_near, n), d.point)
+                    }
                 }
             }
+            days.filter { it.overBudget }.forEach { notes += app.getString(R.string.trip_note_long, it.day) }
             val updated = TripState(origin = origin, stops = stops)
-            _state.update { it.copy(trip = updated, error = null) }
+            _state.update { it.copy(trip = updated, error = null, tripNotes = notes) }
             saveTrip(updated)
             planTrip()
         }
     }
 
+    // --- Unterkunftssuche
+
+    /** Sucht Unterkuenfte um das Ende von Etappe [index] (Overpass), zuerst 8 km, bei leerem Ergebnis 20 km. */
+    fun findLodging(index: Int) {
+        val t = _state.value.trip ?: return
+        val stop = t.stops.getOrNull(index) ?: return
+        _state.update { it.copy(lodging = LodgingUi(index)) }
+        scope.launch {
+            val found = runCatching {
+                withContext(Dispatchers.IO) {
+                    var r = LodgingFinder.parse(fetchOverpass(LodgingFinder.buildQuery(stop.position, 8000, includeCamping = true)))
+                    if (r.isEmpty()) r = LodgingFinder.parse(fetchOverpass(LodgingFinder.buildQuery(stop.position, 20000, includeCamping = true)))
+                    r
+                }
+            }
+            val ui = found.fold(
+                { LodgingUi(index, loading = false, options = LodgingFinder.rank(it, stop.position), failed = false) },
+                { LodgingUi(index, loading = false, failed = true) },
+            )
+            if (_state.value.lodging?.stopIndex == index) _state.update { it.copy(lodging = ui) }
+        }
+    }
+
+    fun closeLodging() = _state.update { it.copy(lodging = null) }
+
+    /** Uebernimmt die gewaehlte Unterkunft als Etappenziel (Ort und Name ersetzt). */
+    fun chooseLodging(option: LodgingOption) {
+        val ui = _state.value.lodging ?: return
+        val t = _state.value.trip ?: return
+        if (ui.stopIndex < t.currentStage || ui.stopIndex !in t.stops.indices) return
+        val updated = t.copy(stops = t.stops.mapIndexed { i, p -> if (i == ui.stopIndex) Place(option.name, option.position) else p })
+        _state.update { it.copy(trip = updated, lodging = null) }
+        saveTrip(updated)
+        planTrip()
+    }
+
     fun clearTrip() {
         saveTrip(null)
-        _state.update { it.copy(trip = null) }
+        _state.update { it.copy(trip = null, tripNotes = emptyList(), lodging = null) }
     }
 
     /** Etappenlaengen/-dauern der ganzen Reise (eine Valhalla-Anfrage). */
