@@ -1,0 +1,9 @@
+{$DOMAIN} {
+	@authorized header X-Api-Token {$API_TOKEN}
+	handle @authorized {
+		reverse_proxy valhalla:8002
+	}
+	handle {
+		respond "Unauthorized" 401
+	}
+}
