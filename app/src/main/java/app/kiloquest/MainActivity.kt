@@ -98,7 +98,7 @@ private fun AppScreen(vm: NavController) {
             incidents = state.incidents.map { it.incident.position },
         )
 
-        Column(Modifier.align(Alignment.TopCenter).padding(12.dp)) {
+        Column(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(12.dp)) {
             if (!state.navigating) SearchPanel(state, vm)
             state.proposal?.let { ProposalCard(it, vm) }
             if (state.proposal == null) BreakCard(state, vm)
@@ -369,6 +369,8 @@ private fun SearchPanel(state: UiState, vm: NavController) {
                     onValueChange = { query = it },
                     placeholder = { Text(stringResource(R.string.search_hint)) },
                     singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { vm.search(query) }),
                     modifier = Modifier.weight(1f),
                 )
                 Button(onClick = { vm.search(query) }, modifier = Modifier.padding(start = 8.dp), enabled = !state.busy) {
@@ -409,6 +411,10 @@ private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean, 
 
     val mapView = remember {
         MapView(context).apply {
+            // Die Karte darf den Fokus nicht an sich ziehen, sonst laesst sich das Suchfeld nicht aktivieren
+            isFocusable = false
+            isFocusableInTouchMode = false
+            descendantFocusability = android.view.ViewGroup.FOCUS_BLOCK_DESCENDANTS
             getMapAsync { m ->
                 map = m
                 m.setStyle(STYLE_URL) { style ->
