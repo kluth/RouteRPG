@@ -120,6 +120,7 @@ fun KidsScreen(state: UiState, nav: NavController) {
                 else -> Text(stringResource(R.string.kids_waiting), style = MaterialTheme.typography.titleMedium)
             }
 
+            app.kiloquest.ui.QuestPreview(state.plan)
             Album(state.album)
             Text(stringResource(R.string.kids_total, state.totalPoints), style = MaterialTheme.typography.bodyMedium)
 

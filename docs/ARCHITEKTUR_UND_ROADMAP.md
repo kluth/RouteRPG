@@ -422,3 +422,10 @@ Gebaut (Build/Lint/Tests grün; **auf einem echten Auto-Display/DHU nicht erprob
 - **Notausgang:** Schalter „Einfache Karte im Auto" (Kinderansicht, nur im Stand) schaltet auf die frühere Canvas-Zeichnung um; sie wird auch automatisch genutzt, wenn das Einrichten der Karte einen Fehler wirft. Nicht abgefangen werden kann eine „schwarze" Karte ohne Fehler, dafür ist der Schalter da.
 - **Bewusst nicht umgesetzt:** Offizielle Spur-Elemente der Car App Library (brauchen ein Spurbild), Kinder-Aufgaben im Auto (Ablenkungsregeln), Wetterkarte.
 - **Zu prüfen im ersten Test:** Ob die Karte im Auto erscheint (Virtual-Display-Rendering hängt vom Fahrzeug/Host ab), Bedienbarkeit der Zoom-Symbole, Lesbarkeit der Überlagerungen, Akkuverbrauch.
+
+## 33. Aufgaben vorladen, live ergänzen, Vorschau
+
+- **Vorschau:** Im Aufgaben-Bildschirm (vor und während der Fahrt) steht unter "Aufgaben-Vorschau" die Liste der anstehenden Aufgaben mit Typ und Kilometer. Feste Aufgaben (Quiz, Bewegung) im Wortlaut, Platzhalter als "Überraschung", vorgeladene mit "Bereit".
+- **Vorladen:** Nach der Routenberechnung lädt die App Streckenfakt (Overpass), Geschichte (Wikipedia) und Natur (iNaturalist) für den Ort, an dem die Aufgabe ausgelöst wird, nächste zuerst, 1,2 s Abstand, Fenster von 80 Aufgaben. Schlägt ein Abruf fehl, bleibt die Aufgabe ein Platzhalter und wird live geladen. Himmel (Flugzeuge, Polarlicht, Mond) und Sprache hängen von Zeit und Land ab und bleiben live.
+- **Live zusätzlich:** `BonusPlanner` (`:game-engine`, getestet) fügt alle ca. 15 km eine zusätzliche Platzhalter-Aufgabe ein. Nur wenn keine Aufgabe aktiv ist, die nächste geplante mindestens 1,5 km entfernt ist, keine Kurvenstrecke vorliegt und kein Manöver näher als 600 m ist (Fahrsicherheit, AGENTS.md Regel 4).
+- Offene Punkte: Vorgeladene Texte werden nicht auf dem Gerät gespeichert (nur im Speicher); Offline-Paket sollte sie später mitnehmen.

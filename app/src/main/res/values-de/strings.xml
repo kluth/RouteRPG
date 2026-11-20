@@ -256,4 +256,21 @@
     <string name="parent_driver_hears">Der Fahrer hört nur eine kurze Ansage.</string>
     <string name="parent_hint">Alle Daten bleiben auf dem Gerät. Das Menü öffnet sich mit langem Drücken auf den Quests-Knopf.</string>
     <string name="parent_open">Beifahrer</string>
+    <string name="preview_title">Aufgaben-Vorschau</string>
+    <string name="preview_summary">%1$d Aufgaben voraus · unterwegs kommen live weitere dazu</string>
+    <string name="preview_km">km %1$d</string>
+    <string name="preview_live">Überraschung: wird passend zum Ort geladen, wenn ihr dort seid</string>
+    <string name="preview_ready">Bereit (vorgeladen)</string>
+    <string name="preview_more">Alle zeigen</string>
+    <string name="preview_less">Weniger zeigen</string>
+    <string name="preview_empty">Plant erst eine Route, dann seht ihr die Aufgaben.</string>
+    <string name="qtype_spotting">Entdecken</string>
+    <string name="qtype_route_fact">Streckenfakt</string>
+    <string name="qtype_alphabet">Alphabet</string>
+    <string name="qtype_story">Geschichte</string>
+    <string name="qtype_break">Pause</string>
+    <string name="qtype_quiz">Quiz</string>
+    <string name="qtype_nature">Natur</string>
+    <string name="qtype_language">Sprache</string>
+    <string name="qtype_sky">Himmel</string>
 </resources>

@@ -256,4 +256,21 @@
     <string name="parent_driver_hears">The driver only hears a short message.</string>
     <string name="parent_hint">Everything stays on this device. Long-press the Quests button to open this menu.</string>
     <string name="parent_open">Co-driver</string>
+    <string name="preview_title">Quest preview</string>
+    <string name="preview_summary">%1$d quests ahead · more are added live on the way</string>
+    <string name="preview_km">km %1$d</string>
+    <string name="preview_live">Surprise: loaded to fit the place when you get there</string>
+    <string name="preview_ready">Ready (preloaded)</string>
+    <string name="preview_more">Show all</string>
+    <string name="preview_less">Show less</string>
+    <string name="preview_empty">Plan a route first to see the quests.</string>
+    <string name="qtype_spotting">Spotting</string>
+    <string name="qtype_route_fact">Route fact</string>
+    <string name="qtype_alphabet">Alphabet</string>
+    <string name="qtype_story">Story</string>
+    <string name="qtype_break">Break</string>
+    <string name="qtype_quiz">Quiz</string>
+    <string name="qtype_nature">Nature</string>
+    <string name="qtype_language">Language</string>
+    <string name="qtype_sky">Sky</string>
 </resources>

@@ -13,6 +13,7 @@ import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import android.content.Context
 import app.kiloquest.game.AdventureSession
+import app.kiloquest.game.BonusPlanner
 import app.kiloquest.game.AgeBand
 import app.kiloquest.game.AnswerMatcher
 import app.kiloquest.game.Quest
@@ -140,6 +141,8 @@ data class UiState(
     val stickers: Int = 0,
     val questsDone: Int = 0,
     val questsTotal: Int = 0,
+    /** Noch ausstehende Aufgaben (Vorschau); Platzhalter werden vorgeladen oder live gefuellt. */
+    val plan: List<Quest> = emptyList(),
     val ageBand: AgeBand = AgeBand.EXPLORER,
     val kidsScreen: Boolean = false,
     val players: Int = 1,
@@ -179,6 +182,9 @@ data class UiState(
     val carSimpleMap: Boolean = false,
 )
 
+private const val PRELOAD_WINDOW = 80
+private const val PRELOAD_GAP_MS = 1_200L
+private const val PRELOAD_IDLE_MS = 30_000L
 private const val TRAFFIC_REFRESH_MS = 5 * 60_000L
 private const val MAX_TRAFFIC_ROADS = 10
 private const val ANNOUNCE_AHEAD_METERS = 100_000.0
@@ -199,6 +205,9 @@ class NavController(private val app: Application) {
     private val prefs = app.getSharedPreferences("kq", Context.MODE_PRIVATE)
     private val generator = QuestGenerator(QuestCatalog.default)
     private var adventure: AdventureSession? = null
+    private var bonusPlanner: BonusPlanner? = null
+    private var preloadJob: kotlinx.coroutines.Job? = null
+    private val preloadFailed = HashSet<Double>()
 
     private val arbiter = SpeechArbiter()
     private val advisor = RerouteAdvisor()
@@ -402,12 +411,16 @@ class NavController(private val app: Application) {
         val players = _state.value.players
         questOffset = 0.0
         adventure = AdventureSession(quests, playerCount = players)
+        val bonusKeys = setOf(RouteFacts.PENDING_KEY, WikiStories.PENDING_KEY, NatureSpotting.PENDING_KEY, PlaneSpotting.PENDING_KEY, LanguageCourses.PENDING_KEY)
+        bonusPlanner = BonusPlanner(QuestCatalog.default.filter { it.textKey in bonusKeys && _state.value.ageBand in it.ageBands }, System.nanoTime())
+        preloadFailed.clear()
         _state.update {
             it.copy(
                 quest = null, feedback = null, newSticker = null, points = 0, stickers = 0, questsDone = 0,
-                questsTotal = quests.size, scores = List(players) { 0 }, currentPlayer = 0,
+                questsTotal = quests.size, scores = List(players) { 0 }, currentPlayer = 0, plan = quests,
             )
         }
+        startPreload()
     }
 
     fun setAgeBand(band: AgeBand) {
@@ -473,6 +486,7 @@ class NavController(private val app: Application) {
         _state.value.route?.maneuvers?.firstOrNull()?.instruction?.let(::speak)
         usedRiddles.clear()
         breakPlanner = BreakPlanner(intervalMs = breakIntervalMs(_state.value.ageBand))
+        bonusPlanner?.reset(questOffset)
         breakPlanning = false
         weatherJob?.cancel()
         announcedHazards.clear()
@@ -547,7 +561,10 @@ class NavController(private val app: Application) {
         updateBreaks(loc, g.alongMeters, now0)
         checkCountry(pos, g.alongMeters)
         // Auf kurvigen Abschnitten keine neue Bildschirm-Aufgabe ausloesen; sie kommt auf gerader Strecke
-        if (!curvy) adventure?.onProgress(questOffset + g.alongMeters)?.let { q -> onQuestTriggered(q, pos) }
+        if (!curvy) {
+            maybeAddBonus(questOffset + g.alongMeters, g.metersToNextManeuver)
+            adventure?.onProgress(questOffset + g.alongMeters)?.let { q -> onQuestTriggered(q, pos); publishPlan() }
+        }
         if (!curvy && _state.value.quest == null) checkRiddles(g.alongMeters, pos)
         arbiter.poll(System.currentTimeMillis(), tts?.isSpeaking == true)?.let(::speakQuest)
         val now = System.currentTimeMillis()
@@ -1252,41 +1269,14 @@ class NavController(private val app: Application) {
             it.copy(quest = q, feedback = null, newSticker = null, currentPlayer = adv?.currentPlayer ?: 0)
         }
         when {
-            q.textKey == RouteFacts.PENDING_KEY -> resolveQuest(q) {
-                val facts = runCatching {
-                    RouteFacts.parse(withContext(Dispatchers.IO) { fetchOverpass(RouteFacts.buildQuery(pos.lat, pos.lon)) })
-                }.getOrDefault(emptyList())
-                RouteFacts.resolve(q, RouteFacts.pick(facts, Random.Default))
-            }
-            q.textKey == WikiStories.PENDING_KEY -> resolveQuest(q) {
-                val age = _state.value.ageBand
-                val lang = Locale.getDefault().language
-                var story: Story? = null
-                // Erst Geraetesprache, dann Englisch als Rueckfall
-                for (l in listOf(lang, "en").distinct()) {
-                    val list = runCatching { WikiStories.parse(fetchUrl(WikiStories.buildUrl(l, pos.lat, pos.lon, age)), age) }
-                        .getOrDefault(emptyList())
-                    story = WikiStories.pick(list, Random.Default)
-                    if (story != null) break
-                }
-                WikiStories.resolve(q, story)
-            }
+            q.textKey == RouteFacts.PENDING_KEY -> resolveQuest(q) { buildFact(q, pos) }
+            q.textKey == WikiStories.PENDING_KEY -> resolveQuest(q) { buildStory(q, pos) }
             q.textKey == PlaneSpotting.PENDING_KEY -> resolveQuest(q) { skyQuest(q, pos) }
             q.textKey == LanguageCourses.PENDING_KEY -> resolveQuest(q) {
                 val course = LanguageCourses.forCountry(_state.value.country)
                 if (course == null) RouteFacts.resolve(q, null) else languageQuest(q, course, taughtPhrases.toSet())
             }
-            q.textKey == NatureSpotting.PENDING_KEY -> resolveQuest(q) {
-                val lang = Locale.getDefault().language
-                var picked: app.kiloquest.game.Species? = null
-                for (l in listOf(lang, "en").distinct()) {
-                    val list = runCatching { NatureSpotting.parse(fetchUrl(NatureSpotting.buildUrl(pos.lat, pos.lon, l))) }
-                        .getOrDefault(emptyList())
-                    picked = NatureSpotting.pick(list, Random.Default)
-                    if (picked != null) break
-                }
-                NatureSpotting.resolve(q, picked)
-            }
+            q.textKey == NatureSpotting.PENDING_KEY -> resolveQuest(q) { buildNature(q, pos) }
             else -> announceQuest(q)
         }
     }
@@ -1310,6 +1300,86 @@ class NavController(private val app: Application) {
             append(app.stringByKey(q.textKey, q.args))
         }
         arbiter.offerQuest(text, System.currentTimeMillis(), tts?.isSpeaking == true)?.let(::speakQuest)
+    }
+
+
+    // ---------------------------------------------------------------- Aufgaben vorladen und live ergaenzen
+
+    private suspend fun buildFact(q: Quest, pos: LatLon): Quest {
+        val facts = runCatching {
+            RouteFacts.parse(withContext(Dispatchers.IO) { fetchOverpass(RouteFacts.buildQuery(pos.lat, pos.lon)) })
+        }.getOrDefault(emptyList())
+        return RouteFacts.resolve(q, RouteFacts.pick(facts, Random.Default))
+    }
+
+    private suspend fun buildStory(q: Quest, pos: LatLon): Quest {
+        val age = _state.value.ageBand
+        val lang = Locale.getDefault().language
+        var story: Story? = null
+        // Erst Geraetesprache, dann Englisch als Rueckfall
+        for (l in listOf(lang, "en").distinct()) {
+            val list = runCatching { WikiStories.parse(fetchUrl(WikiStories.buildUrl(l, pos.lat, pos.lon, age)), age) }
+                .getOrDefault(emptyList())
+            story = WikiStories.pick(list, Random.Default)
+            if (story != null) break
+        }
+        return WikiStories.resolve(q, story)
+    }
+
+    private suspend fun buildNature(q: Quest, pos: LatLon): Quest {
+        val lang = Locale.getDefault().language
+        var picked: app.kiloquest.game.Species? = null
+        for (l in listOf(lang, "en").distinct()) {
+            val list = runCatching { NatureSpotting.parse(fetchUrl(NatureSpotting.buildUrl(pos.lat, pos.lon, l))) }
+                .getOrDefault(emptyList())
+            picked = NatureSpotting.pick(list, Random.Default)
+            if (picked != null) break
+        }
+        return NatureSpotting.resolve(q, picked)
+    }
+
+    private fun publishPlan() {
+        val adv = adventure ?: return
+        _state.update { it.copy(plan = adv.upcoming(), questsTotal = adv.total) }
+    }
+
+    /**
+     * Laedt Platzhalter-Aufgaben (Streckenfakt, Geschichte, Natur) vorab fuer den Ort, an dem sie ausgeloest werden.
+     * Naechste zuerst; schlaegt ein Abruf fehl (offline), bleibt die Aufgabe ein Platzhalter und wird live geladen.
+     * Himmel und Sprache hängen von Zeit und Land ab und bleiben bewusst live.
+     */
+    private fun startPreload() {
+        preloadJob?.cancel()
+        preloadJob = scope.launch {
+            while (true) {
+                val adv = adventure ?: return@launch
+                val route = _state.value.route
+                if (route == null) { delay(1_000); continue }
+                val next = adv.upcoming().take(PRELOAD_WINDOW).firstOrNull { q ->
+                    (q.textKey == RouteFacts.PENDING_KEY || q.textKey == WikiStories.PENDING_KEY || q.textKey == NatureSpotting.PENDING_KEY) &&
+                        q.triggerMeters - questOffset in 0.0..route.lengthMeters && q.triggerMeters !in preloadFailed
+                }
+                if (next == null) { delay(PRELOAD_IDLE_MS); continue }
+                val pos = route.line.points[route.line.indexAtMeters(next.triggerMeters - questOffset)]
+                val resolved = when (next.textKey) {
+                    RouteFacts.PENDING_KEY -> buildFact(next, pos)
+                    WikiStories.PENDING_KEY -> buildStory(next, pos)
+                    else -> buildNature(next, pos)
+                }
+                if (resolved.textKey == RouteFacts.FALLBACK_KEY) preloadFailed += next.triggerMeters
+                else if (adv.replaceUpcoming(next, resolved)) publishPlan()
+                delay(PRELOAD_GAP_MS)
+            }
+        }
+    }
+
+    /** Zusaetzliche Live-Aufgabe einplanen (siehe BonusPlanner); wird gleich danach regulaer ausgeloest. */
+    private fun maybeAddBonus(along: Double, metersToManeuver: Double) {
+        val adv = adventure ?: return
+        val planner = bonusPlanner ?: return
+        val q = planner.next(along, adv.active != null, adv.lastTriggerMeters, adv.upcoming().firstOrNull()?.triggerMeters, metersToManeuver) ?: return
+        adv.insertBonus(q)
+        publishPlan()
     }
 
 }

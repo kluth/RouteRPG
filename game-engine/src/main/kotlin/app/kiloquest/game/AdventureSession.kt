@@ -15,11 +15,13 @@ data class AnswerResult(
  * Punkte werden pro Kind gefuehrt, Sticker gehoeren dem ganzen Team.
  */
 class AdventureSession(
-    private val quests: List<Quest>,
+    initialQuests: List<Quest>,
     private val questsPerSticker: Int = 3,
     val playerCount: Int = 1,
 ) {
     init { require(playerCount >= 1) { "playerCount must be >= 1" } }
+
+    private val quests: MutableList<Quest> = initialQuests.toMutableList()
 
     private var nextIndex = 0
     val scores = IntArray(playerCount)
@@ -36,6 +38,26 @@ class AdventureSession(
 
     val points: Int get() = scores.sum()
     val total: Int get() = quests.size
+
+    /** Strecke (inkl. Offset) der zuletzt ausgeloesten Quest; fuer die Planung von Live-Aufgaben. */
+    var lastTriggerMeters: Double = Double.NEGATIVE_INFINITY
+        private set
+
+    /** Noch nicht ausgeloeste Quests in Reihenfolge (fuer die Vorschau). */
+    fun upcoming(): List<Quest> = quests.drop(nextIndex)
+
+    /** Ersetzt eine noch nicht ausgeloeste Quest (z. B. Platzhalter durch vorab geladenen Text). */
+    fun replaceUpcoming(old: Quest, new: Quest): Boolean {
+        val i = quests.indexOfFirst { it === old || it == old }
+        if (i < nextIndex) return false
+        quests[i] = new
+        return true
+    }
+
+    /** Fuegt eine zusaetzliche Live-Quest als naechste ein (wird beim naechsten [onProgress] ausgeloest). */
+    fun insertBonus(quest: Quest) {
+        quests.add(nextIndex, quest)
+    }
     val stickers: Int get() = completed / questsPerSticker
 
     /**
@@ -49,6 +71,7 @@ class AdventureSession(
         currentPlayer = nextIndex % playerCount
         nextIndex++
         active = next
+        lastTriggerMeters = next.triggerMeters
         return next
     }
 
