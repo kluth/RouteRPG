@@ -53,3 +53,14 @@ class TravelInfoStringsTest {
         }
     }
 }
+
+class SpotStringsTest {
+    @Test fun spotAndBookTextsExistInBothLanguages() {
+        val keys = listOf("spot_playground", "spot_ice_cream", "spot_swimming", "spot_zoo", "spot_castle", "stopover_spoken", "stopover_arrived", "stopover_resume", "stopover_suggest",
+            "memory_title", "memory_footer", "memory_route", "memory_summary", "memory_thanks", "dash_next_break", "dash_dest_weather", "nav_notif_progress")
+        for (dir in listOf("values", "values-de")) {
+            val text = java.io.File("src/main/res/$dir/strings.xml").readText()
+            keys.forEach { assertTrue("$dir fehlt $it", "name=\"$it\"" in text) }
+        }
+    }
+}

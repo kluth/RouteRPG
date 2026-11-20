@@ -529,3 +529,7 @@ Offen: Tests im Auto mit Kinderstimmen, größere Wortlisten, aufgenommene Kilo-
 ## 50. Maut, Funkloch, Spuren, Notfall
 Umgesetzt (Spec 011): Maut-/Vignetten-Lotse, Funkloch-Vorwarnung über Ortsdichte, offizielle Spuranzeige im Auto, Notfall-Karte. Offen: Test im Auto/DHU,
 Pflege der Maut-Tabelle, echte Abdeckungsdaten (falls eine freie Quelle auftaucht), Satelliten-SOS-Hinweis.
+
+## 51. Stopps, Reisebuch, Fahrtkarte
+Umgesetzt (Spec 012): Zwischenstopps für Kinder (Fahrt hin, „Weiter zum Ziel“), Reisebuch-PDF, Benachrichtigung mit Fortschritt und Teamziel, Dashboard mit nächster Pause und Zielwetter.
+Offen: Android-16-Live-Updates (compileSdk 36 / AGP-Update), Wikipedia-Kurztexte zu Stopps, Gerätetest des PDF.

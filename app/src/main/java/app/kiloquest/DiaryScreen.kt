@@ -1,6 +1,7 @@
 package app.kiloquest
 
 import android.content.Context
+import kotlinx.coroutines.launch
 import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -73,6 +74,8 @@ fun DiaryScreen(state: UiState, nav: NavController) {
     val ctx = LocalContext.current
     var confirmClear by remember { mutableStateOf(false) }
     var deleteEntry by remember { mutableStateOf<DiaryEntry?>(null) }
+    var building by remember { mutableStateOf(false) }
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
     BackHandler { nav.showDiary(false) }
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         Column(Modifier.screenColumn().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -124,6 +127,21 @@ fun DiaryScreen(state: UiState, nav: NavController) {
                     },
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text(stringResource(R.string.diary_share)) }
+                Button(
+                    enabled = !building,
+                    onClick = {
+                        building = true
+                        scope.launch {
+                            val pdf = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { runCatching { MemoryBookBuilder.build(ctx, state.diary) }.getOrNull() }
+                            building = false
+                            if (pdf == null) { android.widget.Toast.makeText(ctx, R.string.memory_failed, android.widget.Toast.LENGTH_LONG).show(); return@launch }
+                            val uri = androidx.core.content.FileProvider.getUriForFile(ctx, ctx.packageName + ".files", pdf)
+                            val send = Intent(Intent.ACTION_SEND).setType("application/pdf").putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            ctx.startActivity(Intent.createChooser(send, ctx.getString(R.string.memory_title)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(stringResource(if (building) R.string.memory_building else R.string.memory_open)) }
                 OutlinedButton(onClick = { confirmClear = true }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.diary_clear)) }
             }
             OutlinedButton(onClick = { nav.showDiary(false) }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.kids_back)) }

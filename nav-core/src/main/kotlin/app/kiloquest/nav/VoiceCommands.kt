@@ -8,6 +8,8 @@ enum class VoiceCommand {
     GAME_MENU, GAME_WORD_CHAIN, GAME_LETTERS, GAME_RHYME, GAME_STORY, GAME_STOP, SERIES,
     /** Maut/Vignetten der Route, Notfall-Karte. */
     TOLLS, EMERGENCY,
+    /** Zwischenstopp-Vorschlag fuer Kinder (Spielplatz, Eis, Schwimmbad ...). */
+    STOPOVER,
 }
 
 /**
@@ -19,6 +21,7 @@ object VoiceCommands {
 
     // Reihenfolge zaehlt: spezifischere Befehle zuerst (z. B. "ansagen an" vor "ansagen aus")
     private val phrases: List<Pair<VoiceCommand, List<String>>> = listOf(
+        VoiceCommand.STOPOVER to listOf("zwischenstopp", "spielplatz", "eisdiele", "eis", "schwimmbad", "zoo", "burg", "stopp für die kinder", "playground", "ice cream", "swimming pool", "castle", "stop for the kids"),
         VoiceCommand.EMERGENCY to listOf("notfall", "notruf", "unfall", "emergency", "accident", "need an ambulance", "call for help"),
         VoiceCommand.TOLLS to listOf("maut", "mautstrassen", "mautstraßen", "vignette", "vignetten", "toll roads", "tolls", "do we need a vignette"),
         VoiceCommand.GAME_STOP to listOf("spiel beenden", "spiel stoppen", "spiel aus", "hör auf zu spielen", "hoer auf zu spielen", "stop game", "end game", "stop playing", "quit the game"),

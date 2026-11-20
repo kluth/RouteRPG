@@ -88,6 +88,9 @@ import app.kiloquest.nav.OfflinePackMeta
 import app.kiloquest.nav.OfflinePackCodec
 import app.kiloquest.nav.VoiceCommands
 import app.kiloquest.nav.Emergency
+import app.kiloquest.nav.KidSpot
+import app.kiloquest.nav.KidSpots
+import app.kiloquest.nav.SpotKind
 import app.kiloquest.nav.Hospital
 import app.kiloquest.nav.RemoteStretch
 import app.kiloquest.nav.RemoteStretches
@@ -153,6 +156,11 @@ fun Context.stringByKey(key: String, args: List<String> = emptyList()): String {
     val id = resources.getIdentifier(key, "string", packageName)
     return if (id != 0) getString(id, *args.toTypedArray()) else key
 }
+
+enum class StopoverPhase { HEADING, ARRIVED }
+
+/** Zwischenstopp: Ziel ist der Stopp, danach geht es mit "Weiter" zum urspruenglichen Ziel. */
+data class StopoverState(val label: String, val phase: StopoverPhase)
 
 /** Notfall-Karte: Notrufnummer, Standort als Text, naechste Krankenhaeuser (Suche laeuft ggf. noch). */
 data class EmergencyUi(val number: String, val location: String, val hospitals: List<Hospital> = emptyList(), val loading: Boolean = false, val searched: Boolean = false)
@@ -291,6 +299,12 @@ data class UiState(
     val tolls: List<TollRule> = emptyList(),
     val remoteStretches: List<RemoteStretch> = emptyList(),
     val tripInfoReady: Boolean = false,
+    /** Zwischenstopps fuer Kinder voraus, Suche laeuft, Stopp unterwegs (null = keiner), Minuten bis zur naechsten Pause. */
+    val spots: List<KidSpot> = emptyList(),
+    val spotsLoading: Boolean = false,
+    val spotsSearched: Boolean = false,
+    val stopover: StopoverState? = null,
+    val nextBreakMin: Int? = null,
     /** Notfall-Karte (null = geschlossen). */
     val emergency: EmergencyUi? = null,
     val teamGoal: TeamGoal? = null,
@@ -799,7 +813,8 @@ class NavController(private val app: Application) : KidsActions {
             )
         }
         toiletJob?.cancel(); toiletJob = null; toiletResume = null
-        tripInfoJob?.cancel(); remoteWarner = null
+        tripInfoJob?.cancel(); remoteWarner = null; stopoverResume = null
+        _state.update { it.copy(stopover = null, spots = emptyList(), spotsSearched = false, nextBreakMin = null) }
         _state.update { it.copy(tolls = emptyList(), remoteStretches = emptyList(), tripInfoReady = false) }
         stopAudioGame()
         voiceJob?.cancel()
@@ -836,6 +851,14 @@ class NavController(private val app: Application) : KidsActions {
                 if (t.phase == ToiletPhase.HEADING) {
                     _state.update { it.copy(toilet = t.copy(phase = ToiletPhase.ARRIVED)) }
                     speak(app.getString(R.string.toilet_arrived))
+                }
+                return
+            }
+            _state.value.stopover?.let { so ->
+                if (so.phase == StopoverPhase.HEADING) {
+                    _state.update { it.copy(stopover = so.copy(phase = StopoverPhase.ARRIVED)) }
+                    speak(app.getString(R.string.stopover_arrived, so.label))
+                    logDiary(DiaryKind.QUEST, so.label.take(90))
                 }
                 return
             }
@@ -1433,6 +1456,7 @@ class NavController(private val app: Application) : KidsActions {
             VoiceCommand.GAME_STOP -> stopAudioGame()
             VoiceCommand.SERIES -> tellSeries()
             VoiceCommand.TOLLS -> sayTolls()
+            VoiceCommand.STOPOVER -> findSpots(announce = true)
             VoiceCommand.EMERGENCY -> openEmergency()
         }
     }
@@ -1753,6 +1777,80 @@ class NavController(private val app: Application) : KidsActions {
     }
 
     fun closeEmergency() = _state.update { it.copy(emergency = null) }
+
+
+    // ---------------------------------------------------------------- Zwischenstopps fuer Kinder
+
+    private var stopoverResume: Place? = null
+
+    private fun spotKindRes(k: SpotKind) = when (k) {
+        SpotKind.PLAYGROUND -> R.string.spot_playground
+        SpotKind.ICE_CREAM -> R.string.spot_ice_cream
+        SpotKind.SWIMMING -> R.string.spot_swimming
+        SpotKind.ZOO -> R.string.spot_zoo
+        SpotKind.CASTLE -> R.string.spot_castle
+    }
+
+    fun spotLabel(s: KidSpot): String = s.name ?: app.getString(spotKindRes(s.kind))
+
+    /** Sucht Spielplaetze, Eis, Schwimmbaeder, Zoos und Burgen bis 80 km voraus. Mit [announce] sagt Kilo den besten Vorschlag (fuer den Fahrer nur Audio). */
+    fun findSpots(announce: Boolean = false) {
+        val s = _state.value
+        val route = s.route
+        if (route == null) { if (announce) say(app.getString(R.string.stopover_none)); return }
+        if (s.spotsLoading) return
+        val along = s.guidance?.alongMeters ?: 0.0
+        _state.update { it.copy(spotsLoading = true) }
+        scope.launch {
+            val to = minOf(route.lengthMeters, along + 80_000.0)
+            val found = runCatching {
+                KidSpots.parse(withContext(Dispatchers.IO) { fetchOverpass(KidSpots.buildQuery(route, along, to)) }, route, java.time.LocalDateTime.now(), along, to)
+            }.getOrDefault(emptyList())
+            val ahead = KidSpots.ahead(found, along)
+            _state.update { it.copy(spots = ahead, spotsLoading = false, spotsSearched = true) }
+            if (announce) {
+                val best = ahead.firstOrNull()
+                say(if (best == null) app.getString(R.string.stopover_none)
+                else app.getString(R.string.stopover_suggest, spotLabel(best), ((best.alongMeters - along) / 1000).toInt().coerceAtLeast(1), best.detourMinutes))
+            }
+        }
+    }
+
+    /** Faehrt zum Stopp; danach "Weiter" zum urspruenglichen Ziel. Die Navigation bleibt am Stopp offen (Kinder brauchen Zeit). */
+    fun goToSpot(spot: KidSpot) {
+        val pos = _state.value.position
+        if (pos == null) { _state.update { it.copy(error = R.string.error_no_position) }; return }
+        if (!ServerConfig.configured) { _state.update { it.copy(error = R.string.error_no_server) }; return }
+        if (_state.value.toilet != null || _state.value.stopover?.phase == StopoverPhase.HEADING) return
+        val label = spotLabel(spot)
+        scope.launch {
+            runCatching { loadRoute(pos, spot.position, emptyList()) }.onSuccess { loaded ->
+                val wasNavigating = _state.value.navigating
+                if (stopoverResume == null) stopoverResume = _state.value.destination
+                val along = _state.value.guidance?.alongMeters ?: 0.0
+                installRoute(loaded)
+                if (adventure == null || !wasNavigating) newAdventure(loaded.route) else questOffset += along
+                _state.update {
+                    it.copy(
+                        route = loaded.route, destination = Place(label, spot.position), guidance = null, incidents = emptyList(), proposal = null,
+                        breakProposal = null, breakTarget = null, stopover = StopoverState(label, StopoverPhase.HEADING), spots = emptyList(), spotsSearched = false,
+                    )
+                }
+                speak(app.getString(R.string.stopover_spoken, label))
+                if (!wasNavigating) startNavigation()
+            }.onFailure { _state.update { it.copy(error = R.string.error_route) } }
+        }
+    }
+
+    fun resumeAfterStopover() {
+        val so = _state.value.stopover ?: return
+        val resume = stopoverResume
+        stopoverResume = null
+        if (resume == null) { stopNavigation(); return }
+        _state.update { it.copy(stopover = null, destination = resume) }
+        speak(app.getString(R.string.stopover_resume))
+        calculateRoute()
+    }
 
     // --- Roadtrip-Fotostory
 
@@ -2168,6 +2266,8 @@ class NavController(private val app: Application) : KidsActions {
         val route = _state.value.route ?: return
         val kmh = if (loc.hasSpeed()) loc.speed * 3.6 else 0.0
         val due = breakPlanner.onTick(nowMs, kmh)
+        val left = ((breakIntervalMs(_state.value.ageBand) - breakPlanner.drivingMs) / 60_000L).toInt().coerceAtLeast(0)
+        if (_state.value.nextBreakMin != left) _state.update { it.copy(nextBreakMin = left) }
         if (due && !breakPlanning && _state.value.breakTarget == null && _state.value.breakProposal == null) planBreak(route, along)
 
         // Angenommene Pause: Abstand fortschreiben, Ankunft erkennen

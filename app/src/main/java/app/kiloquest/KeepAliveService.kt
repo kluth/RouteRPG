@@ -31,6 +31,7 @@ class KeepAliveService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var job: Job? = null
     private var lastText = ""
+    private var lastProgress = -1
     private var lastNotifyAt = 0L
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -58,10 +59,16 @@ class KeepAliveService : Service() {
                 val navigating = nav.navigating
                 if (!navigating && !host.hosting && !clientActive) { stopSelf(); return@collect }
                 val connectedKids = host.devices.count { it.connected }
+                // Fahrtkarte: Fortschrittsbalken (Strecke) und Teamziel in der Benachrichtigung (normaler Balken; Android-16-Live-Updates stehen noch aus)
+                var progress: Int? = null
                 val text = when {
                     navigating -> {
-                        val m = nav.guidance?.remainingMeters ?: nav.route?.lengthMeters ?: 0.0
-                        getString(R.string.nav_notif_running, if (m >= 1000) getString(R.string.unit_km, m / 1000.0) else getString(R.string.unit_m, m.toInt()))
+                        val total = nav.route?.lengthMeters ?: 0.0
+                        val m = nav.guidance?.remainingMeters ?: total
+                        if (total > 0) progress = ((1.0 - m / total).coerceIn(0.0, 1.0) * 1000).toInt()
+                        val dist = if (m >= 1000) getString(R.string.unit_km, m / 1000.0) else getString(R.string.unit_m, m.toInt())
+                        val goal = nav.teamGoal
+                        if (goal != null && !goal.reached) getString(R.string.nav_notif_progress, dist, (goal.progress * 100).toInt()) else getString(R.string.nav_notif_running, dist)
                     }
                     clientActive && client.status == ClientStatus.CONNECTED -> getString(R.string.link_notif_client, client.hostName ?: "")
                     clientActive -> getString(R.string.link_notif_client_connecting)
@@ -70,9 +77,9 @@ class KeepAliveService : Service() {
                 }
                 val now = System.currentTimeMillis()
                 // Hoechstens alle 10 s aktualisieren, sonst flackert die Benachrichtigung mit jedem Positions-Update
-                if (text != lastText && now - lastNotifyAt > 10_000) {
-                    lastText = text; lastNotifyAt = now
-                    try { startForegroundCompat(buildNotification(text), typeFor(navigating, host.hosting || clientActive)) } catch (_: Exception) { }
+                if ((text != lastText || progress != lastProgress.takeIf { it >= 0 }) && now - lastNotifyAt > 10_000) {
+                    lastText = text; lastNotifyAt = now; lastProgress = progress ?: -1
+                    try { startForegroundCompat(buildNotification(text, progress), typeFor(navigating, host.hosting || clientActive)) } catch (_: Exception) { }
                 }
             }
         }
@@ -102,7 +109,7 @@ class KeepAliveService : Service() {
         }
     }
 
-    private fun buildNotification(text: String): Notification {
+    private fun buildNotification(text: String, progressPermille: Int? = null): Notification {
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val stop = PendingIntent.getService(this, 1, Intent(this, KeepAliveService::class.java).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE)
         return NotificationCompat.Builder(this, CHANNEL)
@@ -112,7 +119,8 @@ class KeepAliveService : Service() {
             .setContentIntent(open)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setCategory(if (progressPermille != null) NotificationCompat.CATEGORY_NAVIGATION else NotificationCompat.CATEGORY_SERVICE)
+            .apply { if (progressPermille != null) setProgress(1000, progressPermille, false) }
             .addAction(0, getString(R.string.link_notif_stop), stop)
             .build()
     }
