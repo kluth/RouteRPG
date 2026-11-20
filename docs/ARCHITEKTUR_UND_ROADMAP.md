@@ -493,4 +493,4 @@ sich ohne Netz öffnen. Für geplante Reisen werden alle Etappen nacheinander ge
 
 ## 43. Kilo-Stimme
 Feste Kilo-Sätze (Quest-Texte, Antworten für die Kleinsten, Lob/Trost, Sticker) sind vorab aufgenommen und werden offline abgespielt
-(Spec 005). Offen: englische Aufnahmen vervollständigen, weitere Sprachen, Lob für Navigationsmeilensteine, Geschichten als Audio.
+(Spec 005). Deutsch und Englisch sind vollständig (je 53 Sätze). Offen: weitere Sprachen, Lob für Navigationsmeilensteine, Geschichten als Audio.

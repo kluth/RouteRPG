@@ -31,4 +31,4 @@ Aufnahme.
 ## Lizenz und Kosten
 Die Aufnahmen sind synthetische Sprache, erzeugt mit dem ElevenLabs-Konto des Projektinhabers. Die zulässige Nutzung (insbesondere
 kommerziell oder bei einer Veröffentlichung im Play Store) richtet sich nach den Bedingungen des jeweiligen ElevenLabs-Tarifs zum
-Zeitpunkt der Erzeugung; vor einer Veröffentlichung prüfen. Verbrauch für 53 Zeilen je Sprache: rund 2.700 Zeichen pro Sprache.
+Zeitpunkt der Erzeugung; vor einer Veröffentlichung prüfen. Verbrauch für 53 Zeilen je Sprache: rund 2.700 Zeichen pro Sprache, zusammen etwa 5.400 Credits (Deutsch und Englisch).
