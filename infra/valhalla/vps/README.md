@@ -25,3 +25,6 @@ curl -H "X-Api-Token: <TOKEN>" https://<DOMAIN>/route --data '{"locations":[{"la
 
 ## Stand: Hostinger-VPS (srv1091497)
 Auf dem VPS läuft bereits Traefik, daher ist dort `docker-compose.traefik.yml` deployt (Projekt `kiloquest-valhalla`, 4 GB RAM-Limit, Gebiet: NRW, Niedersachsen, Bremen, Hamburg, Schleswig-Holstein, Dänemark, Schweden – also Duisburg bis Lappland). Adresse: `https://valhalla.kluth.cloud`, Zugriff nur mit Header `X-Api-Token` (Token in der Projekt-Umgebung auf dem VPS). Der erste Start baut die Tiles, solange antwortet `/status` noch nicht.
+
+## Fehlerbild: Server antwortet, kennt aber keine Straßen
+Symptom: `/status` liefert 200, `/route` und `/locate` finden nirgends Kanten („No suitable edges near location"). Ursache war ein abgestürzter Tile-Bau (`terminate called ... std::exception`, davor `Failed tile ... vector::_M_range_check`); der Container startete danach mit einer unvollständigen `valhalla_tiles.tar` (nur 358 Kacheln). Abhilfe: Projekt samt Volume löschen und mit `docker-compose.traefik.yml` neu starten (Gebiete zuerst per `osmium merge` zu einer Datei vereinen). Prüfen: `POST /locate` für eine Stadt muss Kanten liefern.

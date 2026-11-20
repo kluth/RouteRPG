@@ -1,7 +1,36 @@
 # Variante fuer VPS mit vorhandenem Traefik (Host-Netzwerk, certresolver "letsencrypt").
-# Genau so auf dem Hostinger-VPS deployt (Projekt "kiloquest-valhalla").
+# So auf dem Hostinger-VPS deployt (Projekt "kiloquest-valhalla").
 # API_TOKEN kommt aus der Projekt-Umgebung auf dem Server, nie ins Repo.
+#
+# Wichtig: Die Gebiete werden zuerst zu EINER Datei zusammengefuehrt (osmium merge, entfernt doppelte
+# Grenzobjekte). Mehrere separate Geofabrik-Dateien liessen den Valhalla-Bau an der deutsch-daenischen
+# Grenze abstuerzen ("vector::_M_range_check", danach wurden unvollstaendige Kacheln ausgeliefert).
 services:
+  prep:
+    image: ubuntu:24.04
+    container_name: kiloquest-osm-prep
+    restart: "no"
+    mem_limit: 1g
+    volumes:
+      - valhalla-data:/data
+    command:
+      - bash
+      - -c
+      - |
+        set -e
+        cd /data
+        if [ -f merged.osm.pbf ]; then echo "merged.osm.pbf exists, skipping"; exit 0; fi
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update -qq
+        apt-get install -y -qq osmium-tool curl ca-certificates
+        for u in https://download.geofabrik.de/europe/germany/nordrhein-westfalen-latest.osm.pbf https://download.geofabrik.de/europe/germany/niedersachsen-latest.osm.pbf https://download.geofabrik.de/europe/germany/bremen-latest.osm.pbf https://download.geofabrik.de/europe/germany/hamburg-latest.osm.pbf https://download.geofabrik.de/europe/germany/schleswig-holstein-latest.osm.pbf https://download.geofabrik.de/europe/denmark-latest.osm.pbf https://download.geofabrik.de/europe/sweden-latest.osm.pbf; do
+          echo "download $$u"
+          curl -fSL --retry 3 -O "$$u"
+        done
+        osmium merge --overwrite -o merged.tmp.osm.pbf *-latest.osm.pbf
+        mv merged.tmp.osm.pbf merged.osm.pbf
+        rm -f *-latest.osm.pbf
+        ls -la /data
   valhalla:
     image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
     container_name: kiloquest-valhalla
@@ -9,10 +38,12 @@ services:
     mem_limit: 4g
     memswap_limit: 4g
     cpus: 1.5
+    depends_on:
+      prep:
+        condition: service_completed_successfully
     volumes:
       - valhalla-data:/custom_files
     environment:
-      - tile_urls=https://download.geofabrik.de/europe/germany/nordrhein-westfalen-latest.osm.pbf https://download.geofabrik.de/europe/germany/niedersachsen-latest.osm.pbf https://download.geofabrik.de/europe/germany/bremen-latest.osm.pbf https://download.geofabrik.de/europe/germany/hamburg-latest.osm.pbf https://download.geofabrik.de/europe/germany/schleswig-holstein-latest.osm.pbf https://download.geofabrik.de/europe/denmark-latest.osm.pbf https://download.geofabrik.de/europe/sweden-latest.osm.pbf
       - use_tiles_ignore_pbf=True
       - build_elevation=False
       - build_admins=True
