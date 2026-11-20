@@ -273,4 +273,21 @@
     <string name="qtype_nature">Nature</string>
     <string name="qtype_language">Language</string>
     <string name="qtype_sky">Sky</string>
+    <string name="quest_night_stars">Look up: can you find a star or the moon?</string>
+    <string name="quest_night_tail">Count the red tail lights you can see ahead!</string>
+    <string name="quest_day_clouds">Find a cloud that looks like an animal.</string>
+    <string name="quest_quiz_capital_de">What is the capital of Germany?</string>
+    <string name="quest_quiz_capital_de_opt1">Berlin</string>
+    <string name="quest_quiz_capital_de_opt2">Vienna</string>
+    <string name="quest_quiz_capital_de_opt3">Zurich</string>
+    <string name="quest_quiz_capital_se">What is the capital of Sweden?</string>
+    <string name="quest_quiz_capital_se_opt1">Stockholm</string>
+    <string name="quest_quiz_capital_se_opt2">Helsinki</string>
+    <string name="quest_quiz_capital_se_opt3">Oslo</string>
+    <string name="quest_flag_dk">Find the Danish flag: red with a white cross!</string>
+    <string name="quest_moose_sign">Spot a yellow moose warning sign by the road.</string>
+    <string name="quest_quiz_sami">Which people have lived in Lapland for thousands of years?</string>
+    <string name="quest_quiz_sami_opt1">The Sámi</string>
+    <string name="quest_quiz_sami_opt2">The Romans</string>
+    <string name="quest_quiz_sami_opt3">The Maya</string>
 </resources>

@@ -429,3 +429,10 @@ Gebaut (Build/Lint/Tests grün; **auf einem echten Auto-Display/DHU nicht erprob
 - **Vorladen:** Nach der Routenberechnung lädt die App Streckenfakt (Overpass), Geschichte (Wikipedia) und Natur (iNaturalist) für den Ort, an dem die Aufgabe ausgelöst wird, nächste zuerst, 1,2 s Abstand, Fenster von 80 Aufgaben. Schlägt ein Abruf fehl, bleibt die Aufgabe ein Platzhalter und wird live geladen. Himmel (Flugzeuge, Polarlicht, Mond) und Sprache hängen von Zeit und Land ab und bleiben live.
 - **Live zusätzlich:** `BonusPlanner` (`:game-engine`, getestet) fügt alle ca. 15 km eine zusätzliche Platzhalter-Aufgabe ein. Nur wenn keine Aufgabe aktiv ist, die nächste geplante mindestens 1,5 km entfernt ist, keine Kurvenstrecke vorliegt und kein Manöver näher als 600 m ist (Fahrsicherheit, AGENTS.md Regel 4).
 - Offene Punkte: Vorgeladene Texte werden nicht auf dem Gerät gespeichert (nur im Speicher); Offline-Paket sollte sie später mitnehmen.
+
+## 34. Aufgaben passend zu Ort und Zeit, keine Wiederholungen
+
+- **Kontext:** Jede Vorlage kann Länder (`countries`), Tageszeit (`time`: Tag/Nacht) und Mindestbreite (`minLat`) verlangen (`QuestFit` in `:game-engine`, getestet). Beim Planen wird Ort, Land (`CountryGuess`, nur Kerngebiete, sonst unbekannt) und die Dunkelheit zur geschätzten Ankunftszeit (`Sun.isDark`) für jeden Auslösepunkt berechnet.
+- **Beim Auslösen** wird mit dem echten Land und der echten Uhrzeit noch einmal geprüft; passt eine feste Aufgabe nicht, wird sie ersetzt.
+- **Wiederholungen:** Feste Aufgaben höchstens einmal pro Fahrt, über Fahrten hinweg seltener (Nutzungszähler, klingt ab). Lange Strecken füllen sich mit Live-Aufgaben. Live-Inhalte (Wikipedia-Ort, Tierart, Streckenfakt) werden gemerkt (300 Einträge) und nicht erneut gestellt.
+- Neu: Nacht-Aufgaben, Länder-Quizze (DE, DK, SE), Elchschild und Sámi-Quiz nur im Norden.

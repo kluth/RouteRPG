@@ -13,6 +13,9 @@ import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import android.content.Context
 import app.kiloquest.game.AdventureSession
+import app.kiloquest.game.CountryGuess
+import app.kiloquest.game.QuestContext
+import app.kiloquest.game.QuestFit
 import app.kiloquest.game.BonusPlanner
 import app.kiloquest.game.AgeBand
 import app.kiloquest.game.AnswerMatcher
@@ -182,6 +185,7 @@ data class UiState(
     val carSimpleMap: Boolean = false,
 )
 
+private const val CONTENT_HISTORY = 300
 private const val PRELOAD_WINDOW = 80
 private const val PRELOAD_GAP_MS = 1_200L
 private const val PRELOAD_IDLE_MS = 30_000L
@@ -208,6 +212,7 @@ class NavController(private val app: Application) {
     private var bonusPlanner: BonusPlanner? = null
     private var preloadJob: kotlinx.coroutines.Job? = null
     private val preloadFailed = HashSet<Double>()
+    private val tripStatics = HashMap<String, Int>()
 
     private val arbiter = SpeechArbiter()
     private val advisor = RerouteAdvisor()
@@ -407,7 +412,12 @@ class NavController(private val app: Application) {
             ageBand = _state.value.ageBand,
             seed = System.nanoTime(),
             avoidMeters = route.maneuvers.map { it.atMeters },
+            // Aufgaben passend zu Ort, Land und (geschaetzter) Tageszeit am Ausloesepunkt
+            contextAt = { m -> contextAt(route, m) },
+            usage = loadUsage(),
         )
+        tripStatics.clear()
+        quests.forEach { q -> if (QuestCatalog.default.firstOrNull { it.id == q.templateId }?.dynamic == false) tripStatics.merge(q.templateId, 1, Int::plus) }
         val players = _state.value.players
         questOffset = 0.0
         adventure = AdventureSession(quests, playerCount = players)
@@ -563,7 +573,7 @@ class NavController(private val app: Application) {
         // Auf kurvigen Abschnitten keine neue Bildschirm-Aufgabe ausloesen; sie kommt auf gerader Strecke
         if (!curvy) {
             maybeAddBonus(questOffset + g.alongMeters, g.metersToNextManeuver)
-            adventure?.onProgress(questOffset + g.alongMeters)?.let { q -> onQuestTriggered(q, pos); publishPlan() }
+            adventure?.onProgress(questOffset + g.alongMeters)?.let { q -> onQuestTriggered(contextualize(q, pos), pos); publishPlan() }
         }
         if (!curvy && _state.value.quest == null) checkRiddles(g.alongMeters, pos)
         arbiter.poll(System.currentTimeMillis(), tts?.isSpeaking == true)?.let(::speakQuest)
@@ -1309,7 +1319,7 @@ class NavController(private val app: Application) {
         val facts = runCatching {
             RouteFacts.parse(withContext(Dispatchers.IO) { fetchOverpass(RouteFacts.buildQuery(pos.lat, pos.lon)) })
         }.getOrDefault(emptyList())
-        return RouteFacts.resolve(q, RouteFacts.pick(facts, Random.Default))
+        return RouteFacts.resolve(q, pickFresh(facts, { "fact:" + it.name }) { RouteFacts.pick(it, Random.Default) })
     }
 
     private suspend fun buildStory(q: Quest, pos: LatLon): Quest {
@@ -1320,7 +1330,7 @@ class NavController(private val app: Application) {
         for (l in listOf(lang, "en").distinct()) {
             val list = runCatching { WikiStories.parse(fetchUrl(WikiStories.buildUrl(l, pos.lat, pos.lon, age)), age) }
                 .getOrDefault(emptyList())
-            story = WikiStories.pick(list, Random.Default)
+            story = pickFresh(list, { "story:" + it.title }) { WikiStories.pick(it, Random.Default) }
             if (story != null) break
         }
         return WikiStories.resolve(q, story)
@@ -1332,7 +1342,7 @@ class NavController(private val app: Application) {
         for (l in listOf(lang, "en").distinct()) {
             val list = runCatching { NatureSpotting.parse(fetchUrl(NatureSpotting.buildUrl(pos.lat, pos.lon, l))) }
                 .getOrDefault(emptyList())
-            picked = NatureSpotting.pick(list, Random.Default)
+            picked = pickFresh(list, { "nature:" + it.name }) { NatureSpotting.pick(it, Random.Default) }
             if (picked != null) break
         }
         return NatureSpotting.resolve(q, picked)
@@ -1382,4 +1392,66 @@ class NavController(private val app: Application) {
         publishPlan()
     }
 
+
+    // ---------------------------------------------------------------- Passende Aufgaben, keine Wiederholungen
+
+    /** Ort, Land und geschaetzte Tageszeit am Streckenpunkt [meters] (Ankunftszeit aus der Routendauer). */
+    private fun contextAt(route: Route, meters: Double): QuestContext {
+        val p = route.line.points[route.line.indexAtMeters(meters.coerceIn(0.0, route.lengthMeters))]
+        val etaSec = System.currentTimeMillis() / 1000 + (route.durationSeconds * meters / route.lengthMeters.coerceAtLeast(1.0)).toLong()
+        val country = countryTimeline?.countryAt(meters) ?: CountryGuess.guess(p.lat, p.lon)
+        return QuestContext(p.lat, p.lon, country, Sun.isDark(p.lat, p.lon, etaSec))
+    }
+
+    /**
+     * Beim Ausloesen mit dem echten Ort (aktuelles Land) und der echten Uhrzeit pruefen; passt eine feste Aufgabe nicht
+     * (z. B. "Findet eine Kuh" bei Dunkelheit), wird sie durch eine passende ersetzt. Nutzung wird fuer spaetere Fahrten gezaehlt.
+     */
+    private fun contextualize(q: Quest, pos: LatLon): Quest {
+        val id = q.templateId.removePrefix("bonus_")
+        val t = QuestCatalog.default.firstOrNull { it.id == id } ?: return q
+        val ctx = QuestContext(pos.lat, pos.lon, _state.value.country ?: CountryGuess.guess(pos.lat, pos.lon), Sun.isDark(pos.lat, pos.lon, System.currentTimeMillis() / 1000))
+        var result = q
+        if (!QuestFit.fits(t, ctx)) {
+            val ageBand = _state.value.ageBand
+            val pool = QuestCatalog.default.filter { ageBand in it.ageBands && it.type != QuestType.BREAK }
+            val repl = QuestFit.choose(pool, ctx, loadUsage(), tripStatics, Random.Default)
+            if (repl != null) {
+                result = repl.toQuest(q.triggerMeters)
+                if (!repl.dynamic) tripStatics.merge(repl.id, 1, Int::plus)
+                adventure?.replaceActive(result)
+            }
+        }
+        QuestCatalog.default.firstOrNull { it.id == result.templateId.removePrefix("bonus_") }?.takeIf { !it.dynamic }?.let { bumpUsage(it.id) }
+        return result
+    }
+
+    private fun loadUsage(): Map<String, Int> = runCatching {
+        val o = org.json.JSONObject(prefs.getString("quest_usage", "{}") ?: "{}")
+        o.keys().asSequence().associateWith { o.getInt(it) }
+    }.getOrDefault(emptyMap())
+
+    private fun bumpUsage(id: String) {
+        val m = loadUsage().toMutableMap()
+        m.merge(id, 1, Int::plus)
+        // Bei vielen Fahrten abklingen lassen, damit nichts dauerhaft ausgeschlossen bleibt
+        if (m.values.sum() > 400) m.replaceAll { _, v -> v / 2 }
+        prefs.edit().putString("quest_usage", org.json.JSONObject(m as Map<*, *>).toString()).apply()
+    }
+
+    /** Inhalte (Orte, Tiere, Fakten), die schon gestellt wurden; ueber Fahrten hinweg gemerkt, damit sich nichts wiederholt. */
+    private val contentUsed: LinkedHashSet<String> by lazy {
+        LinkedHashSet<String>().also { set ->
+            runCatching { val a = org.json.JSONArray(prefs.getString("content_used", "[]")); for (i in 0 until a.length()) set += a.getString(i) }
+        }
+    }
+
+    private fun <T> pickFresh(list: List<T>, key: (T) -> String, pick: (List<T>) -> T?): T? {
+        val fresh = list.filter { key(it) !in contentUsed }
+        val chosen = pick(fresh) ?: return null
+        contentUsed += key(chosen)
+        while (contentUsed.size > CONTENT_HISTORY) contentUsed.remove(contentUsed.first())
+        prefs.edit().putString("content_used", org.json.JSONArray(contentUsed.toList()).toString()).apply()
+        return chosen
+    }
 }

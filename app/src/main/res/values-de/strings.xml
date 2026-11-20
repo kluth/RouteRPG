@@ -273,4 +273,21 @@
     <string name="qtype_nature">Natur</string>
     <string name="qtype_language">Sprache</string>
     <string name="qtype_sky">Himmel</string>
+    <string name="quest_night_stars">Schaut nach oben: Findet ihr einen Stern oder den Mond?</string>
+    <string name="quest_night_tail">Zählt die roten Rücklichter, die ihr vor euch seht!</string>
+    <string name="quest_day_clouds">Findet eine Wolke, die wie ein Tier aussieht.</string>
+    <string name="quest_quiz_capital_de">Wie heißt die Hauptstadt von Deutschland?</string>
+    <string name="quest_quiz_capital_de_opt1">Berlin</string>
+    <string name="quest_quiz_capital_de_opt2">Wien</string>
+    <string name="quest_quiz_capital_de_opt3">Zürich</string>
+    <string name="quest_quiz_capital_se">Wie heißt die Hauptstadt von Schweden?</string>
+    <string name="quest_quiz_capital_se_opt1">Stockholm</string>
+    <string name="quest_quiz_capital_se_opt2">Helsinki</string>
+    <string name="quest_quiz_capital_se_opt3">Oslo</string>
+    <string name="quest_flag_dk">Findet die dänische Flagge: rot mit weißem Kreuz!</string>
+    <string name="quest_moose_sign">Entdeckt ein gelbes Elch-Warnschild am Straßenrand.</string>
+    <string name="quest_quiz_sami">Welches Volk lebt seit Tausenden von Jahren in Lappland?</string>
+    <string name="quest_quiz_sami_opt1">Die Samen</string>
+    <string name="quest_quiz_sami_opt2">Die Römer</string>
+    <string name="quest_quiz_sami_opt3">Die Maya</string>
 </resources>

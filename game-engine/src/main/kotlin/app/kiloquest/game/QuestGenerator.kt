@@ -18,6 +18,10 @@ class QuestGenerator(private val templates: List<QuestTemplate>) {
         marginMeters: Double = 500.0,
         avoidMeters: List<Double> = emptyList(),
         avoidRadiusMeters: Double = 300.0,
+        /** Ort, Land und Tageszeit am Ausloesepunkt; mit dieser Funktion wird passend zu Ort/Zeit gewaehlt. */
+        contextAt: ((Double) -> QuestContext)? = null,
+        /** Wie oft jede feste Aufgabe in frueheren Fahrten vorkam (seltener waehlen). */
+        usage: Map<String, Int> = emptyMap(),
     ): List<Quest> {
         require(routeLengthMeters >= 0) { "routeLengthMeters must be >= 0" }
         require(metersPerQuest > 0) { "metersPerQuest must be > 0" }
@@ -30,6 +34,7 @@ class QuestGenerator(private val templates: List<QuestTemplate>) {
         val count = (usable / metersPerQuest).toInt().coerceAtLeast(1)
         val step = usable / count
         val rng = Random(seed)
+        if (contextAt != null) return generateContextual(pool, count, step, marginMeters, routeLengthMeters, rng, avoidMeters, avoidRadiusMeters, contextAt, usage)
         val order = buildList {
             // Pool wird mehrfach gemischt aneinandergehaengt: erst alle Vorlagen, dann wieder
             while (size < count) addAll(pool.shuffled(rng))
@@ -58,6 +63,29 @@ class QuestGenerator(private val templates: List<QuestTemplate>) {
                 correctIndex = t.correctIndex,
                 points = t.points,
             )
+        }
+        return result
+    }
+
+    private fun generateContextual(
+        pool: List<QuestTemplate>, count: Int, step: Double, margin: Double, routeLength: Double, rng: Random,
+        avoid: List<Double>, avoidRadius: Double, contextAt: (Double) -> QuestContext, usage: Map<String, Int>,
+    ): List<Quest> {
+        val result = ArrayList<Quest>()
+        val usedThisTrip = HashMap<String, Int>()
+        var lastTrigger = -1.0
+        for (i in 0 until count) {
+            var trigger = margin + step * (i + 0.5)
+            val blocker = avoid.firstOrNull { kotlin.math.abs(it - trigger) < avoidRadius }
+            if (blocker != null) {
+                trigger = blocker + avoidRadius
+                if (avoid.any { kotlin.math.abs(it - trigger) < avoidRadius }) continue
+            }
+            if (trigger > routeLength - margin || trigger <= lastTrigger) continue
+            val t = QuestFit.choose(pool, contextAt(trigger), usage, usedThisTrip, rng) ?: continue
+            usedThisTrip.merge(t.id, 1, Int::plus)
+            lastTrigger = trigger
+            result += t.toQuest(trigger)
         }
         return result
     }

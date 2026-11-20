@@ -28,7 +28,21 @@ data class QuestTemplate(
     val optionKeys: List<String> = emptyList(),
     val correctIndex: Int = -1,
     val points: Int = 10,
-)
+    /** Nur in diesen Laendern (ISO-Code, z. B. "DK"); leer = ueberall. */
+    val countries: Set<String> = emptySet(),
+    /** Tageszeit, zu der die Aufgabe Sinn ergibt. */
+    val time: TimeNeed = TimeNeed.ANY,
+    /** Nur noerdlich dieser Breite (z. B. Lappland). */
+    val minLat: Double? = null,
+) {
+    /** Platzhalter, die unterwegs aus Live-Daten gefuellt werden (nie zweimal gleich, siehe Wiederholungsbremse). */
+    val dynamic: Boolean get() = textKey.endsWith("_pending")
+}
+
+enum class TimeNeed { ANY, DAY, NIGHT }
+
+/** Wo und wann wird eine Aufgabe voraussichtlich ausgeloest? [country] ist null, wenn unbekannt. */
+data class QuestContext(val lat: Double, val lon: Double, val country: String?, val dark: Boolean)
 
 /** Konkrete Quest auf einer Route, ausgeloest nach [triggerMeters] Strecke. */
 data class Quest(
