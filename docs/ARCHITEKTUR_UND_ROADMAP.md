@@ -351,3 +351,11 @@ Gebaut (Build/Lint/Tests grün; nicht auf dem Gerät erprobt):
 - **Reiseübelkeit-Modus** (Schalter in der Kinderansicht, Standard an): Die Route wird auf Kurvigkeit analysiert (Richtungsänderung pro km, einzelne Kreuzungsabbiegungen zählen nicht). Auf kurvigen Abschnitten erscheint in der Kinderansicht „Blick nach draußen", neue Bildschirm-Aufgaben werden bis zur nächsten geraden Strecke zurückgestellt, und es gibt höchstens alle 3 Minuten einen gesprochenen Hinweis (3 Varianten).
 - **Pausenplaner:** Zählt Fahrzeit seit der letzten Pause (≥ 5 Min. Stillstand setzt zurück). Intervall nach Altersstufe: 60/75/100 Min. Dann sucht die App per Overpass 4–45 km voraus Rastplätze, Raststätten, Spielplätze, WC (≤ 700 m von der Route) und wählt den besten (Spielplatz/WC in der Nähe zählen, Umweg kostet). Vorschlag per Ansage und Karte im Handy-Display und in der Auto-Aktionsleiste: „Pause einlegen" / „Später" (Erinnerung nach 10 Min.). Bei Ankunft (≤ 400 m, langsam) erscheint eine Bewegungsaufgabe; Zeit-Zähler wird zurückgesetzt.
 - Grenzen: Der Vorschlag führt nicht automatisch dorthin (liegt aber höchstens 700 m neben der Route); OSM-Daten für Rastplätze sind lückenhaft, besonders in Schweden/Lappland. Die Schwellen (150°/km, Intervalle) sind Schätzwerte und gehören auf der Fahrt kalibriert.
+
+## 24. Stand Erweiterung 3: Wetter & Sonnenzeiten
+
+Gebaut (Build/Lint/Tests grün; **Open-Meteo-Antwortformat nur nach Dokumentation und mit eigenen Testdaten geprüft**, die Live-Abfrage war von der Entwicklungsumgebung aus wegen eines Tageslimits für deren gemeinsame IP nicht möglich; auf dem Handy bitte beim ersten Test prüfen):
+- Wetter an bis zu 12 Stützpunkten der Route (etwa alle 75 km, inkl. Ziel) zur geschätzten Ankunftszeit dort, per Open-Meteo (frei, nicht kommerziell, ohne Schlüssel). Aktualisierung alle 30 Min. während der Fahrt.
+- Anzeige: Wetter am Ziel (Symbol, Text, Temperatur), bis zu zwei Gefahren voraus mit Entfernung (Starkregen, Schneefall, Glätte, Gewitter, Nebel, Böen ≥ 70 km/h, Frost ≤ −15 °C), Hinweis „Ankunft nach Einbruch der Dunkelheit"; bei Polarnacht (keine Sonnenzeiten) bleibt dieser Hinweis weg.
+- Ansage zum Fahrtstart (Zielwetter) und je Aktualisierung höchstens eine neue Gefahr.
+- Grenze: Vorhersage-Genauigkeit der Open-Meteo-Modelle; die Ankunftszeit ist linear aus der Routendauer geschätzt (ohne Verkehr/Pausen).

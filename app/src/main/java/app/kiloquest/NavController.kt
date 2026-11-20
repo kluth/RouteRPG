@@ -43,6 +43,10 @@ import app.kiloquest.nav.LaneHint
 import app.kiloquest.nav.LaneParser
 import app.kiloquest.nav.SpeedProfile
 import app.kiloquest.nav.TraceAttributes
+import app.kiloquest.nav.WeatherApi
+import app.kiloquest.nav.WeatherCondition
+import app.kiloquest.nav.WeatherHazard
+import app.kiloquest.nav.WeatherSummary
 import app.kiloquest.nav.IncidentType
 import app.kiloquest.nav.RerouteAdvisor
 import app.kiloquest.nav.RouteIncident
@@ -123,6 +127,7 @@ data class UiState(
     /** Angenommene Pause: Ziel, zu dem es noch [breakAheadMeters] sind. */
     val breakTarget: RestStop? = null,
     val breakAheadMeters: Double = 0.0,
+    val weather: WeatherSummary? = null,
 )
 
 private const val TRAFFIC_REFRESH_MS = 5 * 60_000L
@@ -130,6 +135,7 @@ private const val MAX_TRAFFIC_ROADS = 10
 private const val ANNOUNCE_AHEAD_METERS = 100_000.0
 private const val MIN_SAVED_MINUTES = 5
 private const val MAX_RECENTS = 5
+private const val WEATHER_REFRESH_MS = 30 * 60_000L
 private const val BREAK_ARRIVAL_METERS = 400.0
 private const val SPEED_WINDOW_METERS = 25_000.0
 private const val SPEED_PREFETCH_METERS = 5_000.0
@@ -154,6 +160,8 @@ class NavController(private val app: Application) {
     private var sicknessPromptIndex = 0
     private var breakPlanner = BreakPlanner(intervalMs = 75 * 60_000L)
     private var breakPlanning = false
+    private var weatherJob: Job? = null
+    private val announcedHazards = HashSet<WeatherHazard>()
     /** Meter, die auf frueheren Routen schon gefahren wurden (Quest-Positionen gelten fuer die Gesamtfahrt). */
     private var questOffset = 0.0
     private val book = StickerBook(prefs.getStringSet("album", emptySet()).orEmpty())
@@ -257,6 +265,7 @@ class NavController(private val app: Application) {
                 else questOffset += _state.value.guidance?.alongMeters ?: 0.0
                 _state.update { it.copy(route = route, busy = false, guidance = null, incidents = emptyList()) }
                 if (_state.value.navigating) scope.launch { refreshTraffic() }
+                scope.launch { refreshWeather(announce = false) }
             }.onFailure {
                 _state.update { it.copy(busy = false, error = R.string.error_route) }
             }
@@ -360,6 +369,16 @@ class NavController(private val app: Application) {
         _state.value.route?.maneuvers?.firstOrNull()?.instruction?.let(::speak)
         breakPlanner = BreakPlanner(intervalMs = breakIntervalMs(_state.value.ageBand))
         breakPlanning = false
+        weatherJob?.cancel()
+        announcedHazards.clear()
+        weatherJob = scope.launch {
+            var first = true
+            while (isActive) {
+                refreshWeather(announce = true, speakSummary = first)
+                first = false
+                delay(WEATHER_REFRESH_MS)
+            }
+        }
         trafficJob?.cancel()
         trafficJob = scope.launch {
             while (isActive) {
@@ -375,11 +394,13 @@ class NavController(private val app: Application) {
                 navigating = false, route = null, destination = null, guidance = null, quest = null, feedback = null,
                 kidsScreen = false, incidents = emptyList(), proposal = null,
                 speedKmh = null, speedLimit = null, overspeed = false, lanes = null,
-                curvy = false, breakProposal = null, breakTarget = null,
+                curvy = false, breakProposal = null, breakTarget = null, weather = null,
             )
         }
         trafficJob?.cancel()
         trafficJob = null
+        weatherJob?.cancel()
+        weatherJob = null
         announcedIncidents.clear()
         adventure = null
         engine = null
@@ -421,6 +442,55 @@ class NavController(private val app: Application) {
             lastReroute = now
             speak(app.getString(R.string.rerouting))
             calculateRoute()
+        }
+    }
+
+    // ---------------------------------------------------------------- Wetter
+
+    fun conditionName(c: WeatherCondition): String = app.getString(
+        when (c) {
+            WeatherCondition.CLEAR -> R.string.weather_cond_clear
+            WeatherCondition.CLOUDY -> R.string.weather_cond_cloudy
+            WeatherCondition.FOG -> R.string.weather_cond_fog
+            WeatherCondition.DRIZZLE -> R.string.weather_cond_drizzle
+            WeatherCondition.RAIN -> R.string.weather_cond_rain
+            WeatherCondition.SNOW -> R.string.weather_cond_snow
+            WeatherCondition.SHOWERS -> R.string.weather_cond_showers
+            WeatherCondition.STORM -> R.string.weather_cond_storm
+            WeatherCondition.UNKNOWN -> R.string.weather_cond_unknown
+        },
+    )
+
+    fun hazardName(h: WeatherHazard): String = app.getString(
+        when (h) {
+            WeatherHazard.HEAVY_RAIN -> R.string.weather_hazard_heavy_rain
+            WeatherHazard.SNOW -> R.string.weather_hazard_snow
+            WeatherHazard.ICE -> R.string.weather_hazard_ice
+            WeatherHazard.STORM -> R.string.weather_hazard_storm
+            WeatherHazard.FOG -> R.string.weather_hazard_fog
+            WeatherHazard.WIND -> R.string.weather_hazard_wind
+            WeatherHazard.FROST -> R.string.weather_hazard_frost
+        },
+    )
+
+    /** Wetter entlang der Route zur geschaetzten Ankunftszeit (Open-Meteo); Ansage nur waehrend der Fahrt. */
+    private suspend fun refreshWeather(announce: Boolean, speakSummary: Boolean = false) {
+        val route = _state.value.route ?: return
+        val along = _state.value.guidance?.alongMeters ?: 0.0
+        val samples = WeatherApi.samples(route, along, System.currentTimeMillis() / 1000)
+        val summary = runCatching { WeatherApi.parse(fetchUrl(WeatherApi.buildUrl(samples)), samples) }.getOrNull() ?: return
+        if (summary.points.isEmpty() || _state.value.route !== route) return
+        _state.update { it.copy(weather = summary) }
+        if (!announce) return
+        val dest = summary.destination
+        if (speakSummary && dest?.tempC != null) {
+            speakQuest(app.getString(R.string.weather_speech, conditionName(dest.condition), dest.tempC!!.toInt()))
+        }
+        for ((hazard, at) in summary.hazardsAhead) {
+            if (announcedHazards.add(hazard)) {
+                speakQuest(app.getString(R.string.weather_hazard_speech, hazardName(hazard), distanceText((at - along).coerceAtLeast(0.0))))
+                break // pro Aktualisierung hoechstens eine neue Warnung
+            }
         }
     }
 
@@ -646,6 +716,7 @@ class NavController(private val app: Application) {
         installRoute(LoadedRoute(p.route, p.lanes))
         _state.update { it.copy(route = p.route, guidance = null, proposal = null, incidents = emptyList(), lanes = null) }
         scope.launch { refreshTraffic() }
+        scope.launch { refreshWeather(announce = false) }
     }
 
     fun dismissReroute() = _state.update { it.copy(proposal = null) }

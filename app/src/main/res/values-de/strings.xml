@@ -134,4 +134,25 @@
     <string name="stop_services">Raststätte</string>
     <string name="stop_playground">Spielplatz</string>
     <string name="stop_toilets">WC</string>
+    <string name="weather_cond_clear">klar</string>
+    <string name="weather_cond_cloudy">bewölkt</string>
+    <string name="weather_cond_fog">Nebel</string>
+    <string name="weather_cond_drizzle">Nieselregen</string>
+    <string name="weather_cond_rain">Regen</string>
+    <string name="weather_cond_snow">Schnee</string>
+    <string name="weather_cond_showers">Schauer</string>
+    <string name="weather_cond_storm">Gewitter</string>
+    <string name="weather_cond_unknown">unbekannt</string>
+    <string name="weather_hazard_heavy_rain">Starkregen</string>
+    <string name="weather_hazard_snow">Schneefall</string>
+    <string name="weather_hazard_ice">Glättegefahr</string>
+    <string name="weather_hazard_storm">Gewitter</string>
+    <string name="weather_hazard_fog">Nebel</string>
+    <string name="weather_hazard_wind">Starke Windböen</string>
+    <string name="weather_hazard_frost">Strenger Frost</string>
+    <string name="weather_dest">Am Ziel: %1$s %2$s, %3$d °C</string>
+    <string name="weather_hazard_line">%1$s in %2$s</string>
+    <string name="weather_dark">Ihr kommt nach Einbruch der Dunkelheit an.</string>
+    <string name="weather_speech">Wetter am Ziel: %1$s, %2$d Grad.</string>
+    <string name="weather_hazard_speech">Achtung: %1$s in %2$s.</string>
 </resources>

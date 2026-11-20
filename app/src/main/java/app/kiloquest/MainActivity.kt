@@ -102,6 +102,7 @@ private fun AppScreen(vm: NavController) {
             if (!state.navigating) SearchPanel(state, vm)
             state.proposal?.let { ProposalCard(it, vm) }
             if (state.proposal == null) BreakCard(state, vm)
+            if (state.route != null && !state.kidsScreen) WeatherCard(state, vm)
             if (state.proposal == null) IncidentBanner(state)
             if (state.navigating) state.lanes?.let { LaneStrip(it) }
             state.error?.let {
@@ -181,6 +182,42 @@ private fun IncidentBanner(state: UiState) {
             Modifier.padding(12.dp),
             color = MaterialTheme.colorScheme.error,
         )
+    }
+}
+
+private fun conditionEmoji(c: app.kiloquest.nav.WeatherCondition): String = when (c) {
+    app.kiloquest.nav.WeatherCondition.CLEAR -> "☀️"
+    app.kiloquest.nav.WeatherCondition.CLOUDY -> "⛅"
+    app.kiloquest.nav.WeatherCondition.FOG -> "🌫️"
+    app.kiloquest.nav.WeatherCondition.DRIZZLE, app.kiloquest.nav.WeatherCondition.SHOWERS -> "🌦️"
+    app.kiloquest.nav.WeatherCondition.RAIN -> "🌧️"
+    app.kiloquest.nav.WeatherCondition.SNOW -> "❄️"
+    app.kiloquest.nav.WeatherCondition.STORM -> "⛈️"
+    app.kiloquest.nav.WeatherCondition.UNKNOWN -> ""
+}
+
+/** Wetter am Ziel, Gefahren auf der Strecke, Ankunft im Dunkeln. */
+@Composable
+private fun WeatherCard(state: UiState, vm: NavController) {
+    val w = state.weather ?: return
+    val dest = w.destination
+    val along = state.guidance?.alongMeters ?: 0.0
+    Surface(tonalElevation = 4.dp, modifier = Modifier.padding(top = 8.dp)) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            if (dest?.tempC != null) {
+                Text(
+                    stringResource(R.string.weather_dest, conditionEmoji(dest.condition), vm.conditionName(dest.condition), dest.tempC!!.toInt()),
+                    style = MaterialTheme.typography.titleSmall,
+                )
+            }
+            w.hazardsAhead.take(2).forEach { (hazard, at) ->
+                Text(
+                    stringResource(R.string.weather_hazard_line, vm.hazardName(hazard), formatDistance((at - along).coerceAtLeast(0.0))),
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            if (w.arrivesInDark == true) Text(stringResource(R.string.weather_dark))
+        }
     }
 }
 
