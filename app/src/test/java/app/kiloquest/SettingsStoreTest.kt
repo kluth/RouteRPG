@@ -21,7 +21,7 @@ class SettingsStoreTest {
     @Test fun roundTrip() {
         val s = AppSettings(
             theme = ThemeMode.DARK, naviVoice = false, kiloVoice = false, keepScreenOn = false, showSpeedLimit = false,
-            laneHints = false, detourSuggestions = false, weatherHints = false, breakSuggestions = false, liveQuests = false, toiletCorridorKm = 4, powerSaver = app.kiloquest.nav.PowerSaverMode.ON,
+            laneHints = false, detourSuggestions = false, weatherHints = false, breakSuggestions = false, liveQuests = false, toiletCorridorKm = 4, powerSaver = app.kiloquest.nav.PowerSaverMode.ON, cloudSpeech = true,
         )
         SettingsStore.save(prefs, s)
         assertEquals(s, SettingsStore.load(prefs))
@@ -30,6 +30,10 @@ class SettingsStoreTest {
     @Test fun unknownPowerSaverFallsBackToAuto() {
         prefs.edit().putString("set_power_saver", "TURBO").apply()
         assertEquals(app.kiloquest.nav.PowerSaverMode.AUTO, SettingsStore.load(prefs).powerSaver)
+    }
+
+    @Test fun cloudSpeechIsOffByDefault() {
+        assertEquals(false, SettingsStore.load(prefs).cloudSpeech)
     }
 
     @Test fun unknownThemeFallsBackToSystem() {

@@ -38,3 +38,7 @@ Alles andere (`report_*`, `show_*`, `follow_mode` …) wird per Sprache als „n
 - Dauer-Zuhören läuft nur, solange die App im Vordergrund ist; kein Wake-Word-Modul (nur Erkennung der Anrede im erkannten Text). Der Systemton beim
   Start der Erkennung lässt sich auf manchen Geräten nicht abschalten.
 - Reihenfolge der Rückmeldung und das Verhalten von Gemini auf echten Geräten sind ungetestet.
+
+## Nachtrag: Spracherkennung ohne Offline-Paket (optional)
+- Standard bleibt: nur auf dem Gerät. Fehlt das Offline-Sprachpaket (oder ist Android älter als 12), erklärt die Einstellung den Grund und führt zu den Spracheingabe-Einstellungen.
+- Ausdrücklich als Option „Spracherkennung ohne Offline-Paket“ (Standard aus, Warnhinweis mit Bestätigung): Dann nutzt `VoiceAnswers` den normalen `SpeechRecognizer` des Geräts. Das Audio kann an den Anbieter dieses Dienstes gehen. Gilt für Sprachbefehle, Quiz-Antworten und Hörspiele. Bei vorhandenem Offline-Paket wird weiter bevorzugt auf dem Gerät erkannt.

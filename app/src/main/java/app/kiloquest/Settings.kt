@@ -43,6 +43,8 @@ data class AppSettings(
     val tripReminders: Boolean = true,
     /** Akku-Sparmodus: automatisch bei wenig Akku oder Energiesparmodus, immer oder nie. */
     val powerSaver: PowerSaverMode = PowerSaverMode.AUTO,
+    /** Spracherkennung auch ohne Offline-Paket ueber den normalen Dienst des Geraets (Audio kann an dessen Server gehen). Nur nach Warnhinweis. */
+    val cloudSpeech: Boolean = false,
 )
 
 internal object SettingsStore {
@@ -71,6 +73,7 @@ internal object SettingsStore {
             toiletCorridorKm = p.getInt(P + "toilet_corridor", d.toiletCorridorKm).takeIf { it in setOf(1, 2, 4) } ?: d.toiletCorridorKm,
             dailyDriveHours = p.getInt(P + "daily_hours", d.dailyDriveHours).takeIf { it in setOf(4, 6, 8, 10) } ?: d.dailyDriveHours,
             tripReminders = p.getBoolean(P + "trip_reminders", d.tripReminders),
+            cloudSpeech = p.getBoolean(P + "cloud_speech", d.cloudSpeech),
             powerSaver = runCatching { PowerSaverMode.valueOf(p.getString(P + "power_saver", null) ?: "") }.getOrDefault(d.powerSaver),
         )
     }
@@ -98,6 +101,7 @@ internal object SettingsStore {
             .putInt(P + "daily_hours", s.dailyDriveHours)
             .putBoolean(P + "trip_reminders", s.tripReminders)
             .putString(P + "power_saver", s.powerSaver.name)
+            .putBoolean(P + "cloud_speech", s.cloudSpeech)
             .apply()
     }
 }

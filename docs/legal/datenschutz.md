@@ -24,7 +24,8 @@ Der Server-Token liegt nur in den privaten SharedPreferences, nicht in der APK (
 Gekoppelte Geräte tauschen Spielstand, Route, Position des Autos (`pos`), Tempo und Strecke (`drive`) nur direkt per Bluetooth und nur mit erlaubten Geräten.
 
 ## Kamera, Mikrofon
-Kamera nur nach Tippen auf „Foto machen“. Mikrofon für Sprachantworten und optional Befehle mit „Kilo“; Erkennung auf dem Gerät (Android 12+), keine Speicherung.
+Kamera nur nach Tippen auf „Foto machen“. Mikrofon für Sprachantworten, Hörspiele und optional Befehle mit „Kilo“; Erkennung standardmäßig nur auf dem Gerät (Android 12+, Offline-Sprachpaket), keine Speicherung durch KiloQuest.
+**Option „Spracherkennung ohne Offline-Paket“** (Standard aus, nur nach Warnhinweis): nutzt den normalen Spracherkennungsdienst des Handys (meist Google/Hersteller). Dann kann das Audio, auch von Kindern, an dessen Server gehen und unterliegt dessen Datenschutzbedingungen. KiloQuest sendet selbst nichts. Für eine Veröffentlichung (Play-Familienrichtlinie, Datensicherheitsangaben) ist das gesondert zu bewerten.
 
 ## Offen
 Eltern-Einwilligung/Altersangabe, Play-Familienrichtlinie, Foreground-Service-Deklarationen: vor einem Store-Release zu klären.

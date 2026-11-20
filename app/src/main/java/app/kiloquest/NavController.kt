@@ -428,7 +428,7 @@ class NavController(private val app: Application) : KidsActions {
     private var autoStartAfterRoute = false
     private var countryChecking = false
     private val usedRiddles = HashSet<String>()
-    private val voice = VoiceAnswers(app)
+    private val voice = VoiceAnswers(app).also { VoiceAnswers.allowCloud = prefs.getBoolean("set_cloud_speech", false) }
     private val offline by lazy { OfflinePackage(app) }
     private val packStore by lazy { OfflineStore(app) }
     private var countryTimeline: CountryTimeline? = null
@@ -678,7 +678,8 @@ class NavController(private val app: Application) : KidsActions {
         val next = transform(_state.value.settings)
         SettingsStore.save(prefs, next)
         ReminderScheduler.sync(app, next.tripReminders)
-        _state.update { it.copy(settings = next) }
+        VoiceAnswers.allowCloud = next.cloudSpeech
+        _state.update { it.copy(settings = next, voiceAvailable = VoiceAnswers.isAvailable(app)) }
     }
 
     /** Zuletzt gesuchte Ziele und Reise-Etappen vergessen. */

@@ -4,6 +4,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,7 +37,7 @@ import app.kiloquest.ui.SettingSwitch
 import app.kiloquest.ui.SettingsSection
 import app.kiloquest.ui.screenColumn
 
-private enum class Dlg { NONE, CAMERAS, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES, SERVER, POWER, STORAGE, VOICE_HELP }
+private enum class Dlg { NONE, CAMERAS, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES, SERVER, POWER, STORAGE, VOICE_HELP, CLOUD_WARN }
 
 /** Einstellungen: alles, was sich dauerhaft einstellen laesst, mit Abfragen vor dem Loeschen. */
 @Composable
@@ -101,6 +103,10 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                             else -> dialog = Dlg.VOICE_HELP
                         }
                     }
+                }
+                SettingDivider()
+                SettingSwitch(stringResource(R.string.set_cloud_speech), stringResource(R.string.set_cloud_speech_hint), s.cloudSpeech) { v ->
+                    if (v) dialog = Dlg.CLOUD_WARN else nav.updateSettings { it.copy(cloudSpeech = false) }
                 }
                 SettingDivider()
                 SettingSwitch(stringResource(R.string.set_photo_prompts), stringResource(R.string.set_photo_prompts_hint), s.photoPrompts) { v -> nav.updateSettings { it.copy(photoPrompts = v) } }
@@ -273,9 +279,23 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                         }) { Text(stringResource(if (st == VoiceAnswers.Status.NO_MIC) R.string.voice_help_open_app else R.string.voice_help_open_voice)) }
                     }
                 },
-                dismissButton = { androidx.compose.material3.TextButton(onClick = { dialog = Dlg.NONE }) { Text(close) } },
+                dismissButton = {
+                    Row {
+                        if (st == VoiceAnswers.Status.NO_ON_DEVICE || st == VoiceAnswers.Status.OLD_ANDROID) {
+                            androidx.compose.material3.TextButton(onClick = { dialog = Dlg.CLOUD_WARN }) { Text(stringResource(R.string.voice_help_cloud)) }
+                        }
+                        androidx.compose.material3.TextButton(onClick = { dialog = Dlg.NONE }) { Text(close) }
+                    }
+                },
             )
         }
+        Dlg.CLOUD_WARN -> androidx.compose.material3.AlertDialog(
+            onDismissRequest = { dialog = Dlg.NONE },
+            title = { Text(stringResource(R.string.cloud_warn_title)) },
+            text = { Column(Modifier.verticalScroll(rememberScrollState())) { Text(stringResource(R.string.cloud_warn_text), style = MaterialTheme.typography.bodyMedium) } },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { nav.updateSettings { it.copy(cloudSpeech = true) }; dialog = Dlg.NONE }) { Text(stringResource(R.string.cloud_warn_allow), color = MaterialTheme.colorScheme.error) } },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { dialog = Dlg.NONE }) { Text(cancel) } },
+        )
         Dlg.POWER -> ChoiceDialog(
             stringResource(R.string.set_power),
             app.kiloquest.nav.PowerSaverMode.entries.map { Triple(it, stringResource(powerLabel(it)), stringResource(powerHint(it))) },
