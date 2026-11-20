@@ -68,8 +68,8 @@
     <string name="kids_open">Quests</string>
     <string name="kids_back">Back to map</string>
     <string name="kids_title">Adventure</string>
-    <string name="kids_points">%1$d points</string>
-    <string name="kids_stickers">%1$d stickers</string>
+    <string name="kids_points">Points: %1$d</string>
+    <string name="kids_stickers">Stickers: %1$d</string>
     <string name="kids_progress">Quest %1$d of %2$d</string>
     <string name="kids_found">Done!</string>
     <string name="kids_skip">Skip</string>

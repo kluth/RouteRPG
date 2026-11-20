@@ -22,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import app.kiloquest.ui.screenColumn
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.kiloquest.nav.TripApi
@@ -46,7 +47,7 @@ fun TripScreen(state: UiState, nav: NavController) {
     val trip = state.trip
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+            Modifier.screenColumn().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(stringResource(R.string.trip_title), style = MaterialTheme.typography.headlineMedium)

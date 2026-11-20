@@ -39,6 +39,7 @@ android {
         compose = true
         buildConfig = true
     }
+    testOptions { unitTests { isIncludeAndroidResources = true } }
     lint {
         // i18n von Tag 1: harte Strings sind Fehler
         error += "HardcodedText"
@@ -59,4 +60,10 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.maplibre)
     implementation(libs.androidx.car.app)
+    // Layout-Pruefung ohne Geraet: Compose-Screenshots in Robolectric (nur Test, siehe app/src/test)
+    testImplementation(libs.junit)
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation(platform(libs.compose.bom))
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
 }

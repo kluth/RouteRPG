@@ -28,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import app.kiloquest.ui.screenColumn
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -177,7 +178,7 @@ fun LinkClientCard(ageBand: AgeBand) {
 fun CopilotRemoteScreen(snapshot: Snapshot?, onMenu: () -> Unit) {
     val client = (LocalContext.current.applicationContext as KiloQuestApp).linkClient
     Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.screenColumn().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.parent_title), style = MaterialTheme.typography.headlineMedium)
             val rr = snapshot?.reroute
             val bp = snapshot?.breakProposal

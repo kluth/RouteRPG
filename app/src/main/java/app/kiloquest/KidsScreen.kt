@@ -3,6 +3,7 @@ package app.kiloquest
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,6 +20,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import app.kiloquest.ui.screenColumn
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -33,11 +35,8 @@ import app.kiloquest.game.StickerBook
 @Composable
 fun KidsScreen(state: UiState, nav: KidsActions) {
     val ctx = LocalContext.current
-    Surface(Modifier.fillMaxSize(), color = app.kiloquest.ui.kidsBackground(state.ageBand)) {
-        Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
+    val win = app.kiloquest.ui.rememberWindowInfo()
+    val questPane: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
             app.kiloquest.ui.KiloSays(stringResource(if (state.quest != null) R.string.kilo_intro else R.string.kids_title))
 
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
@@ -120,12 +119,35 @@ fun KidsScreen(state: UiState, nav: KidsActions) {
                 else -> Text(stringResource(R.string.kids_waiting), style = MaterialTheme.typography.titleMedium)
             }
 
+    }
+    val sidePane: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit = {
             app.kiloquest.ui.QuestPreview(state.plan)
             Album(state.album)
             Text(stringResource(R.string.kids_total, state.totalPoints), style = MaterialTheme.typography.bodyMedium)
 
+    }
+    val backButton: @Composable () -> Unit = {
             OutlinedButton(onClick = { nav.showKids(false) }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.kids_back))
+            }
+    }
+    Surface(Modifier.fillMaxSize(), color = app.kiloquest.ui.kidsBackground(state.ageBand)) {
+        if (win.twoPane) {
+            // Tablet / Querformat: links die Aufgabe, rechts Vorschau und Album
+            Row(Modifier.fillMaxSize().padding(24.dp), horizontalArrangement = Arrangement.spacedBy(28.dp)) {
+                Column(Modifier.weight(1.15f).fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    questPane()
+                    backButton()
+                }
+                Column(Modifier.weight(1f).fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    sidePane()
+                }
+            }
+        } else {
+            Column(Modifier.screenColumn().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                questPane()
+                sidePane()
+                backButton()
             }
         }
     }

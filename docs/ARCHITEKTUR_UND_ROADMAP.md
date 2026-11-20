@@ -441,3 +441,10 @@ Gebaut (Build/Lint/Tests grün; **auf einem echten Auto-Display/DHU nicht erprob
 
 Spec: `docs/specs/001-geraete-koppeln.md`. Modul `:link-core` (Protokoll, Rollen, Geräteliste, getestet). In `:app`: `link/BtHost` (Hauptgerät, RFCOMM-Server), `link/BtClient` (Kinder-/Beifahrer-Gerät, Neuaufbau bei Verbindungsverlust), `link/LinkController` (Zustand senden, Aktionen prüfen und ausführen), `link/LinkScreens` (Oberfläche im Beifahrer-Menü). Kinder-Geräte nutzen dieselbe Kinderansicht wie das Hauptgerät; die Antwort zählt für den Spieler des antwortenden Geräts. Alter je Gerät: Aufgaben werden reihum je Spieler in dessen Altersstufe geplant (gilt bei der nächsten Planung vor der Fahrt).
 **Nicht auf echten Geräten getestet.** Hintergrunddienst: `KeepAliveService` (Vordergrunddienst, Typ `location` während der Navigation und `connectedDevice` bei Kopplung, Benachrichtigung mit Restweg und "Beenden"); beendet sich selbst, wenn nichts mehr aktiv ist. Offen: Mehr-Geräte-Test, Sprachausgabe der Aufgabe auf dem Kinder-Gerät.
+
+## 36. Oberfläche für alle Größen und Ausrichtungen
+
+- `ui/Responsive.kt`: Fensterklassen (compact < 600 dp, medium < 840, expanded), Querformat, niedrige Höhe. Die Activity wird bei Drehung nicht neu erzeugt (`configChanges`), die Karte bleibt stehen; Statusleiste und Display-Ausschnitt bleiben frei.
+- Handy hochkant: Karten über die volle Breite, Quests-Knopf mittig rechts. Querformat/Tablet: schmale Spalten links (Suche, Hinweise), Routenvorschau als schwebende Karte, Fahrleiste höchstens 560 dp breit, Kinderansicht zweispaltig (Aufgabe links, Vorschau und Album rechts), Menüs zentriert mit höchstens 640 dp.
+- Einheitliche Formen und Farben (`KiloShapes`, `KiloCard`, Container-Farben im Theme, kein M3-Standardlila).
+- **Layout prüfen ohne Gerät:** `./gradlew :app:testDebugUnitTest --tests app.kiloquest.LayoutShotsTest` rendert die Oberfläche in 9 Größen (Handy hoch/quer, Tablet, hell/dunkel) als PNG nach `app/build/layout-shots/`. Braucht beim ersten Mal Netz (Robolectric lädt Android-Jars; bei Fehler 429 einfach wiederholen).

@@ -21,6 +21,7 @@ import app.kiloquest.ui.ManeuverCard
 import app.kiloquest.ui.SpeedSign
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,6 +31,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
@@ -113,12 +118,13 @@ private fun AppScreen(vm: NavController) {
         view.keepScreenOn = state.navigating
         onDispose { view.keepScreenOn = false }
     }
-    // Statusleiste (Benachrichtigungen, Uhr) bleibt sichtbar: nichts wird darunter gezeichnet
+    val win = app.kiloquest.ui.rememberWindowInfo()
+    // Statusleiste (Benachrichtigungen, Uhr) und Ausschnitte/Kameraloch bleiben frei: nichts wird darunter gezeichnet
     Box(
         Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .windowInsetsPadding(WindowInsets.systemBars)
+            .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout))
             .imePadding(),
     ) {
         MapScreen(
@@ -127,37 +133,58 @@ private fun AppScreen(vm: NavController) {
             follow = state.navigating,
             incidents = state.incidents.map { it.incident.position },
         )
+        AppOverlays(state, vm)
+    }
+}
 
-        Column(Modifier.align(Alignment.TopCenter).fillMaxWidth().padding(top = if (state.navigating) (if (app.kiloquest.ui.isCompactWidth()) 100.dp else 120.dp) else 12.dp, start = 12.dp, end = 12.dp, bottom = 12.dp)) {
+/** Alles ueber der Karte; getrennt von der Karte, damit sich das Layout ohne MapView pruefen laesst. */
+@Composable
+internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
+    val win = app.kiloquest.ui.rememberWindowInfo()
+    val overlays = !state.kidsScreen && !state.tripScreen && !state.riddleScreen && !state.parentScreen
+        // Obere Spalte: Suche/Vorschlaege (vor der Fahrt) bzw. Hinweise unter der Abbiege-Karte (waehrend der Fahrt).
+        // Auf breiten Fenstern bleibt sie schmal und links, statt ueber die ganze Breite zu laufen.
+        Column(
+            Modifier
+                .align(Alignment.TopStart)
+                .then(if (win.wide) Modifier.widthIn(max = if (state.navigating) 380.dp else 560.dp) else Modifier.fillMaxWidth())
+                .padding(top = if (state.navigating) 100.dp else 12.dp, start = 12.dp, end = 12.dp, bottom = 12.dp),
+        ) {
             if (!state.navigating) SearchPanel(state, vm)
             state.proposal?.let { ProposalCard(it, vm) }
             if (state.proposal == null) BreakCard(state, vm)
             if (state.route != null && !state.kidsScreen) WeatherCard(state, vm)
             if (state.proposal == null) HintBanner(state, vm)
             state.error?.let {
-                Surface(tonalElevation = 4.dp, modifier = Modifier.padding(top = 8.dp)) {
-                    Text(stringResource(it), Modifier.padding(12.dp), color = MaterialTheme.colorScheme.error)
+                app.kiloquest.ui.KiloCard(Modifier.padding(top = 8.dp), color = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.onErrorContainer) {
+                    Text(stringResource(it))
                 }
             }
         }
 
-        if (state.navigating && !state.kidsScreen && !state.tripScreen && !state.riddleScreen && !state.parentScreen) {
+        if (state.navigating && overlays) {
             val g = state.guidance
             val route = state.route
             if (g != null && route != null) {
                 ManeuverCard(
                     route.maneuvers.getOrNull(g.nextManeuverIndex),
                     g.metersToNextManeuver,
-                    Modifier.align(Alignment.TopStart).padding(12.dp).then(if (app.kiloquest.ui.isCompactWidth()) Modifier.fillMaxWidth() else Modifier),
+                    Modifier.align(Alignment.TopStart).padding(12.dp).then(if (win.wide) Modifier.widthIn(max = 380.dp) else Modifier.fillMaxWidth()),
                 )
             }
-            QuestsPill({ vm.showKids(true) }, Modifier.align(if (app.kiloquest.ui.isCompactWidth()) Alignment.CenterEnd else Alignment.TopEnd).padding(12.dp), onLongClick = { vm.showParent(true) })
-            state.lanes?.let { LaneStrip(it, Modifier.align(Alignment.BottomCenter).padding(bottom = 100.dp)) }
+            // Quests-Knopf: schmal und hoch in der Mitte rechts, sonst oben rechts
+            QuestsPill(
+                { vm.showKids(true) },
+                Modifier.align(if (!win.wide && !win.landscape) Alignment.CenterEnd else Alignment.TopEnd).padding(12.dp),
+                onLongClick = { vm.showParent(true) },
+            )
+            state.lanes?.let { LaneStrip(it, Modifier.align(Alignment.BottomCenter).padding(bottom = if (win.shortHeight) 76.dp else 100.dp)) }
             SpeedSign(
                 limit = state.speedLimit,
                 speedKmh = state.speedKmh,
                 overspeed = state.overspeed,
-                modifier = Modifier.align(Alignment.CenterStart).padding(start = 12.dp),
+                modifier = if (win.shortHeight) Modifier.align(Alignment.BottomStart).padding(start = 12.dp, bottom = 76.dp)
+                else Modifier.align(Alignment.CenterStart).padding(start = 12.dp),
             )
         }
 
@@ -166,24 +193,29 @@ private fun AppScreen(vm: NavController) {
         if (state.riddleScreen) RiddleScreen(state, vm)
         if (state.parentScreen) ParentScreen(state, vm)
         // Gekoppeltes Geraet: Zustand vom Hauptgeraet
-        val linkApp = LocalContext.current.applicationContext as KiloQuestApp
-        val client by linkApp.linkClient.state.collectAsState()
-        if (client.status == app.kiloquest.link.ClientStatus.CONNECTED && !state.parentScreen) {
-            val snap = client.snapshot
-            if (client.role == app.kiloquest.link.Role.COPILOT) {
-                app.kiloquest.link.CopilotRemoteScreen(snap) { vm.showParent(true) }
-            } else if (snap != null) {
-                KidsScreen(snap.toUiStateFor(state.ageBand), app.kiloquest.link.RemoteActions(linkApp.linkClient, vm))
+        val linkApp = LocalContext.current.applicationContext as? KiloQuestApp
+        if (linkApp != null) {
+            val client by linkApp.linkClient.state.collectAsState()
+            if (client.status == app.kiloquest.link.ClientStatus.CONNECTED && !state.parentScreen) {
+                val snap = client.snapshot
+                if (client.role == app.kiloquest.link.Role.COPILOT) {
+                    app.kiloquest.link.CopilotRemoteScreen(snap) { vm.showParent(true) }
+                } else if (snap != null) {
+                    KidsScreen(snap.toUiStateFor(state.ageBand), app.kiloquest.link.RemoteActions(linkApp.linkClient, vm))
+                }
             }
         }
 
         val route = state.route
-        if (route != null && !state.kidsScreen && !state.tripScreen && !state.riddleScreen && !state.parentScreen) {
+        if (route != null && overlays) {
             if (state.navigating) {
                 val g = state.guidance
                 val remaining = g?.remainingMeters ?: route.lengthMeters
                 val seconds = route.durationSeconds * (remaining / route.lengthMeters.coerceAtLeast(1.0))
-                EtaBar(remaining, seconds, vm::stopNavigation, Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = 24.dp, start = 12.dp, end = 12.dp))
+                EtaBar(
+                    remaining, seconds, vm::stopNavigation,
+                    Modifier.align(Alignment.BottomCenter).widthIn(max = 560.dp).fillMaxWidth().padding(bottom = if (win.shortHeight) 8.dp else 24.dp, start = 12.dp, end = 12.dp),
+                )
             } else {
                 app.kiloquest.ui.RoutePreviewSheet(
                     distanceMeters = route.lengthMeters,
@@ -191,18 +223,20 @@ private fun AppScreen(vm: NavController) {
                     onStart = vm::startNavigation,
                     onQuests = { vm.showKids(true) },
                     onQuestsLong = { vm.showParent(true) },
-                    modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+                    floating = win.wide,
+                    modifier = if (win.wide) Modifier.align(Alignment.BottomStart).widthIn(max = 460.dp).fillMaxWidth().padding(12.dp)
+                    else Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
                     extra = { PackageLine(state.pkg, vm) },
                 )
             }
-        } else if (!state.kidsScreen && !state.tripScreen && !state.riddleScreen && !state.parentScreen) {
+        } else if (overlays) {
             Text(
                 text = stringResource(R.string.map_attribution),
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.BottomStart).padding(8.dp),
             )
         }
-    }
 }
 
 @Composable
@@ -257,8 +291,8 @@ private fun WeatherCard(state: UiState, vm: NavController) {
     val w = state.weather ?: return
     val dest = w.destination
     val along = state.guidance?.alongMeters ?: 0.0
-    Surface(tonalElevation = 4.dp, modifier = Modifier.padding(top = 8.dp)) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    app.kiloquest.ui.KiloCard(Modifier.padding(top = 8.dp)) {
+        run {
             if (dest?.tempC != null) {
                 Text(
                     stringResource(R.string.weather_dest, conditionEmoji(dest.condition), vm.conditionName(dest.condition), dest.tempC!!.toInt()),
@@ -310,8 +344,8 @@ private fun BreakCard(state: UiState, vm: NavController) {
     val proposal = state.breakProposal
     val target = state.breakTarget
     if (proposal != null) {
-        Surface(tonalElevation = 8.dp, modifier = Modifier.padding(top = 8.dp).fillMaxWidth()) {
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        app.kiloquest.ui.KiloCard(Modifier.padding(top = 8.dp).fillMaxWidth(), color = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer) {
+            run {
                 Text(stringResource(R.string.break_title), style = MaterialTheme.typography.titleMedium)
                 Text(stringResource(R.string.break_banner, formatDistance(proposal.aheadMeters), vm.stopText(proposal.stop)))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -321,19 +355,16 @@ private fun BreakCard(state: UiState, vm: NavController) {
             }
         }
     } else if (target != null) {
-        Surface(tonalElevation = 4.dp, modifier = Modifier.padding(top = 8.dp)) {
-            Text(
-                stringResource(R.string.break_banner, formatDistance(state.breakAheadMeters.coerceAtLeast(0.0)), vm.stopText(target)),
-                Modifier.padding(12.dp),
-            )
+        app.kiloquest.ui.KiloCard(Modifier.padding(top = 8.dp)) {
+            Text(stringResource(R.string.break_banner, formatDistance(state.breakAheadMeters.coerceAtLeast(0.0)), vm.stopText(target)), style = MaterialTheme.typography.titleSmall)
         }
     }
 }
 
 @Composable
 private fun ProposalCard(p: RerouteProposal, vm: NavController) {
-    Surface(tonalElevation = 8.dp, modifier = Modifier.padding(top = 8.dp).fillMaxWidth()) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    app.kiloquest.ui.KiloCard(Modifier.padding(top = 8.dp).fillMaxWidth(), color = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer) {
+        run {
             Text(
                 stringResource(if (p.blocked) R.string.reroute_blocked else R.string.reroute_title),
                 style = MaterialTheme.typography.titleMedium,
@@ -353,33 +384,41 @@ private fun ProposalCard(p: RerouteProposal, vm: NavController) {
 @Composable
 private fun SearchPanel(state: UiState, vm: NavController) {
     var query by remember { mutableStateOf("") }
-    Surface(tonalElevation = 6.dp) {
-        Column(Modifier.padding(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    placeholder = { Text(stringResource(R.string.search_hint)) },
-                    singleLine = true,
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
-                    keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { vm.search(query) }),
-                    modifier = Modifier.weight(1f),
-                )
-                Button(onClick = { vm.search(query) }, modifier = Modifier.padding(start = 8.dp), enabled = !state.busy) {
-                    Text(stringResource(R.string.search_action))
-                }
-                androidx.compose.material3.OutlinedButton(onClick = { vm.showTrip(true) }, modifier = Modifier.padding(start = 8.dp)) {
-                    Text(stringResource(R.string.trip_open))
-                }
-                androidx.compose.material3.OutlinedButton(onClick = { vm.showParent(true) }, modifier = Modifier.padding(start = 8.dp)) {
-                    Text(stringResource(R.string.parent_open))
-                }
+    app.kiloquest.ui.KiloCard {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = { Text(stringResource(R.string.search_hint)) },
+                leadingIcon = { androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_search), contentDescription = null) },
+                singleLine = true,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(imeAction = androidx.compose.ui.text.input.ImeAction.Search),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(onSearch = { vm.search(query) }),
+                modifier = Modifier.weight(1f),
+            )
+            Button(onClick = { vm.search(query) }, enabled = !state.busy, modifier = Modifier.heightIn(min = 52.dp)) {
+                Text(stringResource(R.string.search_action))
             }
-            (if (state.results.isEmpty() && query.isBlank()) state.recents else state.results).forEach { place ->
-                Text(
-                    place.name,
-                    modifier = Modifier.fillMaxWidth().clickable { vm.selectPlace(place) }.padding(vertical = 10.dp),
-                )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            androidx.compose.material3.FilledTonalButton(onClick = { vm.showTrip(true) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+                Text(stringResource(R.string.trip_open), maxLines = 1)
+            }
+            androidx.compose.material3.FilledTonalButton(onClick = { vm.showParent(true) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+                Text(stringResource(R.string.parent_open), maxLines = 1)
+            }
+        }
+        val list = if (state.results.isEmpty() && query.isBlank()) state.recents else state.results
+        list.forEachIndexed { i, place ->
+            if (i > 0) androidx.compose.material3.HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Row(
+                Modifier.fillMaxWidth().clickable { vm.selectPlace(place) }.heightIn(min = 48.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                androidx.compose.material3.Icon(androidx.compose.ui.res.painterResource(R.drawable.ic_place), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(place.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             }
         }
     }

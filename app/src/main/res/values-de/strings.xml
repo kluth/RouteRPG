@@ -68,8 +68,8 @@
     <string name="kids_open">Aufgaben</string>
     <string name="kids_back">Zurück zur Karte</string>
     <string name="kids_title">Abenteuer</string>
-    <string name="kids_points">%1$d Punkte</string>
-    <string name="kids_stickers">%1$d Sticker</string>
+    <string name="kids_points">Punkte: %1$d</string>
+    <string name="kids_stickers">Sticker: %1$d</string>
     <string name="kids_progress">Aufgabe %1$d von %2$d</string>
     <string name="kids_found">Geschafft!</string>
     <string name="kids_skip">Überspringen</string>

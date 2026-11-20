@@ -15,6 +15,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.kiloquest.R
 
@@ -85,24 +86,34 @@ internal val LightScheme: ColorScheme = lightColorScheme(
     primary = Color(0xFF0B57D0), onPrimary = Color(0xFFFFFFFF),
     primaryContainer = Color(0xFFD6E3FF), onPrimaryContainer = Color(0xFF0A2A5C),
     secondary = Color(0xFF0F766E), onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFCFEFE9), onSecondaryContainer = Color(0xFF00201D),
     tertiary = Color(0xFFC2410C), onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFFFE3BD), onTertiaryContainer = Color(0xFF5C2E00),
     background = Color(0xFFF7F5F0), onBackground = Color(0xFF1B1F24),
     surface = Color(0xFFFBF9F4), onSurface = Color(0xFF1B1F24),
     surfaceVariant = Color(0xFFE6E2DA), onSurfaceVariant = Color(0xFF44474E),
     outline = Color(0xFF74777F),
     error = Color(0xFFB3261E), onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFFFDAD6), onErrorContainer = Color(0xFF410002),
+    outlineVariant = Color(0xFFD5D1C7),
+    surfaceTint = Color.Transparent,
 )
 
 internal val DarkScheme: ColorScheme = darkColorScheme(
     primary = Color(0xFF9CCAFF), onPrimary = Color(0xFF003258),
     primaryContainer = Color(0xFF12233F), onPrimaryContainer = Color(0xFFD6E3FF),
     secondary = Color(0xFF4DD6C4), onSecondary = Color(0xFF00382F),
+    secondaryContainer = Color(0xFF0F4F49), onSecondaryContainer = Color(0xFFCFEFE9),
     tertiary = Color(0xFFFFB68A), onTertiary = Color(0xFF4A1A00),
+    tertiaryContainer = Color(0xFF4A3500), onTertiaryContainer = Color(0xFFFFE3BD),
     background = Color(0xFF14171A), onBackground = Color(0xFFE6E8EC),
     surface = Color(0xFF1B1F24), onSurface = Color(0xFFE6E8EC),
     surfaceVariant = Color(0xFF2B3036), onSurfaceVariant = Color(0xFFC4C7CF),
     outline = Color(0xFF8D9199),
     error = Color(0xFFFFB4AB), onError = Color(0xFF601410),
+    errorContainer = Color(0xFF93000A), onErrorContainer = Color(0xFFFFDAD6),
+    outlineVariant = Color(0xFF3A4048),
+    surfaceTint = Color.Transparent,
 )
 
 private fun style(size: Int, line: Int, bold: Boolean = false, family: FontFamily = AtkinsonFamily) = TextStyle(
@@ -130,6 +141,15 @@ val KiloTypography = Typography(
     labelSmall = style(13, 16, bold = true),
 )
 
+/** Einheitliche, weiche Ecken (Karten 20-24, Knoepfe 16-18). */
+val KiloShapes = androidx.compose.material3.Shapes(
+    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+    small = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+    medium = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+    large = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(28.dp),
+)
+
 @Composable
 fun KiloQuestTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     androidx.compose.runtime.CompositionLocalProvider(
@@ -138,6 +158,7 @@ fun KiloQuestTheme(dark: Boolean = isSystemInDarkTheme(), content: @Composable (
         MaterialTheme(
             colorScheme = if (dark) DarkScheme else LightScheme,
             typography = KiloTypography,
+            shapes = KiloShapes,
             content = content,
         )
     }

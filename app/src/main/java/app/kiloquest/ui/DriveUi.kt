@@ -37,10 +37,6 @@ import app.kiloquest.nav.SpeedProfile
 import java.text.DateFormat
 import java.util.Date
 
-/** Schmale Bildschirme (Hochformat): kleinere Schrift und feste Einzeiler statt unkontrollierter Umbrueche. */
-@Composable
-fun isCompactWidth(): Boolean = androidx.compose.ui.platform.LocalConfiguration.current.screenWidthDp < 420
-
 @Composable
 private fun distanceLabel(meters: Double): String =
     if (meters >= 1000) stringResource(R.string.unit_km, meters / 1000.0)
@@ -175,13 +171,15 @@ fun RoutePreviewSheet(
     onQuests: () -> Unit,
     onQuestsLong: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
+    /** Auf breiten Fenstern als schwebende Karte mit allen Ecken rund statt als unterer Rand ueber die ganze Breite. */
+    floating: Boolean = false,
     extra: @Composable () -> Unit = {},
 ) {
     val minutes = (durationSeconds / 60).toInt()
     val duration = if (minutes >= 60) stringResource(R.string.unit_h_min, minutes / 60, minutes % 60) else stringResource(R.string.unit_min, minutes)
     val km = if (distanceMeters >= 1000) stringResource(R.string.unit_km, distanceMeters / 1000.0) else stringResource(R.string.unit_m, distanceMeters.toInt())
     val arrival = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(System.currentTimeMillis() + (durationSeconds * 1000).toLong()))
-    Surface(modifier, shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 12.dp) {
+    Surface(modifier, shape = if (floating) RoundedCornerShape(28.dp) else RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 12.dp) {
         Column(Modifier.padding(horizontal = 20.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             val compact = isCompactWidth()
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
