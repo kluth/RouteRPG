@@ -23,7 +23,7 @@ class VoiceAnswers(private val context: Context) {
 
     /** Hoert einmal zu und meldet die Erkennungsergebnisse (leer bei Fehler/Stille). Muss auf dem Hauptthread laufen. */
     fun listen(onResult: (List<String>) -> Unit) {
-        if (!isAvailable(context)) { onResult(emptyList()); return }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || !isAvailable(context)) { onResult(emptyList()); return }
         stop()
         val r = SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
         recognizer = r

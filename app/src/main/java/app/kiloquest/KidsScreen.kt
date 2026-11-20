@@ -148,6 +148,10 @@ private fun KidsContent(state: UiState, nav: KidsActions, onOpenMap: () -> Unit,
             Album(state.album)
             Text(stringResource(R.string.kids_total, state.totalPoints), style = MaterialTheme.typography.bodyMedium)
             state.teamGoal?.let { app.kiloquest.ui.TeamGoalBar(it) }
+            state.weather?.destination?.let { d ->
+                val t = d.tempC?.let { Math.round(it).toInt().toString() + " °C, " }.orEmpty()
+                Text(stringResource(R.string.dash_dest_weather, t + stringResource(app.kiloquest.weatherConditionRes(d.condition))), style = MaterialTheme.typography.bodyMedium)
+            }
 
     }
     val backButton: @Composable () -> Unit = {

@@ -532,4 +532,4 @@ Pflege der Maut-Tabelle, echte Abdeckungsdaten (falls eine freie Quelle auftauch
 
 ## 51. Stopps, Reisebuch, Fahrtkarte
 Umgesetzt (Spec 012): Zwischenstopps für Kinder (Fahrt hin, „Weiter zum Ziel“), Reisebuch-PDF, Benachrichtigung mit Fortschritt und Teamziel, Dashboard mit nächster Pause und Zielwetter.
-Offen: Android-16-Live-Updates (compileSdk 36 / AGP-Update), Wikipedia-Kurztexte zu Stopps, Gerätetest des PDF.
+Nachgezogen: echter Zwischenstopp in einer Mehrpunkt-Route, Wikipedia-Auszug am Stopp, Android-16-Live-Update (AGP 8.11.1, compileSdk 36), Zielwetter für Kinder, Satelliten-SOS-Hinweis. Offen: Gerätetests (PDF, Live-Update, Spuranzeige im Auto).

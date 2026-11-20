@@ -855,4 +855,8 @@
     <string name="dash_next_break">Next break in about %1$d min</string>
     <string name="dash_dest_weather">At the destination: %1$s</string>
     <string name="nav_notif_progress">%1$s to go · team goal %2$d%%</string>
+    <string name="notif_chip_km">%1$d km</string>
+    <string name="notif_chip_m">%1$d m</string>
+    <string name="stopover_waypoint">Stop reached</string>
+    <string name="emergency_satellite">No mobile signal? Many newer phones (for example Pixel 9 and 10) can send an emergency message by satellite. Look for Emergency SOS in the phone settings and try it before you travel. It works only outdoors with a view of the sky.</string>
 </resources>

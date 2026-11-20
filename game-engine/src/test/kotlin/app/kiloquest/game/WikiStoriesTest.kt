@@ -83,4 +83,12 @@ class WikiStoriesTest {
         assertEquals(listOf("Lang"), r.map { it.title })
         assertTrue(r.single().text.length in 120..900)
     }
+
+    @Test fun matchingFindsTheNamedPlaceOnly() {
+        val list = listOf(Story("Burg Eltz", "x".repeat(130)), Story("Zoo Duisburg", "y".repeat(130)), Story("Rathaus", "z".repeat(130)))
+        assertEquals("Zoo Duisburg", WikiStories.matching(list, "Zoo Duisburg")?.title)
+        assertEquals("Burg Eltz", WikiStories.matching(list, "Eltz")?.title)
+        assertEquals(null, WikiStories.matching(list, "Spielplatz am See"))
+        assertEquals(null, WikiStories.matching(list, ""))
+    }
 }

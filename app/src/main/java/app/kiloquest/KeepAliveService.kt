@@ -59,14 +59,16 @@ class KeepAliveService : Service() {
                 val navigating = nav.navigating
                 if (!navigating && !host.hosting && !clientActive) { stopSelf(); return@collect }
                 val connectedKids = host.devices.count { it.connected }
-                // Fahrtkarte: Fortschrittsbalken (Strecke) und Teamziel in der Benachrichtigung (normaler Balken; Android-16-Live-Updates stehen noch aus)
+                // Fahrtkarte: Fortschrittsbalken (Strecke) und Teamziel in der Benachrichtigung (normaler Balken; ab Android 16 als Live-Update)
                 var progress: Int? = null
+                var chip: String? = null
                 val text = when {
                     navigating -> {
                         val total = nav.route?.lengthMeters ?: 0.0
                         val m = nav.guidance?.remainingMeters ?: total
                         if (total > 0) progress = ((1.0 - m / total).coerceIn(0.0, 1.0) * 1000).toInt()
                         val dist = if (m >= 1000) getString(R.string.unit_km, m / 1000.0) else getString(R.string.unit_m, m.toInt())
+                        chip = if (m >= 1000) getString(R.string.notif_chip_km, (m / 1000).toInt()) else getString(R.string.notif_chip_m, m.toInt())
                         val goal = nav.teamGoal
                         if (goal != null && !goal.reached) getString(R.string.nav_notif_progress, dist, (goal.progress * 100).toInt()) else getString(R.string.nav_notif_running, dist)
                     }
@@ -79,7 +81,7 @@ class KeepAliveService : Service() {
                 // Hoechstens alle 10 s aktualisieren, sonst flackert die Benachrichtigung mit jedem Positions-Update
                 if ((text != lastText || progress != lastProgress.takeIf { it >= 0 }) && now - lastNotifyAt > 10_000) {
                     lastText = text; lastNotifyAt = now; lastProgress = progress ?: -1
-                    try { startForegroundCompat(buildNotification(text, progress), typeFor(navigating, host.hosting || clientActive)) } catch (_: Exception) { }
+                    try { startForegroundCompat(buildNotification(text, progress, chip), typeFor(navigating, host.hosting || clientActive)) } catch (_: Exception) { }
                 }
             }
         }
@@ -109,9 +111,28 @@ class KeepAliveService : Service() {
         }
     }
 
-    private fun buildNotification(text: String, progressPermille: Int? = null): Notification {
+    private fun buildNotification(text: String, progressPermille: Int? = null, chip: String? = null): Notification {
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val stop = PendingIntent.getService(this, 1, Intent(this, KeepAliveService::class.java).setAction(ACTION_STOP), PendingIntent.FLAG_IMMUTABLE)
+        // Android 16+: Live-Update mit Fortschrittsstil (Statusleisten-Chip, Sperrbildschirm). Aeltere Versionen: normale Benachrichtigung mit Balken.
+        if (android.os.Build.VERSION.SDK_INT >= 36 && progressPermille != null) {
+            val style = android.app.Notification.ProgressStyle()
+                .setProgressSegments(listOf(android.app.Notification.ProgressStyle.Segment(1000)))
+                .setProgressPoints(listOf(250, 500, 750).map { android.app.Notification.ProgressStyle.Point(it) })
+                .setProgress(progressPermille)
+            return android.app.Notification.Builder(this, CHANNEL)
+                .setSmallIcon(R.drawable.ic_stat_link)
+                .setContentTitle(getString(R.string.app_name))
+                .setContentText(text)
+                .setContentIntent(open)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setCategory(android.app.Notification.CATEGORY_NAVIGATION)
+                .setShortCriticalText(chip)
+                .setStyle(style)
+                .addAction(android.app.Notification.Action.Builder(android.graphics.drawable.Icon.createWithResource(this, R.drawable.ic_stat_link), getString(R.string.link_notif_stop), stop).build())
+                .build()
+        }
         return NotificationCompat.Builder(this, CHANNEL)
             .setSmallIcon(R.drawable.ic_stat_link)
             .setContentTitle(getString(R.string.app_name))

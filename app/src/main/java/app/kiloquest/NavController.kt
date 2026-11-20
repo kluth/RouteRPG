@@ -93,6 +93,7 @@ import app.kiloquest.nav.KidSpots
 import app.kiloquest.nav.SpotKind
 import app.kiloquest.nav.Hospital
 import app.kiloquest.nav.RemoteStretch
+import app.kiloquest.nav.RouteMerge
 import app.kiloquest.nav.RemoteStretches
 import app.kiloquest.nav.RemoteWarner
 import app.kiloquest.nav.TollGuide
@@ -157,10 +158,23 @@ fun Context.stringByKey(key: String, args: List<String> = emptyList()): String {
     return if (id != 0) getString(id, *args.toTypedArray()) else key
 }
 
+/** Text-Ressource zur Wetterlage (fuer Handy-, Kinder- und Dashboard-Anzeige). */
+fun weatherConditionRes(c: WeatherCondition): Int = when (c) {
+    WeatherCondition.CLEAR -> R.string.weather_cond_clear
+    WeatherCondition.CLOUDY -> R.string.weather_cond_cloudy
+    WeatherCondition.FOG -> R.string.weather_cond_fog
+    WeatherCondition.DRIZZLE -> R.string.weather_cond_drizzle
+    WeatherCondition.RAIN -> R.string.weather_cond_rain
+    WeatherCondition.SNOW -> R.string.weather_cond_snow
+    WeatherCondition.SHOWERS -> R.string.weather_cond_showers
+    WeatherCondition.STORM -> R.string.weather_cond_storm
+    WeatherCondition.UNKNOWN -> R.string.weather_cond_unknown
+}
+
 enum class StopoverPhase { HEADING, ARRIVED }
 
 /** Zwischenstopp: Ziel ist der Stopp, danach geht es mit "Weiter" zum urspruenglichen Ziel. */
-data class StopoverState(val label: String, val phase: StopoverPhase)
+data class StopoverState(val label: String, val phase: StopoverPhase, /** Kurzer Wikipedia-Auszug zum Ort (CC BY-SA), falls gefunden. */ val story: Story? = null)
 
 /** Notfall-Karte: Notrufnummer, Standort als Text, naechste Krankenhaeuser (Suche laeuft ggf. noch). */
 data class EmergencyUi(val number: String, val location: String, val hospitals: List<Hospital> = emptyList(), val loading: Boolean = false, val searched: Boolean = false)
@@ -227,7 +241,7 @@ data class PlanResult(
 /** Hoergeschichte: wird gesucht ([loading]), ist da ([title]/[text]) oder nicht gefunden ([failed]). */
 data class StoryCard(val loading: Boolean = false, val title: String = "", val text: String = "", val failed: Boolean = false)
 
-private data class LoadedRoute(val route: Route, val lanes: List<LaneGuidance>)
+private data class LoadedRoute(val route: Route, val lanes: List<LaneGuidance>, /** Streckenmeter der Zwischenstopps (leer ohne). */ val waypoints: List<Double> = emptyList())
 
 data class UiState(
     val results: List<Place> = emptyList(),
@@ -567,9 +581,16 @@ class NavController(private val app: Application) : KidsActions {
     }
 
     /** Route plus Spurinformation (zweite Anfrage im OSRM-Format; Spuren sind optional). */
-    private suspend fun loadRoute(from: LatLon, to: LatLon, excludes: List<List<LatLon>>): LoadedRoute {
+    private suspend fun loadRoute(from: LatLon, to: LatLon, excludes: List<List<LatLon>>, via: LatLon? = null): LoadedRoute {
         val lang = Locale.getDefault().toLanguageTag()
         val avoid = routeAvoid()
+        if (via != null) {
+            // Mehrpunkt-Route mit Zwischenstopp: Etappen zu einer Route zusammensetzen (Ziel bleibt das urspruengliche)
+            val locs = listOf(from, via, to)
+            val merged = RouteMerge.merge(ValhallaApi.parseLegRoutes(fetchRoute(ValhallaApi.buildRequest(locs, lang, excludePolygons = excludes, avoid = avoid))), app.getString(R.string.stopover_waypoint))
+            val lanes = runCatching { LaneParser.parseOsrm(fetchRoute(ValhallaApi.buildRequest(locs, lang, excludePolygons = excludes, osrm = true, avoid = avoid)), merged.route) }.getOrDefault(emptyList())
+            return LoadedRoute(merged.route, lanes, merged.waypointsAlong)
+        }
         val route = ValhallaApi.parseRoute(fetchRoute(ValhallaApi.buildRouteRequest(from, to, lang, excludePolygons = excludes, avoid = avoid)))
         val lanes = runCatching {
             LaneParser.parseOsrm(fetchRoute(ValhallaApi.buildRouteRequest(from, to, lang, excludePolygons = excludes, osrm = true, avoid = avoid)), route)
@@ -813,7 +834,7 @@ class NavController(private val app: Application) : KidsActions {
             )
         }
         toiletJob?.cancel(); toiletJob = null; toiletResume = null
-        tripInfoJob?.cancel(); remoteWarner = null; stopoverResume = null
+        tripInfoJob?.cancel(); remoteWarner = null; stopoverAlong = null
         _state.update { it.copy(stopover = null, spots = emptyList(), spotsSearched = false, nextBreakMin = null) }
         _state.update { it.copy(tolls = emptyList(), remoteStretches = emptyList(), tripInfoReady = false) }
         stopAudioGame()
@@ -854,14 +875,6 @@ class NavController(private val app: Application) : KidsActions {
                 }
                 return
             }
-            _state.value.stopover?.let { so ->
-                if (so.phase == StopoverPhase.HEADING) {
-                    _state.update { it.copy(stopover = so.copy(phase = StopoverPhase.ARRIVED)) }
-                    speak(app.getString(R.string.stopover_arrived, so.label))
-                    logDiary(DiaryKind.QUEST, so.label.take(90))
-                }
-                return
-            }
             val stageMessage = onStageArrived()
             logDiary(DiaryKind.ARRIVAL, _state.value.destination?.name.orEmpty(), meters = _state.value.route?.lengthMeters ?: 0.0)
             speak(stageMessage ?: app.getString(R.string.arrived))
@@ -883,6 +896,7 @@ class NavController(private val app: Application) : KidsActions {
             speakQuest(app.getString(res))
         }
         updateBreaks(loc, g.alongMeters, now0)
+        checkStopover(g.alongMeters, if (loc.hasSpeed()) loc.speed * 3.6 else 0.0)
         checkCountry(pos, g.alongMeters)
         // Auf kurvigen Abschnitten keine neue Bildschirm-Aufgabe ausloesen; sie kommt auf gerader Strecke
         if (!curvy) {
@@ -1816,40 +1830,77 @@ class NavController(private val app: Application) : KidsActions {
         }
     }
 
-    /** Faehrt zum Stopp; danach "Weiter" zum urspruenglichen Ziel. Die Navigation bleibt am Stopp offen (Kinder brauchen Zeit). */
+    private var stopoverAlong: Double? = null
+
+    /**
+     * Zwischenstopp in **einer** Route: Start -> Stopp -> urspruengliches Ziel (Ankunftszeit und Fuehrung laufen durch). Am Stopp bleibt die
+     * Navigation weiter aktiv; "Weiter" beendet nur die Pause. Kinder bekommen dort eine Bewegungsaufgabe.
+     */
     fun goToSpot(spot: KidSpot) {
-        val pos = _state.value.position
+        val s = _state.value
+        val pos = s.position
+        val dest = s.destination
         if (pos == null) { _state.update { it.copy(error = R.string.error_no_position) }; return }
         if (!ServerConfig.configured) { _state.update { it.copy(error = R.string.error_no_server) }; return }
-        if (_state.value.toilet != null || _state.value.stopover?.phase == StopoverPhase.HEADING) return
+        if (dest == null || s.toilet != null || s.stopover != null) return
         val label = spotLabel(spot)
         scope.launch {
-            runCatching { loadRoute(pos, spot.position, emptyList()) }.onSuccess { loaded ->
+            runCatching { loadRoute(pos, dest.position, emptyList(), via = spot.position) }.onSuccess { loaded ->
                 val wasNavigating = _state.value.navigating
-                if (stopoverResume == null) stopoverResume = _state.value.destination
                 val along = _state.value.guidance?.alongMeters ?: 0.0
                 installRoute(loaded)
                 if (adventure == null || !wasNavigating) newAdventure(loaded.route) else questOffset += along
+                stopoverAlong = loaded.waypoints.firstOrNull()
                 _state.update {
                     it.copy(
-                        route = loaded.route, destination = Place(label, spot.position), guidance = null, incidents = emptyList(), proposal = null,
-                        breakProposal = null, breakTarget = null, stopover = StopoverState(label, StopoverPhase.HEADING), spots = emptyList(), spotsSearched = false,
+                        route = loaded.route, guidance = null, incidents = emptyList(), proposal = null, breakProposal = null, breakTarget = null,
+                        stopover = StopoverState(label, StopoverPhase.HEADING), spots = emptyList(), spotsSearched = false,
                     )
                 }
                 speak(app.getString(R.string.stopover_spoken, label))
                 if (!wasNavigating) startNavigation()
+                loadSpotStory(spot)
             }.onFailure { _state.update { it.copy(error = R.string.error_route) } }
         }
     }
 
-    fun resumeAfterStopover() {
+    /** Sucht zum benannten Ort einen Wikipedia-Auszug; er wird am Stopp vorgelesen und angezeigt (Quelle sichtbar). */
+    private fun loadSpotStory(spot: KidSpot) {
+        val name = spot.name ?: return
+        scope.launch {
+            for (l in listOf(Locale.getDefault().language, "en").distinct()) {
+                val list = runCatching { WikiStories.parseListen(withContext(Dispatchers.IO) { fetchUrl(WikiStories.buildListenUrl(l, spot.position.lat, spot.position.lon)) }) }.getOrDefault(emptyList())
+                val story = WikiStories.matching(list, name) ?: continue
+                _state.update { st -> st.stopover?.let { st.copy(stopover = it.copy(story = story)) } ?: st }
+                return@launch
+            }
+        }
+    }
+
+    /** Ankunft am Zwischenstopp erkennen (nah dran und langsam) und die Kinder-Pause starten; wer nicht anhaelt, verliert den Stopp stillschweigend. */
+    private fun checkStopover(along: Double, kmh: Double) {
         val so = _state.value.stopover ?: return
-        val resume = stopoverResume
-        stopoverResume = null
-        if (resume == null) { stopNavigation(); return }
-        _state.update { it.copy(stopover = null, destination = resume) }
+        val wp = stopoverAlong ?: return
+        if (so.phase == StopoverPhase.HEADING && wp - along <= 60.0 && kmh < 15.0) {
+            _state.update { it.copy(stopover = so.copy(phase = StopoverPhase.ARRIVED)) }
+            speak(app.getString(R.string.stopover_arrived, so.label))
+            so.story?.let { speakQuest(it.title + ". " + it.text) }
+            logDiary(DiaryKind.QUEST, so.label.take(90))
+            val q = QuestCatalog.default.filter { it.type == QuestType.BREAK }.random().toQuest(questOffset + along)
+            adventure?.forceQuest(q)
+            breakPlanner.reset()
+            _state.update { it.copy(quest = q, feedback = null, newSticker = null) }
+        } else if (so.phase == StopoverPhase.HEADING && along > wp + 400.0) {
+            stopoverAlong = null
+            _state.update { it.copy(stopover = null) }
+        }
+    }
+
+    fun resumeAfterStopover() {
+        if (_state.value.stopover == null) return
+        stopoverAlong = null
+        _state.update { it.copy(stopover = null) }
         speak(app.getString(R.string.stopover_resume))
-        calculateRoute()
     }
 
     // --- Roadtrip-Fotostory
@@ -2199,19 +2250,7 @@ class NavController(private val app: Application) : KidsActions {
 
     // ---------------------------------------------------------------- Wetter
 
-    fun conditionName(c: WeatherCondition): String = app.getString(
-        when (c) {
-            WeatherCondition.CLEAR -> R.string.weather_cond_clear
-            WeatherCondition.CLOUDY -> R.string.weather_cond_cloudy
-            WeatherCondition.FOG -> R.string.weather_cond_fog
-            WeatherCondition.DRIZZLE -> R.string.weather_cond_drizzle
-            WeatherCondition.RAIN -> R.string.weather_cond_rain
-            WeatherCondition.SNOW -> R.string.weather_cond_snow
-            WeatherCondition.SHOWERS -> R.string.weather_cond_showers
-            WeatherCondition.STORM -> R.string.weather_cond_storm
-            WeatherCondition.UNKNOWN -> R.string.weather_cond_unknown
-        },
-    )
+    fun conditionName(c: WeatherCondition): String = app.getString(weatherConditionRes(c))
 
     fun hazardName(h: WeatherHazard): String = app.getString(
         when (h) {

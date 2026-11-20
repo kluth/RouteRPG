@@ -175,3 +175,38 @@ class MemoryBookTest {
         assertTrue(MemoryBook.project(listOf(LatLon(1.0, 1.0)), 10f, 10f).isEmpty())
     }
 }
+
+class RouteMergeTest {
+    private fun m(type: Int, at: Double, text: String) = Maneuver(type, text, text, null, emptyList(), at, 0.0)
+    private fun leg(from: Double, to: Double): Route {
+        val line = Polyline(listOf(LatLon(from, 10.0), LatLon(to, 10.0)))
+        return Route(line, listOf(m(1, 0.0, "Start"), m(2 + 2, line.lengthMeters, "Angekommen")), line.lengthMeters, 600.0)
+    }
+
+    @Test fun twoLegsBecomeOneRoute() {
+        val a = leg(50.0, 50.5); val b = leg(50.5, 51.0)
+        val r = RouteMerge.merge(listOf(a, b), "Zwischenstopp")
+        assertEquals(1, r.waypointsAlong.size)
+        assertEquals(a.line.lengthMeters, r.waypointsAlong[0], 0.01)
+        assertEquals(a.line.lengthMeters + b.line.lengthMeters, r.route.line.lengthMeters, 0.5)
+        assertEquals(1200.0, r.route.durationSeconds, 0.001)
+        // Start, Zwischenstopp-Hinweis, Ziel (der zweite Start entfaellt)
+        assertEquals(listOf("Start", "Zwischenstopp", "Angekommen"), r.route.maneuvers.map { it.instruction })
+        assertEquals(r.waypointsAlong[0], r.route.maneuvers[1].atMeters, 0.01)
+        assertEquals(8, r.route.maneuvers[1].type)
+        assertEquals(4, r.route.maneuvers.last().type)
+        assertTrue(r.route.maneuvers.zipWithNext().all { (x, y) -> x.atMeters <= y.atMeters })
+    }
+
+    @Test fun singleLegIsUnchanged() {
+        val a = leg(50.0, 50.5)
+        val r = RouteMerge.merge(listOf(a), "x")
+        assertEquals(a, r.route); assertTrue(r.waypointsAlong.isEmpty())
+    }
+
+    @Test fun threeLegsGiveTwoWaypoints() {
+        val r = RouteMerge.merge(listOf(leg(50.0, 50.2), leg(50.2, 50.4), leg(50.4, 50.6)), "w")
+        assertEquals(2, r.waypointsAlong.size)
+        assertTrue(r.waypointsAlong[0] < r.waypointsAlong[1])
+    }
+}

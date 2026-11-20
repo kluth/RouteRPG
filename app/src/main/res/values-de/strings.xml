@@ -855,4 +855,8 @@
     <string name="dash_next_break">Nächste Pause in etwa %1$d Min.</string>
     <string name="dash_dest_weather">Am Ziel: %1$s</string>
     <string name="nav_notif_progress">Noch %1$s · Teamziel %2$d%%</string>
+    <string name="notif_chip_km">%1$d km</string>
+    <string name="notif_chip_m">%1$d m</string>
+    <string name="stopover_waypoint">Zwischenstopp erreicht</string>
+    <string name="emergency_satellite">Kein Netz? Viele neuere Handys (zum Beispiel Pixel 9 und 10) können eine Notfallnachricht per Satellit senden. Suche in den Handy-Einstellungen nach Notruf-SOS und probiere es vor der Reise aus. Es funktioniert nur draußen mit freier Sicht zum Himmel.</string>
 </resources>

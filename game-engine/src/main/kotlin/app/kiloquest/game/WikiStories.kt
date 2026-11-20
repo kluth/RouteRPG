@@ -89,6 +89,15 @@ object WikiStories {
     )
 
     /** Bevorzugt Orte, die Kinder vom Auto aus sehen koennen; sonst irgendeinen. */
+    /** Der Auszug, der zu einem Ortsnamen passt (Titel gleich/enthalten oder alle langen Namensteile im Titel); sonst null (nie ein beliebiger Treffer). */
+    fun matching(stories: List<Story>, name: String): Story? {
+        val n = AnswerMatcher.normalize(name)
+        if (n.isEmpty()) return null
+        val tokens = n.split(' ').filter { it.length >= 4 }
+        return stories.firstOrNull { val t = AnswerMatcher.normalize(it.title); t == n || t.contains(n) || (t.length >= 4 && n.contains(t)) }
+            ?: stories.firstOrNull { st -> tokens.isNotEmpty() && AnswerMatcher.normalize(st.title).let { t -> tokens.all { it in t } } }
+    }
+
     fun pick(stories: List<Story>, random: Random): Story? {
         if (stories.isEmpty()) return null
         val good = stories.filter { interesting.containsMatchIn(it.title) || interesting.containsMatchIn(it.text) }

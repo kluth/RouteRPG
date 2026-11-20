@@ -23,4 +23,4 @@ Fahrer bekommt nur Audio; Anzeigen sind für den Beifahrer oder die offiziellen 
 ## Offen / ungetestet
 - Ob die Lane-Elemente im echten Auto/DHU richtig aussehen (Größe, Kontrast); Spurbild ist ein Entwurf.
 - Genauigkeit der Funkloch-Hinweise in Lappland (Ortsdichte ≠ Netzabdeckung); Photon/Overpass-Last bei langen Routen (35 Proben, 12 Fenster).
-- Krankenhaus-Suche ohne Netz nicht möglich; Satelliten-SOS-Hinweis fehlt noch.
+- Krankenhaus-Suche ohne Netz nicht möglich; ein Hinweis auf Satelliten-SOS (neuere Handys, z. B. Pixel 9/10) steht in der Notfall-Karte, ob und wo er geht, hängt vom Gerät und Land ab.

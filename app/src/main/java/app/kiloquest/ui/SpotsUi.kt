@@ -36,6 +36,11 @@ fun StopoverCard(state: UiState, nav: NavController) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.stopover_heading, so.label), style = MaterialTheme.typography.titleMedium)
             if (so.phase == StopoverPhase.ARRIVED) Text(stringResource(R.string.stopover_arrived, so.label), style = MaterialTheme.typography.bodyMedium)
+            so.story?.let {
+                Text(it.title, style = MaterialTheme.typography.titleSmall)
+                Text(it.text, style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.story_source), style = MaterialTheme.typography.labelMedium)
+            }
             Button(onClick = nav::resumeAfterStopover, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) { Text(stringResource(R.string.stopover_continue)) }
         }
     }

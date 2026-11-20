@@ -76,6 +76,7 @@ fun EmergencyDialog(state: UiState, nav: NavController) {
                     else -> e.hospitals.forEach { Text(stringResource(R.string.emergency_hospital_line, it.name, Math.round(it.distanceMeters / 1000.0).toInt())) }
                 }
                 Text(stringResource(R.string.emergency_disclaimer, e.number), style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.emergency_satellite), style = MaterialTheme.typography.bodySmall)
                 Button(
                     onClick = { ctx.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + e.number)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
