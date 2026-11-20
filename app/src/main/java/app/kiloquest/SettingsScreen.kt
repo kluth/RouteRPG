@@ -75,6 +75,8 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 SettingDivider()
                 SettingSwitch(stringResource(R.string.set_speed_limit), null, s.showSpeedLimit) { v -> nav.updateSettings { it.copy(showSpeedLimit = v) } }
                 SettingDivider()
+                SettingSwitch(stringResource(R.string.set_overspeed), stringResource(R.string.set_overspeed_hint), s.overspeedWarning) { v -> nav.updateSettings { it.copy(overspeedWarning = v) } }
+                SettingDivider()
                 SettingSwitch(stringResource(R.string.set_lane_hints), null, s.laneHints) { v -> nav.updateSettings { it.copy(laneHints = v) } }
                 SettingDivider()
                 SettingSwitch(stringResource(R.string.set_detours), stringResource(R.string.set_detours_hint), s.detourSuggestions) { v -> nav.updateSettings { it.copy(detourSuggestions = v) } }

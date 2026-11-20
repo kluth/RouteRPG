@@ -80,6 +80,7 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.currentCoroutineContext
 import app.kiloquest.nav.OfflinePackMeta
 import app.kiloquest.nav.OfflinePackCodec
+import app.kiloquest.nav.OverspeedAlerter
 import app.kiloquest.nav.TripOps
 import app.kiloquest.nav.PlanStay
 import app.kiloquest.nav.PlanStore
@@ -308,6 +309,7 @@ class NavController(private val app: Application) : KidsActions {
     private var kidBands: List<AgeBand> = emptyList()
 
     private val arbiter = SpeechArbiter()
+    private val overspeed = OverspeedAlerter()
     private val kiloClips = KiloVoicePlayer(app)
     private var lastPraise = 0
     private var lastRetry = 0
@@ -504,6 +506,7 @@ class NavController(private val app: Application) : KidsActions {
         offlineToilets = emptyList()
         curveProfile = CurveProfile(l.route)
         speedProfile = SpeedProfile()
+        overspeed.reset()
         speedFetching = false
         speedRetryAt = 0L
         countryTimeline = null
@@ -1788,6 +1791,12 @@ class NavController(private val app: Application) : KidsActions {
                 lanes = laneNow,
             )
         }
+        if (_state.value.settings.overspeedWarning) {
+            // Nur Audio; laeuft gerade eine Ansage, wird die Warnung spaeter nachgeholt
+            overspeed.onTick(System.currentTimeMillis(), kmh, limit, busy = tts?.isSpeaking == true)?.let {
+                speak(app.getString(R.string.overspeed_warning, it.limitKmh))
+            }
+        } else overspeed.reset()
         if (_state.value.settings.laneHints) laneAnnouncer?.next(along)?.let { g ->
             val res = when (g.hint()) {
                 LaneHint.LEFT -> R.string.lane_hint_left

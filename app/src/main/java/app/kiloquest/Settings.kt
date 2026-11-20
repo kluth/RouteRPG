@@ -16,6 +16,8 @@ data class AppSettings(
     val kiloVoice: Boolean = true,
     val keepScreenOn: Boolean = true,
     val showSpeedLimit: Boolean = true,
+    /** Sprachansage "Tempolimit N" bei dauerhafter Ueberschreitung (gilt ueberall, betrifft nur das eigene Tempo). */
+    val overspeedWarning: Boolean = true,
     val laneHints: Boolean = true,
     val detourSuggestions: Boolean = true,
     val weatherHints: Boolean = true,
@@ -41,6 +43,7 @@ internal object SettingsStore {
             kiloVoice = p.getBoolean(P + "kilo_voice", d.kiloVoice),
             keepScreenOn = p.getBoolean(P + "keep_screen_on", d.keepScreenOn),
             showSpeedLimit = p.getBoolean(P + "speed_limit", d.showSpeedLimit),
+            overspeedWarning = p.getBoolean(P + "overspeed_warning", d.overspeedWarning),
             laneHints = p.getBoolean(P + "lane_hints", d.laneHints),
             detourSuggestions = p.getBoolean(P + "detours", d.detourSuggestions),
             weatherHints = p.getBoolean(P + "weather", d.weatherHints),
@@ -59,6 +62,7 @@ internal object SettingsStore {
             .putBoolean(P + "kilo_voice", s.kiloVoice)
             .putBoolean(P + "keep_screen_on", s.keepScreenOn)
             .putBoolean(P + "speed_limit", s.showSpeedLimit)
+            .putBoolean(P + "overspeed_warning", s.overspeedWarning)
             .putBoolean(P + "lane_hints", s.laneHints)
             .putBoolean(P + "detours", s.detourSuggestions)
             .putBoolean(P + "weather", s.weatherHints)

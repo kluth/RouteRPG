@@ -500,3 +500,9 @@ Umgesetzt: `CameraPolicy` (`:nav-core`) mit Länder-Register, Standard überall 
 Freischaltung und AUS in Ländern mit Verbot. Recherche in `docs/legal/speed-cameras.md` (Stand Juni 2026: kein Land belastbar belegt;
 EuGH C-188/24/C-190/24 vom 16.06.2026). Einstellungen zeigen Erklärung und Status je Land. Die Warnfunktion selbst (OSM-Daten, Audio) wird
 erst gebaut, wenn ein Land nach amtlicher Quelle oder Anwaltsprüfung freigegeben ist.
+
+## 45. Warnung bei Tempoüberschreitung
+`OverspeedAlerter` (`:nav-core`): Sprachansage „Tempolimit N. Bitte langsamer fahren.“, wenn das Limit um mehr als 5 km/h dauerhaft (4 s)
+überschritten wird; Wiederholung frühestens nach 90 s, sofort bei neuem niedrigerem Limit, Nachholen statt Unterbrechen bei laufender
+Ansage. Betrifft nur das eigene Tempo, nutzt keine Kamerastandorte und gilt daher in allen Ländern (anders als die Blitzerwarnung, §44).
+Einstellung „Bei Tempoüberschreitung warnen“ (Standard an). Das rote Tempolimit-Schild bleibt zusätzlich.

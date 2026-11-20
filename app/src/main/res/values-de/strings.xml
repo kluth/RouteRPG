@@ -606,4 +606,7 @@
     <string name="cameras_status_banned">für Fahrer verboten</string>
     <string name="cameras_status_restricted">nur allgemeine Gefahrenzonen</string>
     <string name="cameras_status_unclear">nicht eindeutig geklärt, bleibt aus</string>
+    <string name="set_overspeed">Bei Tempoüberschreitung warnen</string>
+    <string name="set_overspeed_hint">Sprachansage, wenn du dauerhaft über dem Tempolimit fährst</string>
+    <string name="overspeed_warning">Tempolimit %1$d. Bitte langsamer fahren.</string>
 </resources>

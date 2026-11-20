@@ -606,4 +606,7 @@
     <string name="cameras_status_banned">banned for drivers</string>
     <string name="cameras_status_restricted">only general danger zones</string>
     <string name="cameras_status_unclear">not clearly settled, stays off</string>
+    <string name="set_overspeed">Warn when speeding</string>
+    <string name="set_overspeed_hint">Voice message when you stay above the speed limit</string>
+    <string name="overspeed_warning">Speed limit %1$d. Please slow down.</string>
 </resources>
