@@ -106,11 +106,16 @@ class NavScreen(carContext: CarContext, private val nav: NavController, private 
     private fun mapActionStrip(): ActionStrip {
         fun iconAction(res: Int, onClick: () -> Unit) =
             Action.Builder().setIcon(carIcon(carContext, res)).setOnClickListener(onClick).build()
-        return ActionStrip.Builder()
-            .addAction(Action.PAN)
-            .addAction(iconAction(R.drawable.ic_car_zoom_in) { map.zoomIn() })
-            .addAction(iconAction(R.drawable.ic_car_zoom_out) { map.zoomOut() })
-            .addAction(iconAction(R.drawable.ic_car_recenter) { map.recenter() })
+        val b = ActionStrip.Builder().addAction(Action.PAN)
+        // Waehrend der Fahrt keine Zoom-Tasten (Ablenkung); die Karte zoomt selbst nach Tempo.
+        if (nav.state.value.navigating) {
+            b.addAction(iconAction(R.drawable.ic_car_recenter) { map.recenter() })
+        } else {
+            b.addAction(iconAction(R.drawable.ic_car_zoom_in) { map.zoomIn() })
+                .addAction(iconAction(R.drawable.ic_car_zoom_out) { map.zoomOut() })
+                .addAction(iconAction(R.drawable.ic_car_recenter) { map.recenter() })
+        }
+        return b
             .build()
     }
 }

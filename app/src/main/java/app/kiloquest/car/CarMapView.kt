@@ -40,7 +40,8 @@ import kotlin.math.ln
 import kotlin.math.max
 
 private const val DARK_STYLE_URL = "https://tiles.openfreemap.org/styles/dark"
-private const val LIGHT_STYLE_URL = "https://tiles.openfreemap.org/styles/liberty"
+// Ruhiger Tagesstil (liberty ist im Auto zu voll)
+private const val LIGHT_STYLE_URL = "https://tiles.openfreemap.org/styles/positron"
 private const val ROUTE_AHEAD_METERS = 80_000.0
 
 /**
@@ -177,10 +178,15 @@ class CarMapView(private val carContext: CarContext, private val nav: NavControl
             visibility = ViewGroup.GONE
         }
         banner = TextView(ctx).apply {
-            setTextColor(Color.WHITE)
-            setBackgroundColor(Color.argb(200, 30, 30, 30))
-            setPadding(dp(14), dp(8), dp(14), dp(8))
-            textSize = 17f
+            val dark = carContext.isDarkMode
+            setTextColor(if (dark) Color.rgb(255, 194, 77) else Color.rgb(92, 46, 0))
+            background = GradientDrawable().apply {
+                cornerRadius = dp(16).toFloat()
+                setColor(if (dark) Color.rgb(74, 53, 0) else Color.rgb(255, 227, 189))
+            }
+            typeface = Typeface.DEFAULT_BOLD
+            setPadding(dp(16), dp(10), dp(16), dp(10))
+            textSize = 22f
             visibility = ViewGroup.GONE
         }
         frame.addView(speedSign, FrameLayout.LayoutParams(dp(72), dp(72)))
@@ -339,17 +345,19 @@ class CarMapView(private val carContext: CarContext, private val nav: NavControl
                 sign.text = if (unlimited) "∞" else limit.toString()
                 sign.background = GradientDrawable().apply {
                     shape = GradientDrawable.OVAL
-                    setColor(if (st.overspeed) Color.rgb(255, 205, 210) else Color.WHITE)
-                    setStroke(dp(6), if (unlimited) Color.GRAY else Color.rgb(211, 47, 47))
+                    setColor(if (carContext.isDarkMode) Color.rgb(232, 232, 232) else Color.WHITE)
+                    setStroke(dp(8), if (unlimited) Color.GRAY else if (carContext.isDarkMode) Color.rgb(255, 138, 128) else Color.rgb(179, 38, 30))
                 }
                 sign.visibility = ViewGroup.VISIBLE
             } else sign.visibility = ViewGroup.GONE
         }
         speedNow?.apply {
             val kmh = st.speedKmh
-            if (st.navigating && kmh != null) {
+            // Die eigene Zahl zeigt das Auto selbst; hier nur bei Ueberschreitung
+            if (st.navigating && kmh != null && st.overspeed) {
                 text = carContext.getString(R.string.speed_kmh, kmh)
-                setTextColor(if (st.overspeed) Color.rgb(255, 138, 128) else Color.WHITE)
+                setTextColor(Color.WHITE)
+                setBackgroundColor(if (carContext.isDarkMode) Color.rgb(179, 38, 30) else Color.rgb(179, 38, 30))
                 visibility = ViewGroup.VISIBLE
             } else visibility = ViewGroup.GONE
         }

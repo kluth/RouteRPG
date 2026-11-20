@@ -13,7 +13,7 @@
     <string name="error_route">Route konnte nicht berechnet werden.</string>
     <string name="error_search">Suche fehlgeschlagen.</string>
     <string name="error_no_results">Keine Treffer.</string>
-    <string name="arrived">Sie haben Ihr Ziel erreicht.</string>
+    <string name="arrived">Ihr habt euer Ziel erreicht.</string>
     <string name="rerouting">Route wird neu berechnet.</string>
     <string name="unit_km">%1$.1f km</string>
     <string name="unit_m">%1$d m</string>
@@ -92,7 +92,7 @@
     <string name="fact_bridge">Wir sind in der Nähe der Brücke %1$s. Entdeckt sie vom Auto aus!</string>
     <string name="kids_players">Spieler</string>
     <string name="kids_player">Spieler %1$d</string>
-    <string name="kids_turn">%1$s, du bist dran!</string>
+    <string name="kids_turn">%1$s ist dran!</string>
     <string name="kids_album">Sticker-Album: %1$d von %2$d</string>
     <string name="kids_new_sticker">Neuer Sticker!</string>
     <string name="kids_total">Alle Fahrten: %1$d Punkte</string>
