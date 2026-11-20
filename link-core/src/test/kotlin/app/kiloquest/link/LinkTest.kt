@@ -84,4 +84,19 @@ class LinkTest {
         r.onHello("A", hello("A", "PRO")); r.approve("A", Role.KID)
         assertEquals(listOf("PRO", "EXPLORER", "EXPLORER"), r.ageBands(3, "EXPLORER"))
     }
+
+    @Test fun restoreKeepsPairingsAcrossRestart() {
+        val r = DeviceRoster()
+        r.onHello("A", hello("A", "PRO")); val a = r.approve("A", Role.KID)!!
+        val r2 = DeviceRoster(); r2.restore(listOf(a))
+        assertTrue(r2.onHello("A", hello("A")) is DeviceRoster.HelloResult.Known)
+    }
+
+    @Test fun pendingListIsCapped() {
+        val r = DeviceRoster(maxPending = 2)
+        r.onHello("A", hello()); r.onHello("B", hello())
+        assertEquals(DeviceRoster.HelloResult.Rejected(DenyReason.FULL), r.onHello("C", hello()))
+        assertEquals(DeviceRoster.HelloResult.Pending, r.onHello("A", hello("A2"))) // bekannte Anfrage darf aktualisieren
+        assertEquals(2, r.pendingRequests().size)
+    }
 }

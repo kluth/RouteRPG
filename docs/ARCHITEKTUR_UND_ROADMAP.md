@@ -436,3 +436,8 @@ Gebaut (Build/Lint/Tests grün; **auf einem echten Auto-Display/DHU nicht erprob
 - **Beim Auslösen** wird mit dem echten Land und der echten Uhrzeit noch einmal geprüft; passt eine feste Aufgabe nicht, wird sie ersetzt.
 - **Wiederholungen:** Feste Aufgaben höchstens einmal pro Fahrt, über Fahrten hinweg seltener (Nutzungszähler, klingt ab). Lange Strecken füllen sich mit Live-Aufgaben. Live-Inhalte (Wikipedia-Ort, Tierart, Streckenfakt) werden gemerkt (300 Einträge) und nicht erneut gestellt.
 - Neu: Nacht-Aufgaben, Länder-Quizze (DE, DK, SE), Elchschild und Sámi-Quiz nur im Norden.
+
+## 35. Geräte koppeln (Bluetooth)
+
+Spec: `docs/specs/001-geraete-koppeln.md`. Modul `:link-core` (Protokoll, Rollen, Geräteliste, getestet). In `:app`: `link/BtHost` (Hauptgerät, RFCOMM-Server), `link/BtClient` (Kinder-/Beifahrer-Gerät, Neuaufbau bei Verbindungsverlust), `link/LinkController` (Zustand senden, Aktionen prüfen und ausführen), `link/LinkScreens` (Oberfläche im Beifahrer-Menü). Kinder-Geräte nutzen dieselbe Kinderansicht wie das Hauptgerät; die Antwort zählt für den Spieler des antwortenden Geräts. Alter je Gerät: Aufgaben werden reihum je Spieler in dessen Altersstufe geplant (gilt bei der nächsten Planung vor der Fahrt).
+**Nicht auf echten Geräten getestet.** Offen: Verbindung läuft nur, solange die App läuft (kein Vordergrunddienst), Mehr-Geräte-Test, Sprachausgabe der Aufgabe auf dem Kinder-Gerät.

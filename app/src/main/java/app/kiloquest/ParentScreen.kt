@@ -90,6 +90,10 @@ fun ParentScreen(state: UiState, nav: NavController) {
                 SwitchRow(R.string.car_simple_map, R.string.car_simple_map_hint, state.carSimpleMap, true, nav::setCarSimpleMap)
             }
 
+            app.kiloquest.link.LinkHostCard()
+            // Altersstufe dieses Geraets (gilt als Kinder-Geraet) und Verbindung zu einem Hauptgeraet
+            app.kiloquest.link.LinkClientCard(state.ageBand)
+
             Card(MaterialTheme.colorScheme.surface) {
                 if (state.route != null && !state.navigating) PackageLine(state.pkg, nav)
                 OutlinedButton(onClick = { nav.showParent(false); nav.showRiddles(true) }, modifier = Modifier.fillMaxWidth()) {

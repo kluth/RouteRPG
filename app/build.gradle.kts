@@ -48,6 +48,7 @@ android {
 dependencies {
     implementation(project(":game-engine"))
     implementation(project(":nav-core"))
+    implementation(project(":link-core"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime)

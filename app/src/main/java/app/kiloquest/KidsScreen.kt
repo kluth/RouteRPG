@@ -31,7 +31,7 @@ import app.kiloquest.game.StickerBook
  * Grosse Schrift und grosse Buttons; der Fahrer bekommt nur die Sprachansage.
  */
 @Composable
-fun KidsScreen(state: UiState, nav: NavController) {
+fun KidsScreen(state: UiState, nav: KidsActions) {
     val ctx = LocalContext.current
     Surface(Modifier.fillMaxSize(), color = app.kiloquest.ui.kidsBackground(state.ageBand)) {
         Column(
@@ -116,7 +116,7 @@ fun KidsScreen(state: UiState, nav: NavController) {
                         Text(stringResource(R.string.kids_next))
                     }
                 }
-                state.route == null -> Text(stringResource(R.string.kids_need_route), style = MaterialTheme.typography.titleMedium)
+                state.route == null && !state.remote -> Text(stringResource(R.string.kids_need_route), style = MaterialTheme.typography.titleMedium)
                 else -> Text(stringResource(R.string.kids_waiting), style = MaterialTheme.typography.titleMedium)
             }
 

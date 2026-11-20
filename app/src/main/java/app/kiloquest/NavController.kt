@@ -146,6 +146,8 @@ data class UiState(
     val questsTotal: Int = 0,
     /** Noch ausstehende Aufgaben (Vorschau); Platzhalter werden vorgeladen oder live gefuellt. */
     val plan: List<Quest> = emptyList(),
+    /** Gekoppeltes Geraet: Zustand kommt vom Hauptgeraet (keine eigene Route). */
+    val remote: Boolean = false,
     val ageBand: AgeBand = AgeBand.EXPLORER,
     val kidsScreen: Boolean = false,
     val players: Int = 1,
@@ -204,7 +206,7 @@ private const val SPEED_WINDOW_METERS = 25_000.0
 private const val SPEED_PREFETCH_METERS = 5_000.0
 
 /** Gemeinsamer Navigationszustand fuer Handy-UI und Android-Auto (lebt im Application-Prozess). */
-class NavController(private val app: Application) {
+class NavController(private val app: Application) : KidsActions {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val prefs = app.getSharedPreferences("kq", Context.MODE_PRIVATE)
     private val generator = QuestGenerator(QuestCatalog.default)
@@ -213,6 +215,8 @@ class NavController(private val app: Application) {
     private var preloadJob: kotlinx.coroutines.Job? = null
     private val preloadFailed = HashSet<Double>()
     private val tripStatics = HashMap<String, Int>()
+    /** Altersstufe je gekoppeltem Kinder-Geraet (Spielernummer = Index). */
+    private var kidBands: List<AgeBand> = emptyList()
 
     private val arbiter = SpeechArbiter()
     private val advisor = RerouteAdvisor()
@@ -406,6 +410,7 @@ class NavController(private val app: Application) {
     }
 
     private fun newAdventure(route: Route) {
+        val players = maxOf(_state.value.players, kidBands.size)
         // Keine Quests nahe Abbiegungen (Fahrsicherheit)
         val quests = generator.generate(
             routeLengthMeters = route.lengthMeters,
@@ -415,10 +420,10 @@ class NavController(private val app: Application) {
             // Aufgaben passend zu Ort, Land und (geschaetzter) Tageszeit am Ausloesepunkt
             contextAt = { m -> contextAt(route, m) },
             usage = loadUsage(),
+            ageBandAt = if (kidBands.isEmpty()) null else { i -> kidBands.getOrNull(i % players) ?: _state.value.ageBand },
         )
         tripStatics.clear()
         quests.forEach { q -> if (QuestCatalog.default.firstOrNull { it.id == q.templateId }?.dynamic == false) tripStatics.merge(q.templateId, 1, Int::plus) }
-        val players = _state.value.players
         questOffset = 0.0
         adventure = AdventureSession(quests, playerCount = players)
         val bonusKeys = setOf(RouteFacts.PENDING_KEY, WikiStories.PENDING_KEY, NatureSpotting.PENDING_KEY, PlaneSpotting.PENDING_KEY, LanguageCourses.PENDING_KEY)
@@ -427,10 +432,19 @@ class NavController(private val app: Application) {
         _state.update {
             it.copy(
                 quest = null, feedback = null, newSticker = null, points = 0, stickers = 0, questsDone = 0,
-                questsTotal = quests.size, scores = List(players) { 0 }, currentPlayer = 0, plan = quests,
+                questsTotal = quests.size, scores = List(players) { 0 }, currentPlayer = 0, plan = quests, players = players,
             )
         }
         startPreload()
+    }
+
+    /** Gekoppelte Kinder-Geraete bestimmen Spielerzahl und Altersstufen; vor der Fahrt wird neu geplant. */
+    fun setKidDevices(bands: List<AgeBand>) {
+        if (bands == kidBands) return
+        kidBands = bands
+        val r = _state.value.route
+        if (r != null && !_state.value.navigating) newAdventure(r)
+        else _state.update { it.copy(players = maxOf(it.players, bands.size)) }
     }
 
     fun setAgeBand(band: AgeBand) {
@@ -455,13 +469,16 @@ class NavController(private val app: Application) {
     }
 
     fun showParent(show: Boolean) = _state.update { it.copy(parentScreen = show) }
-    fun showKids(show: Boolean) = _state.update { it.copy(kidsScreen = show) }
+    override fun showKids(show: Boolean) = _state.update { it.copy(kidsScreen = show) }
 
-    fun answerQuest(choice: Int? = null) {
+    override fun answerQuest(choice: Int?) = answerQuestFrom(choice, null)
+
+    /** [player]: Spieler eines gekoppelten Geraets, der antwortet (bekommt die Punkte); null = aktueller Spieler. */
+    fun answerQuestFrom(choice: Int?, player: Int?) {
         val q = _state.value.quest ?: return
         val adv = adventure ?: return
         val before = adv.stickers
-        val r = adv.answer(choice) ?: return
+        val r = adv.answer(choice, player) ?: return
         val correctKey = q.optionKeys.getOrNull(r.correctIndex)
         val total = _state.value.totalPoints + r.pointsAwarded
         var sticker: Sticker? = null
@@ -482,13 +499,13 @@ class NavController(private val app: Application) {
         }
     }
 
-    fun skipQuest() {
+    override fun skipQuest() {
         adventure?.skip()
         arbiter.cancelQuest()
         _state.update { it.copy(quest = null) }
     }
 
-    fun dismissFeedback() = _state.update { it.copy(feedback = null, newSticker = null) }
+    override fun dismissFeedback() = _state.update { it.copy(feedback = null, newSticker = null) }
 
     fun startNavigation() {
         if (_state.value.route == null) return

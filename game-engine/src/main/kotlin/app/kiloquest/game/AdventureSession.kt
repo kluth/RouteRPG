@@ -89,16 +89,18 @@ class AdventureSession(
     }
 
     /** [choice] nur bei CHOICE-Quests. Gibt null zurueck, wenn keine Quest aktiv ist. */
-    fun answer(choice: Int? = null): AnswerResult? {
+    fun answer(choice: Int? = null, player: Int? = null): AnswerResult? {
         val q = active ?: return null
+        // Antwortet ein bestimmtes (gekoppeltes) Geraet, bekommt dessen Spieler die Punkte
+        val who = (player ?: currentPlayer).coerceIn(0, playerCount - 1)
         val result = when (q.kind) {
             QuestKind.CHOICE -> {
                 val ok = choice != null && choice == q.correctIndex
-                AnswerResult(ok, if (ok) q.points else 0, q.correctIndex, currentPlayer)
+                AnswerResult(ok, if (ok) q.points else 0, q.correctIndex, who)
             }
-            else -> AnswerResult(true, q.points, -1, currentPlayer)
+            else -> AnswerResult(true, q.points, -1, who)
         }
-        scores[currentPlayer] += result.pointsAwarded
+        scores[who] += result.pointsAwarded
         completed++
         active = null
         return result

@@ -62,3 +62,25 @@ class QuestFitTest {
         assertEquals(null, CountryGuess.guess(51.43, 6.76)) // Duisburg: Grenznaehe, lieber unbekannt
     }
 }
+
+class PerPlayerAgeTest {
+    @Test fun questsFollowTheAgeOfTheirPlayer() {
+        val gen = QuestGenerator(QuestCatalog.default)
+        val bands = listOf(AgeBand.MINI, AgeBand.PRO)
+        val quests = gen.generate(
+            routeLengthMeters = 100_000.0, ageBand = AgeBand.EXPLORER, seed = 5,
+            contextAt = { QuestContext(52.0, 9.0, "DE", false) },
+            ageBandAt = { i -> bands[i % 2] },
+        )
+        val byId = QuestCatalog.default.associateBy { it.id }
+        quests.forEachIndexed { i, q -> assertTrue(bands[i % 2] in byId.getValue(q.templateId).ageBands, "quest $i ${q.templateId}") }
+    }
+
+    @Test fun answerCreditsTheAnsweringPlayer() {
+        val s = AdventureSession(listOf(Quest("a", "k", QuestType.SPOTTING, 0.0, points = 10)), playerCount = 2)
+        s.onProgress(0.0)
+        val r = s.answer(player = 1)!!
+        assertEquals(1, r.player)
+        assertEquals(listOf(0, 10), s.scores.toList())
+    }
+}

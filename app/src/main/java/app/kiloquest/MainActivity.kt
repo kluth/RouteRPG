@@ -13,6 +13,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import app.kiloquest.link.toUiState as toUiStateFor
 import app.kiloquest.ui.EtaBar
 import app.kiloquest.ui.QuestsPill
 import app.kiloquest.ui.LaneStrip
@@ -84,6 +85,7 @@ class MainActivity : ComponentActivity() {
         // Unter Android 15 ist Edge-to-Edge Pflicht; die Oberflaeche haelt selbst Abstand zu den Systemleisten
         enableEdgeToEdge()
         MapLibre.getInstance(this)
+        (application as KiloQuestApp).link.resumeIfPaired()
         setContent {
             val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
                 if (it) vm.startLocationUpdates()
@@ -158,6 +160,17 @@ private fun AppScreen(vm: NavController) {
         if (state.tripScreen) TripScreen(state, vm)
         if (state.riddleScreen) RiddleScreen(state, vm)
         if (state.parentScreen) ParentScreen(state, vm)
+        // Gekoppeltes Geraet: Zustand vom Hauptgeraet
+        val linkApp = LocalContext.current.applicationContext as KiloQuestApp
+        val client by linkApp.linkClient.state.collectAsState()
+        if (client.status == app.kiloquest.link.ClientStatus.CONNECTED && !state.parentScreen) {
+            val snap = client.snapshot
+            if (client.role == app.kiloquest.link.Role.COPILOT) {
+                app.kiloquest.link.CopilotRemoteScreen(snap) { vm.showParent(true) }
+            } else if (snap != null) {
+                KidsScreen(snap.toUiStateFor(state.ageBand), app.kiloquest.link.RemoteActions(linkApp.linkClient, vm))
+            }
+        }
 
         val route = state.route
         if (route != null && !state.kidsScreen && !state.tripScreen && !state.riddleScreen && !state.parentScreen) {

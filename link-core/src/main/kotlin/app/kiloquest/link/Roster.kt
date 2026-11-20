@@ -7,7 +7,7 @@ data class JoinRequest(val address: String, val name: String, val ageBand: Strin
  * Verwaltet gekoppelte Geraete auf dem Hauptgeraet: Anfragen, Erlauben/Ablehnen, Spieler-Nummern, Rechte.
  * Rechte vergibt nur das Hauptgeraet; jede Nachricht wird gegen die Rolle geprueft ([allows]).
  */
-class DeviceRoster(private val maxKids: Int = 4, private val maxCopilots: Int = 2) {
+class DeviceRoster(private val maxKids: Int = 4, private val maxCopilots: Int = 2, private val maxPending: Int = 8) {
     private val pending = LinkedHashMap<String, JoinRequest>()
     private val paired = LinkedHashMap<String, Device>()
 
@@ -31,6 +31,8 @@ class DeviceRoster(private val maxKids: Int = 4, private val maxCopilots: Int = 
             paired[address] = updated
             return HelloResult.Known(updated)
         }
+        // Schutz vor Anfragen-Flut: wer nicht mehr in die Warteliste passt, wird abgewiesen
+        if (address !in pending && pending.size >= maxPending) return HelloResult.Rejected(DenyReason.FULL)
         pending[address] = JoinRequest(address, hello.name.take(40), hello.ageBand)
         return HelloResult.Pending
     }
@@ -44,6 +46,9 @@ class DeviceRoster(private val maxKids: Int = 4, private val maxCopilots: Int = 
         val player = if (role == Role.KID) firstFreePlayer() else -1
         return Device(address, req.name, role, player, req.ageBand).also { paired[address] = it }
     }
+
+    /** Gespeicherte Kopplungen nach einem App-Neustart wiederherstellen. */
+    fun restore(devices: List<Device>) { paired.clear(); devices.forEach { paired[it.address] = it } }
 
     fun deny(address: String): Boolean = pending.remove(address) != null
     fun remove(address: String): Boolean = paired.remove(address) != null

@@ -22,6 +22,8 @@ class QuestGenerator(private val templates: List<QuestTemplate>) {
         contextAt: ((Double) -> QuestContext)? = null,
         /** Wie oft jede feste Aufgabe in frueheren Fahrten vorkam (seltener waehlen). */
         usage: Map<String, Int> = emptyMap(),
+        /** Altersstufe der i-ten Aufgabe (Spieler reihum, je Geraet eigenes Alter); null = [ageBand] fuer alle. */
+        ageBandAt: ((Int) -> AgeBand)? = null,
     ): List<Quest> {
         require(routeLengthMeters >= 0) { "routeLengthMeters must be >= 0" }
         require(metersPerQuest > 0) { "metersPerQuest must be > 0" }
@@ -34,7 +36,7 @@ class QuestGenerator(private val templates: List<QuestTemplate>) {
         val count = (usable / metersPerQuest).toInt().coerceAtLeast(1)
         val step = usable / count
         val rng = Random(seed)
-        if (contextAt != null) return generateContextual(pool, count, step, marginMeters, routeLengthMeters, rng, avoidMeters, avoidRadiusMeters, contextAt, usage)
+        if (contextAt != null) return generateContextual(templates, ageBand, ageBandAt, count, step, marginMeters, routeLengthMeters, rng, avoidMeters, avoidRadiusMeters, contextAt, usage)
         val order = buildList {
             // Pool wird mehrfach gemischt aneinandergehaengt: erst alle Vorlagen, dann wieder
             while (size < count) addAll(pool.shuffled(rng))
@@ -68,8 +70,8 @@ class QuestGenerator(private val templates: List<QuestTemplate>) {
     }
 
     private fun generateContextual(
-        pool: List<QuestTemplate>, count: Int, step: Double, margin: Double, routeLength: Double, rng: Random,
-        avoid: List<Double>, avoidRadius: Double, contextAt: (Double) -> QuestContext, usage: Map<String, Int>,
+        templates: List<QuestTemplate>, ageBand: AgeBand, ageBandAt: ((Int) -> AgeBand)?, count: Int, step: Double, margin: Double,
+        routeLength: Double, rng: Random, avoid: List<Double>, avoidRadius: Double, contextAt: (Double) -> QuestContext, usage: Map<String, Int>,
     ): List<Quest> {
         val result = ArrayList<Quest>()
         val usedThisTrip = HashMap<String, Int>()
@@ -82,6 +84,8 @@ class QuestGenerator(private val templates: List<QuestTemplate>) {
                 if (avoid.any { kotlin.math.abs(it - trigger) < avoidRadius }) continue
             }
             if (trigger > routeLength - margin || trigger <= lastTrigger) continue
+            val band = ageBandAt?.invoke(result.size) ?: ageBand
+            val pool = templates.filter { band in it.ageBands }
             val t = QuestFit.choose(pool, contextAt(trigger), usage, usedThisTrip, rng) ?: continue
             usedThisTrip.merge(t.id, 1, Int::plus)
             lastTrigger = trigger
