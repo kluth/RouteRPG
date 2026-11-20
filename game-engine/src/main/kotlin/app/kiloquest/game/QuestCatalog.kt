@@ -44,5 +44,8 @@ object QuestCatalog {
         t("break_stretch", BREAK, setOf(MINI, EXPLORER, PRO)),
         t("break_sing", BREAK, setOf(MINI, EXPLORER)),
         t("break_count", BREAK, setOf(EXPLORER, PRO)),
+        // Platzhalter: Text wird unterwegs aus OSM-Daten der aktuellen Umgebung bestimmt (siehe RouteFacts)
+        QuestTemplate("route_fact", QuestType.ROUTE_FACT, setOf(MINI, EXPLORER, PRO), RouteFacts.PENDING_KEY),
+        QuestTemplate("route_fact_2", QuestType.ROUTE_FACT, setOf(MINI, EXPLORER, PRO), RouteFacts.PENDING_KEY),
     )
 }

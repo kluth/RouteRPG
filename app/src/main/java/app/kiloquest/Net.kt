@@ -12,7 +12,13 @@ data class Place(val name: String, val position: LatLon)
 
 private const val USER_AGENT = "KiloQuest/0.1 (private use)"
 
-private suspend fun http(url: String, method: String = "GET", body: String? = null, headers: Map<String, String> = emptyMap()): String =
+private suspend fun http(
+    url: String,
+    method: String = "GET",
+    body: String? = null,
+    headers: Map<String, String> = emptyMap(),
+    contentType: String = "application/json",
+): String =
     withContext(Dispatchers.IO) {
         val c = URL(url).openConnection() as HttpURLConnection
         try {
@@ -23,7 +29,7 @@ private suspend fun http(url: String, method: String = "GET", body: String? = nu
             headers.forEach { (k, v) -> c.setRequestProperty(k, v) }
             if (body != null) {
                 c.doOutput = true
-                c.setRequestProperty("Content-Type", "application/json")
+                c.setRequestProperty("Content-Type", contentType)
                 c.outputStream.use { it.write(body.toByteArray()) }
             }
             val code = c.responseCode
@@ -64,3 +70,11 @@ suspend fun fetchRoute(requestJson: String): String {
         mapOf("X-Api-Token" to BuildConfig.VALHALLA_TOKEN),
     )
 }
+
+/** Overpass-API (OSM-Daten). Oeffentlicher Server, nur wenige Anfragen pro Fahrt, privat okay. */
+suspend fun fetchOverpass(query: String): String =
+    http(
+        "https://overpass-api.de/api/interpreter", "POST",
+        "data=" + URLEncoder.encode(query, "UTF-8"),
+        contentType = "application/x-www-form-urlencoded",
+    )

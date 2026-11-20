@@ -40,4 +40,6 @@ data class Quest(
     val optionKeys: List<String> = emptyList(),
     val correctIndex: Int = -1,
     val points: Int = 10,
+    /** Platzhalter fuer den Text (z. B. Ortsname), in Reihenfolge %1$s, %2$s ... */
+    val args: List<String> = emptyList(),
 )

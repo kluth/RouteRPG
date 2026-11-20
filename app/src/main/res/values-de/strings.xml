@@ -83,4 +83,17 @@
     <string name="age_explorer">7–10 Jahre</string>
     <string name="age_pro">11–14 Jahre</string>
     <string name="kids_need_route">Plant zuerst eine Route – dann beginnt das Abenteuer.</string>
+    <string name="fact_pending">Gleich kommt etwas Interessantes …</string>
+    <string name="fact_fallback">Schaut aus dem Fenster: Was ist das Interessanteste, das ihr seht?</string>
+    <string name="fact_river">Wir sind in der Nähe des Flusses %1$s. Könnt ihr Wasser entdecken?</string>
+    <string name="fact_lake">Hier in der Nähe liegt ein See: %1$s. Könnt ihr ihn entdecken?</string>
+    <string name="fact_castle">Hier ist eine Burg in der Nähe: %1$s. Seht ihr Türme oder Mauern?</string>
+    <string name="fact_peak">Wir sind in der Nähe des Berges %1$s. Könnt ihr ihn entdecken?</string>
+    <string name="fact_bridge">Wir sind in der Nähe der Brücke %1$s. Entdeckt sie vom Auto aus!</string>
+    <string name="kids_players">Spieler</string>
+    <string name="kids_player">Spieler %1$d</string>
+    <string name="kids_turn">%1$s, du bist dran!</string>
+    <string name="kids_album">Sticker-Album: %1$d von %2$d</string>
+    <string name="kids_new_sticker">Neuer Sticker!</string>
+    <string name="kids_total">Alle Fahrten: %1$d Punkte</string>
 </resources>

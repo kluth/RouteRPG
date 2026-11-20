@@ -17,6 +17,13 @@ import app.kiloquest.game.AgeBand
 import app.kiloquest.game.Quest
 import app.kiloquest.game.QuestCatalog
 import app.kiloquest.game.QuestGenerator
+import app.kiloquest.game.QuestType
+import app.kiloquest.game.RouteFacts
+import app.kiloquest.game.Sticker
+import app.kiloquest.game.StickerBook
+import app.kiloquest.nav.SpeechArbiter
+import kotlin.random.Random
+import kotlinx.coroutines.withContext
 import app.kiloquest.nav.AnnouncementPlanner
 import app.kiloquest.nav.GuidanceEngine
 import app.kiloquest.nav.GuidanceState
@@ -35,10 +42,10 @@ import kotlinx.coroutines.launch
 data class QuestFeedback(val correct: Boolean, val points: Int, val correctOptionKey: String?)
 
 /** Text einer String-Ressource per Schluessel (Quest-Texte sind sprachneutral als Schluessel gespeichert). */
-fun Context.stringByKey(key: String): String {
+fun Context.stringByKey(key: String, args: List<String> = emptyList()): String {
     @Suppress("DiscouragedApi")
     val id = resources.getIdentifier(key, "string", packageName)
-    return if (id != 0) getString(id) else key
+    return if (id != 0) getString(id, *args.toTypedArray()) else key
 }
 
 data class UiState(
@@ -58,6 +65,12 @@ data class UiState(
     val questsTotal: Int = 0,
     val ageBand: AgeBand = AgeBand.EXPLORER,
     val kidsScreen: Boolean = false,
+    val players: Int = 1,
+    val currentPlayer: Int = 0,
+    val scores: List<Int> = listOf(0),
+    val album: Set<String> = emptySet(),
+    val newSticker: Sticker? = null,
+    val totalPoints: Int = 0,
 )
 
 /** Gemeinsamer Navigationszustand fuer Handy-UI und Android-Auto (lebt im Application-Prozess). */
@@ -67,8 +80,16 @@ class NavController(private val app: Application) {
     private val generator = QuestGenerator(QuestCatalog.default)
     private var adventure: AdventureSession? = null
 
+    private val arbiter = SpeechArbiter()
+    private val book = StickerBook(prefs.getStringSet("album", emptySet()).orEmpty())
+
     private val _state = MutableStateFlow(
-        UiState(ageBand = runCatching { AgeBand.valueOf(prefs.getString("age", null) ?: "EXPLORER") }.getOrDefault(AgeBand.EXPLORER)),
+        UiState(
+            ageBand = runCatching { AgeBand.valueOf(prefs.getString("age", null) ?: "EXPLORER") }.getOrDefault(AgeBand.EXPLORER),
+            players = prefs.getInt("players", 1).coerceIn(1, 4),
+            album = book.collected.toSet(),
+            totalPoints = prefs.getInt("total_points", 0),
+        ),
     )
     val state: StateFlow<UiState> = _state
 
@@ -155,8 +176,14 @@ class NavController(private val app: Application) {
             seed = System.nanoTime(),
             avoidMeters = route.maneuvers.map { it.atMeters },
         )
-        adventure = AdventureSession(quests)
-        _state.update { it.copy(quest = null, feedback = null, points = 0, stickers = 0, questsDone = 0, questsTotal = quests.size) }
+        val players = _state.value.players
+        adventure = AdventureSession(quests, playerCount = players)
+        _state.update {
+            it.copy(
+                quest = null, feedback = null, newSticker = null, points = 0, stickers = 0, questsDone = 0,
+                questsTotal = quests.size, scores = List(players) { 0 }, currentPlayer = 0,
+            )
+        }
     }
 
     fun setAgeBand(band: AgeBand) {
@@ -167,28 +194,48 @@ class NavController(private val app: Application) {
         if (r != null && !_state.value.navigating) newAdventure(r)
     }
 
+    fun setPlayers(count: Int) {
+        val n = count.coerceIn(1, 4)
+        prefs.edit().putInt("players", n).apply()
+        _state.update { it.copy(players = n) }
+        val r = _state.value.route
+        if (r != null && !_state.value.navigating) newAdventure(r)
+    }
+
     fun showKids(show: Boolean) = _state.update { it.copy(kidsScreen = show) }
 
     fun answerQuest(choice: Int? = null) {
         val q = _state.value.quest ?: return
         val adv = adventure ?: return
+        val before = adv.stickers
         val r = adv.answer(choice) ?: return
         val correctKey = q.optionKeys.getOrNull(r.correctIndex)
+        val total = _state.value.totalPoints + r.pointsAwarded
+        var sticker: Sticker? = null
+        if (adv.stickers > before) {
+            sticker = book.award(Random.Default)
+            if (sticker != null) prefs.edit().putStringSet("album", book.collected.toSet()).apply()
+        }
+        prefs.edit().putInt("total_points", total).apply()
+        arbiter.cancelQuest()
         _state.update {
             it.copy(
                 quest = null,
                 feedback = QuestFeedback(r.correct, r.pointsAwarded, correctKey),
                 points = adv.points, stickers = adv.stickers, questsDone = adv.completed,
+                scores = adv.scores.toList(), totalPoints = total,
+                newSticker = sticker, album = book.collected.toSet(),
             )
         }
     }
 
     fun skipQuest() {
         adventure?.skip()
+        arbiter.cancelQuest()
         _state.update { it.copy(quest = null) }
     }
 
-    fun dismissFeedback() = _state.update { it.copy(feedback = null) }
+    fun dismissFeedback() = _state.update { it.copy(feedback = null, newSticker = null) }
 
     fun startNavigation() {
         if (_state.value.route == null) return
@@ -219,10 +266,8 @@ class NavController(private val app: Application) {
             return
         }
         planner?.next(g)?.let(::speak)
-        adventure?.onProgress(g.alongMeters)?.let { q ->
-            _state.update { it.copy(quest = q, feedback = null) }
-            speak(app.stringByKey(q.textKey))
-        }
+        adventure?.onProgress(g.alongMeters)?.let { q -> onQuestTriggered(q, pos) }
+        arbiter.poll(System.currentTimeMillis(), tts?.isSpeaking == true)?.let(::speakQuest)
         val now = System.currentTimeMillis()
         if (g.isOffRoute && now - lastReroute > 15_000) {
             lastReroute = now
@@ -231,8 +276,46 @@ class NavController(private val app: Application) {
         }
     }
 
+    /** Navigationsansage: hat Vorrang und unterbricht Quest-Ansagen. */
     private fun speak(text: String) {
-        tts?.speak(text, TextToSpeech.QUEUE_ADD, null, "kq-${System.nanoTime()}")
+        arbiter.navSpoken(System.currentTimeMillis())
+        tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "kq-nav-${System.nanoTime()}")
+    }
+
+    private fun speakQuest(text: String) {
+        tts?.speak(text, TextToSpeech.QUEUE_ADD, null, "kq-quest-${System.nanoTime()}")
+    }
+
+    private fun onQuestTriggered(q: Quest, pos: LatLon) {
+        val adv = adventure
+        _state.update {
+            it.copy(quest = q, feedback = null, newSticker = null, currentPlayer = adv?.currentPlayer ?: 0)
+        }
+        if (q.type == QuestType.ROUTE_FACT && q.textKey == RouteFacts.PENDING_KEY) {
+            // Streckenfakt: Umgebung per Overpass abfragen, bei Fehler Rueckfall-Aufgabe
+            scope.launch {
+                val facts = runCatching {
+                    RouteFacts.parse(withContext(Dispatchers.IO) { fetchOverpass(RouteFacts.buildQuery(pos.lat, pos.lon)) })
+                }.getOrDefault(emptyList())
+                val resolved = RouteFacts.resolve(q, RouteFacts.pick(facts, Random.Default))
+                if (adventure?.active?.triggerMeters == q.triggerMeters) {
+                    adventure?.replaceActive(resolved)
+                    _state.update { it.copy(quest = resolved) }
+                    announceQuest(resolved)
+                }
+            }
+        } else {
+            announceQuest(q)
+        }
+    }
+
+    private fun announceQuest(q: Quest) {
+        val s = _state.value
+        val text = buildString {
+            if (s.players > 1) append(app.getString(R.string.kids_turn, app.getString(R.string.kids_player, s.currentPlayer + 1))).append(' ')
+            append(app.stringByKey(q.textKey, q.args))
+        }
+        arbiter.offerQuest(text, System.currentTimeMillis(), tts?.isSpeaking == true)?.let(::speakQuest)
     }
 
 }

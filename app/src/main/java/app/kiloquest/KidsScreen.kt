@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.kiloquest.game.AgeBand
 import app.kiloquest.game.QuestKind
+import app.kiloquest.game.StickerBook
 
 /**
  * Kinderansicht (Handy/Tablet, nicht im Auto-Display): aktuelle Aufgabe, Punkte, Sticker.
@@ -47,13 +48,25 @@ fun KidsScreen(state: UiState, nav: NavController) {
                 )
             }
 
-            if (!state.navigating) AgePicker(state.ageBand, nav::setAgeBand)
+            if (state.players > 1) Scoreboard(state)
+
+            if (!state.navigating) {
+                AgePicker(state.ageBand, nav::setAgeBand)
+                PlayerPicker(state.players, nav::setPlayers)
+            }
 
             val q = state.quest
             val fb = state.feedback
             when {
                 q != null -> {
-                    Text(ctx.stringByKey(q.textKey), style = MaterialTheme.typography.headlineMedium)
+                    if (state.players > 1) {
+                        Text(
+                            stringResource(R.string.kids_turn, stringResource(R.string.kids_player, state.currentPlayer + 1)),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    Text(ctx.stringByKey(q.textKey, q.args), style = MaterialTheme.typography.headlineMedium)
                     if (q.kind == QuestKind.CHOICE) {
                         q.optionKeys.forEachIndexed { i, key ->
                             Button(onClick = { nav.answerQuest(i) }, modifier = Modifier.fillMaxWidth()) {
@@ -76,6 +89,13 @@ fun KidsScreen(state: UiState, nav: NavController) {
                         else -> stringResource(R.string.kids_wrong, ctx.stringByKey(fb.correctOptionKey))
                     }
                     Text(msg, style = MaterialTheme.typography.headlineMedium)
+                    state.newSticker?.let {
+                        Text(
+                            stringResource(R.string.kids_new_sticker) + " " + it.emoji,
+                            style = MaterialTheme.typography.headlineLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                     Button(onClick = nav::dismissFeedback, modifier = Modifier.fillMaxWidth()) {
                         Text(stringResource(R.string.kids_next))
                     }
@@ -83,6 +103,9 @@ fun KidsScreen(state: UiState, nav: NavController) {
                 state.route == null -> Text(stringResource(R.string.kids_need_route), style = MaterialTheme.typography.titleMedium)
                 else -> Text(stringResource(R.string.kids_waiting), style = MaterialTheme.typography.titleMedium)
             }
+
+            Album(state.album)
+            Text(stringResource(R.string.kids_total, state.totalPoints), style = MaterialTheme.typography.bodyMedium)
 
             OutlinedButton(onClick = { nav.showKids(false) }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.kids_back))
@@ -113,4 +136,41 @@ private fun AgePicker(selected: AgeBand, onSelect: (AgeBand) -> Unit) {
             )
         }
     }
+}
+
+@Composable
+private fun PlayerPicker(selected: Int, onSelect: (Int) -> Unit) {
+    Text(stringResource(R.string.kids_players), style = MaterialTheme.typography.titleMedium)
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        for (n in 1..4) {
+            FilterChip(selected = n == selected, onClick = { onSelect(n) }, label = { Text(n.toString()) })
+        }
+    }
+}
+
+@Composable
+private fun Scoreboard(state: UiState) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        state.scores.forEachIndexed { i, pts ->
+            val active = state.quest != null && i == state.currentPlayer
+            Text(
+                stringResource(R.string.kids_player, i + 1) + ": " + stringResource(R.string.kids_points, pts),
+                style = if (active) MaterialTheme.typography.titleLarge else MaterialTheme.typography.bodyLarge,
+                color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+@Composable
+private fun Album(collected: Set<String>) {
+    Text(
+        stringResource(R.string.kids_album, collected.size, StickerBook.ALL.size),
+        style = MaterialTheme.typography.titleMedium,
+    )
+    // Gesammelte Sticker als Emoji, fehlende als graue Punkte
+    Text(
+        StickerBook.ALL.joinToString(" ") { if (it.id in collected) it.emoji else "·" },
+        style = MaterialTheme.typography.headlineSmall,
+    )
 }

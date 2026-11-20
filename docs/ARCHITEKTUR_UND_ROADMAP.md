@@ -285,4 +285,10 @@ Gebaut (Build, Lint und 15 Unit-Tests grün; **nicht auf dem Gerät erprobt**):
 - i18n: alle Quest-Texte EN + DE als Ressourcen; Test prüft, dass jede Katalog-Aufgabe in jeder Sprachdatei existiert und beide Dateien dieselben Schlüssel haben.
 - App: Kinderansicht („Aufgaben"-Button) mit Altersauswahl, Punkten, Stickern und großen Buttons; neue Aufgabe wird zusätzlich per Sprache angesagt (Fahrer bekommt nur Audio). Altersstufe wird gespeichert.
 
-Noch offen für Phase 2: streckenbezogene Aufgaben aus OSM/Wikipedia („Gleich seht ihr einen Fluss"), Sammelalbum/Sticker-Motive, Persistenz der Gesamtpunkte, Team-Modus für Geschwister, Sprachansagen-Priorität gegenüber Navigationsansagen.
+Nachgezogen (Phase 2, zweiter Schritt; Build/Lint/Tests grün, nicht auf dem Gerät erprobt):
+- **Streckenfakten:** Platzhalter-Quests werden beim Auslösen per Overpass (OSM) mit der Umgebung gefüllt (Fluss, See, Burg, Gipfel, Brücke, mit Ortsname); bei Fehler oder keinem Treffer gibt es eine Rückfall-Aufgabe. Wikipedia-Geschichten folgen in Phase 4.
+- **Sticker-Album:** 16 Sticker (Emoji, sprachneutral), werden zufällig aus den fehlenden vergeben, gespeichert in den App-Einstellungen. Gesamtpunkte über alle Fahrten werden gespeichert.
+- **Team-Modus:** 1–4 Kinder, reihum dran, Punkte pro Kind, Sticker für das ganze Team, Ansage nennt, wer dran ist.
+- **Ansagen-Priorität:** Navigationsansagen unterbrechen Quest-Ansagen; Quests werden frühestens 8 s nach einer Navigationsansage gesprochen und verfallen nach 60 s Wartezeit (`SpeechArbiter`).
+
+Offen: Wikipedia-Geschichten zu Orten, eigene Namen für Kinder, Sticker-Motive grafisch statt Emoji, Community-Rätsel.

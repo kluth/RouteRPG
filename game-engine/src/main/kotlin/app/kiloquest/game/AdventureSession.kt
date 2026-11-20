@@ -5,20 +5,36 @@ data class AnswerResult(
     val pointsAwarded: Int,
     /** Index der richtigen Option (nur bei CHOICE), sonst -1. */
     val correctIndex: Int,
+    /** Welches Teammitglied hat geantwortet (0-basiert). */
+    val player: Int = 0,
 )
 
-/** Spielstand einer Fahrt: welche Quest ist aktiv, Punkte, Sticker. */
-class AdventureSession(private val quests: List<Quest>, private val questsPerSticker: Int = 3) {
+/**
+ * Spielstand einer Fahrt: aktive Quest, Punkte, Sticker.
+ * Team-Modus: bei [playerCount] > 1 sind die Kinder reihum dran (Quest 1 -> Kind 1, Quest 2 -> Kind 2 ...),
+ * Punkte werden pro Kind gefuehrt, Sticker gehoeren dem ganzen Team.
+ */
+class AdventureSession(
+    private val quests: List<Quest>,
+    private val questsPerSticker: Int = 3,
+    val playerCount: Int = 1,
+) {
+    init { require(playerCount >= 1) { "playerCount must be >= 1" } }
+
     private var nextIndex = 0
+    val scores = IntArray(playerCount)
+
     var active: Quest? = null
         private set
-    var points: Int = 0
+    /** Wer ist bei der aktiven Quest dran? */
+    var currentPlayer: Int = 0
         private set
     var completed: Int = 0
         private set
     var skipped: Int = 0
         private set
 
+    val points: Int get() = scores.sum()
     val total: Int get() = quests.size
     val stickers: Int get() = completed / questsPerSticker
 
@@ -30,9 +46,15 @@ class AdventureSession(private val quests: List<Quest>, private val questsPerSti
         val next = quests.getOrNull(nextIndex) ?: return null
         if (alongMeters < next.triggerMeters) return null
         if (active != null) skipped++
+        currentPlayer = nextIndex % playerCount
         nextIndex++
         active = next
         return next
+    }
+
+    /** Ersetzt die aktive Quest (z. B. Streckenfakt-Platzhalter durch konkreten Text). */
+    fun replaceActive(quest: Quest) {
+        if (active != null) active = quest
     }
 
     /** [choice] nur bei CHOICE-Quests. Gibt null zurueck, wenn keine Quest aktiv ist. */
@@ -41,11 +63,11 @@ class AdventureSession(private val quests: List<Quest>, private val questsPerSti
         val result = when (q.kind) {
             QuestKind.CHOICE -> {
                 val ok = choice != null && choice == q.correctIndex
-                AnswerResult(ok, if (ok) q.points else 0, q.correctIndex)
+                AnswerResult(ok, if (ok) q.points else 0, q.correctIndex, currentPlayer)
             }
-            else -> AnswerResult(true, q.points, -1)
+            else -> AnswerResult(true, q.points, -1, currentPlayer)
         }
-        points += result.pointsAwarded
+        scores[currentPlayer] += result.pointsAwarded
         completed++
         active = null
         return result
