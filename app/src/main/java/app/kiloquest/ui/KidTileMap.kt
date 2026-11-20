@@ -37,9 +37,6 @@ private const val DARK_STYLE = "https://tiles.openfreemap.org/styles/dark"
 private const val SRC_DONE = "kid-route-done"
 private const val SRC_TODO = "kid-route-todo"
 private const val SRC_DEST = "kid-dest"
-private const val SRC_ME = "kid-me"
-private const val IMG_ME = "kid-me-img"
-private const val IMG_ME_FLIP = "kid-me-img-flip"
 private const val IMG_FLAG = "kid-flag-img"
 
 /**
@@ -54,6 +51,9 @@ fun KidTileMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier, int
     val dark = isSystemInDarkTheme()
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
     var styleReady by remember { mutableStateOf(false) }
+    val currentMode by androidx.compose.runtime.rememberUpdatedState(mode)
+    // Animierte 3D-Figur; die Kamera faehrt in der Nah-Ansicht mit jeder weichen Zwischenposition mit
+    val marker = remember { AvatarMarker("kid") { ll -> if (currentMode == MapMode.FOLLOW) map?.moveCamera(CameraUpdateFactory.newLatLng(ll)) } }
 
     val mapView = remember {
         MapView(context).apply {
@@ -69,12 +69,11 @@ fun KidTileMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier, int
                     style.addSource(GeoJsonSource(SRC_DONE))
                     style.addSource(GeoJsonSource(SRC_TODO))
                     style.addSource(GeoJsonSource(SRC_DEST))
-                    style.addSource(GeoJsonSource(SRC_ME))
                     style.addLayer(LineLayer("kid-done-line", SRC_DONE).withProperties(PropertyFactory.lineColor("#9DB7E8"), PropertyFactory.lineWidth(7f), PropertyFactory.lineCap("round"), PropertyFactory.lineJoin("round")))
                     style.addLayer(LineLayer("kid-todo-casing", SRC_TODO).withProperties(PropertyFactory.lineColor("#FFFFFF"), PropertyFactory.lineWidth(11f), PropertyFactory.lineCap("round"), PropertyFactory.lineJoin("round")))
                     style.addLayer(LineLayer("kid-todo-line", SRC_TODO).withProperties(PropertyFactory.lineColor("#0B57D0"), PropertyFactory.lineWidth(7f), PropertyFactory.lineCap("round"), PropertyFactory.lineJoin("round")))
                     style.addLayer(SymbolLayer("kid-dest-layer", SRC_DEST).withProperties(PropertyFactory.iconImage(IMG_FLAG), PropertyFactory.iconAllowOverlap(true), PropertyFactory.iconIgnorePlacement(true), PropertyFactory.iconSize(0.5f), PropertyFactory.iconAnchor(Property.ICON_ANCHOR_BOTTOM)))
-                    style.addLayer(SymbolLayer("kid-me-layer", SRC_ME).withProperties(PropertyFactory.iconImage(IMG_ME), PropertyFactory.iconAllowOverlap(true), PropertyFactory.iconIgnorePlacement(true), PropertyFactory.iconSize(0.55f), PropertyFactory.iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP)))
+                    marker.install(style, state.avatar)
                     style.addImage(IMG_FLAG, emojiBitmap("🏁", 128, disc = false))
                     styleReady = true
                 }
@@ -87,30 +86,16 @@ fun KidTileMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier, int
         map?.uiSettings?.setAllGesturesEnabled(interactive && mode == MapMode.OVERVIEW)
     }
 
-    // Figur als Bild (normal und gespiegelt)
+    // Figur wechseln
     LaunchedEffect(state.avatar, styleReady) {
-        val m = map ?: return@LaunchedEffect
-        if (!styleReady) return@LaunchedEffect
-        m.getStyle { style: Style ->
-            runCatching { style.removeImage(IMG_ME); style.removeImage(IMG_ME_FLIP) }
-            style.addImage(IMG_ME, emojiBitmap(state.avatar, 128))
-            style.addImage(IMG_ME_FLIP, emojiBitmap(state.avatar, 128, mirrored = true))
-        }
+        if (styleReady) marker.setAvatar(state.avatar)
     }
 
-    // Position und Fahrtrichtung: Figur dreht sich bzw. schaut in Fahrtrichtung
-    LaunchedEffect(state.position, state.bearing, state.avatar, styleReady) {
-        val m = map ?: return@LaunchedEffect
+    // Position und Fahrtrichtung: gleitet weich, Figur dreht sich bzw. schaut in Fahrtrichtung
+    LaunchedEffect(state.position, state.bearing, styleReady) {
         if (!styleReady) return@LaunchedEffect
-        val pose = Avatars.pose(state.avatar, state.bearing)
-        m.getStyle { style: Style ->
-            val p = state.position
-            style.getSourceAs<GeoJsonSource>(SRC_ME)?.setGeoJson(FeatureCollection.fromFeatures(if (p == null) emptyList() else listOf(Feature.fromGeometry(Point.fromLngLat(p.lon, p.lat)))))
-            style.getLayerAs<SymbolLayer>("kid-me-layer")?.setProperties(
-                PropertyFactory.iconImage(if (pose.mirrored) IMG_ME_FLIP else IMG_ME),
-                PropertyFactory.iconRotate(pose.rotationDegrees),
-            )
-        }
+        val p = state.position
+        if (p == null) marker.clear() else marker.update(p.lat, p.lon, state.bearing)
     }
 
     // Route: zurueckgelegt (blass) und noch vor uns, dazu das Ziel
@@ -135,17 +120,22 @@ fun KidTileMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier, int
         }
     }
 
-    // Kamera: Naeh-Ansicht folgt dem Auto, Gesamtansicht zeigt die ganze Route
-    LaunchedEffect(state.position, mode, state.route, styleReady) {
+    // Kamera: Naeh-Ansicht gekippt (3D, Gebaeude erheben sich), Gesamtansicht flach von oben mit der ganzen Route
+    LaunchedEffect(mode, state.route, styleReady) {
         val m = map ?: return@LaunchedEffect
         if (!styleReady) return@LaunchedEffect
         val route = state.route
         val p = state.position
         if (mode == MapMode.OVERVIEW && route != null) {
             val pts = route.line.slice(0.0, route.line.lengthMeters, 300).map { LatLng(it.lat, it.lon) }
+            m.moveCamera(CameraUpdateFactory.tiltTo(0.0))
             if (pts.size >= 2) m.animateCamera(CameraUpdateFactory.newLatLngBounds(LatLngBounds.Builder().includes(pts).build(), 80))
         } else if (p != null) {
-            m.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(p.lat, p.lon), 14.5))
+            m.animateCamera(
+                CameraUpdateFactory.newCameraPosition(
+                    org.maplibre.android.camera.CameraPosition.Builder().target(LatLng(p.lat, p.lon)).zoom(15.0).tilt(55.0).bearing(0.0).build(),
+                ),
+            )
         }
     }
 
@@ -163,6 +153,7 @@ fun KidTileMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier, int
         mapView.onCreate(null)
         onDispose {
             lifecycle.removeObserver(observer)
+            marker.release()
             mapView.onDestroy()
         }
     }

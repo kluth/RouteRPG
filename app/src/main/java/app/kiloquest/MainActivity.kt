@@ -81,10 +81,6 @@ private const val ROUTE_SOURCE = "route-source"
 private const val ROUTE_LAYER = "route-layer"
 private const val INCIDENT_SOURCE = "incident-source"
 private const val INCIDENT_LAYER = "incident-layer"
-private const val AVATAR_SOURCE = "avatar-source"
-private const val AVATAR_LAYER = "avatar-layer"
-private const val AVATAR_IMAGE = "avatar-image"
-private const val AVATAR_IMAGE_FLIP = "avatar-image-flip"
 
 
 class MainActivity : ComponentActivity() {
@@ -463,6 +459,9 @@ private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean, 
     var map by remember { mutableStateOf<MapLibreMap?>(null) }
     var styleReady by remember { mutableStateOf(false) }
 
+    val followState by androidx.compose.runtime.rememberUpdatedState(follow)
+    val marker = remember { app.kiloquest.ui.AvatarMarker("host") { ll -> if (followState) map?.moveCamera(CameraUpdateFactory.newLatLng(ll)) } }
+
     val mapView = remember {
         MapView(context).apply {
             // Die Karte darf den Fokus nicht an sich ziehen, sonst laesst sich das Suchfeld nicht aktivieren
@@ -490,16 +489,8 @@ private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean, 
                             PropertyFactory.circleStrokeWidth(2f),
                         ),
                     )
-                    // Eigene Position als gewaehlte Figur (Bild wird unten gesetzt)
-                    style.addSource(GeoJsonSource(AVATAR_SOURCE))
-                    style.addLayer(
-                        org.maplibre.android.style.layers.SymbolLayer(AVATAR_LAYER, AVATAR_SOURCE).withProperties(
-                            PropertyFactory.iconImage(AVATAR_IMAGE),
-                            PropertyFactory.iconAllowOverlap(true),
-                            PropertyFactory.iconIgnorePlacement(true),
-                            PropertyFactory.iconSize(0.5f),
-                        ),
-                    )
+                    // Eigene Position als animierte Figur (siehe AvatarMarker)
+                    marker.install(style, avatar)
                     styleReady = true
                 }
                 m.cameraPosition = CameraPosition.Builder()
@@ -538,41 +529,15 @@ private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean, 
         }
     }
 
-    // Figur als Bild (Emoji der Emoji-Schrift) und Position
-    LaunchedEffect(avatar, styleReady) {
-        val m = map ?: return@LaunchedEffect
+    // Figur wechseln, Position gleitet weich, Figur dreht sich/schaut in Fahrtrichtung
+    LaunchedEffect(avatar, styleReady) { if (styleReady) marker.setAvatar(avatar) }
+    LaunchedEffect(position, bearing, styleReady) {
         if (!styleReady) return@LaunchedEffect
-        m.getStyle { style: Style ->
-            runCatching { style.removeImage(AVATAR_IMAGE); style.removeImage(AVATAR_IMAGE_FLIP) }
-            style.addImage(AVATAR_IMAGE, app.kiloquest.ui.emojiBitmap(avatar, 128))
-            style.addImage(AVATAR_IMAGE_FLIP, app.kiloquest.ui.emojiBitmap(avatar, 128, mirrored = true))
-        }
-    }
-    // Die Figur dreht sich mit der Fahrtrichtung (Flugzeug/Rakete) bzw. schaut in Fahrtrichtung (Fahrzeuge in Seitenansicht)
-    LaunchedEffect(avatar, bearing, styleReady) {
-        val m = map ?: return@LaunchedEffect
-        if (!styleReady) return@LaunchedEffect
-        val pose = app.kiloquest.game.Avatars.pose(avatar, bearing)
-        m.getStyle { style: Style ->
-            style.getLayerAs<org.maplibre.android.style.layers.SymbolLayer>(AVATAR_LAYER)?.setProperties(
-                PropertyFactory.iconImage(if (pose.mirrored) AVATAR_IMAGE_FLIP else AVATAR_IMAGE),
-                PropertyFactory.iconRotate(pose.rotationDegrees),
-                PropertyFactory.iconRotationAlignment(org.maplibre.android.style.layers.Property.ICON_ROTATION_ALIGNMENT_MAP),
-            )
-        }
-    }
-    LaunchedEffect(position, styleReady) {
-        val m = map ?: return@LaunchedEffect
-        if (!styleReady) return@LaunchedEffect
-        m.getStyle { style: Style ->
-            val src = style.getSourceAs<GeoJsonSource>(AVATAR_SOURCE) ?: return@getStyle
-            if (position == null) src.setGeoJson(org.maplibre.geojson.FeatureCollection.fromFeatures(emptyList()))
-            else src.setGeoJson(Feature.fromGeometry(Point.fromLngLat(position.lon, position.lat)))
-        }
+        if (position == null) marker.clear() else marker.update(position.lat, position.lon, bearing)
     }
 
-    // Kamera folgt der Position waehrend der Navigation
-    LaunchedEffect(position, follow) {
+    // Waehrend der Navigation folgt die Kamera der (weich gleitenden) Figur; hier nur der Zoom beim Start
+    LaunchedEffect(follow, styleReady) {
         val m = map ?: return@LaunchedEffect
         val p = position ?: return@LaunchedEffect
         if (follow) m.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(p.lat, p.lon), 16.0))
@@ -592,6 +557,7 @@ private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean, 
         mapView.onCreate(null)
         onDispose {
             lifecycle.removeObserver(observer)
+            marker.release()
             mapView.onDestroy()
         }
     }

@@ -21,7 +21,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,24 +63,86 @@ private const val FOLLOW_WINDOW_M = 3_000.0
  * Figur an der aktuellen Position. Braucht weder Internet noch Kartenkacheln, laeuft also auch auf Geraeten, die nur per
  * Bluetooth verbunden sind. [FOLLOW] zeigt die Umgebung (Fahrtrichtung oben), [OVERVIEW] die ganze Route (Norden oben).
  */
+/** Sanft zur neuen GPS-Position gleiten (statt zu springen); Verschiebung in Metern gegenueber dem ersten Fix. */
+@Composable
+private fun rememberSmoothPosition(target: LatLon?): LatLon? {
+    var anchor by remember { mutableStateOf<LatLon?>(null) }
+    val east = remember { androidx.compose.animation.core.Animatable(0f) }
+    val north = remember { androidx.compose.animation.core.Animatable(0f) }
+    androidx.compose.runtime.LaunchedEffect(target) {
+        if (target == null) { anchor = null; return@LaunchedEffect }
+        val a = anchor
+        if (a == null || app.kiloquest.nav.haversine(a, target) > 20_000.0) {
+            anchor = target; east.snapTo(0f); north.snapTo(0f); return@LaunchedEffect
+        }
+        val e = ((target.lon - a.lon) * cos(a.lat * PI / 180) * 111_320.0).toFloat()
+        val n = ((target.lat - a.lat) * M_PER_DEG_LAT).toFloat()
+        val spec = androidx.compose.animation.core.tween<Float>(900, easing = androidx.compose.animation.core.LinearEasing)
+        kotlinx.coroutines.coroutineScope {
+            launch { east.animateTo(e, spec) }
+            launch { north.animateTo(n, spec) }
+        }
+    }
+    val a = anchor ?: return target
+    return LatLon(a.lat + north.value / M_PER_DEG_LAT, a.lon + east.value / (111_320.0 * cos(a.lat * PI / 180)))
+}
+
+/** Richtung weich drehen (immer den kuerzeren Weg, auch ueber Norden). */
+@Composable
+private fun rememberSmoothBearing(target: Float?): Float? {
+    val angle = remember { androidx.compose.animation.core.Animatable(0f) }
+    var inited by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(target) {
+        if (target == null) return@LaunchedEffect
+        if (!inited) { angle.snapTo(target); inited = true; return@LaunchedEffect }
+        val cur = angle.value
+        val d = ((target - cur) % 360f + 540f) % 360f - 180f
+        angle.animateTo(cur + d, androidx.compose.animation.core.tween(600))
+    }
+    return if (target == null) null else ((angle.value % 360f) + 360f) % 360f
+}
+
+/**
+ * Schematische Live-Karte fuer Kinder in 3D-Optik: die Kartenebene ist nach hinten gekippt (Perspektive, Nebel am Horizont),
+ * Route als dicke Linie (zurueckgelegt blass), Ziel-Flagge und die eigene Figur. Die Figur schwebt leicht auf und ab, wirft
+ * einen Schatten auf die Karte, pulsiert mit einem Ring, zeigt mit einem Lichtkegel in Fahrtrichtung und gleitet weich von
+ * Position zu Position. Braucht weder Internet noch Kartenkacheln. [FOLLOW] zeigt die Umgebung, [OVERVIEW] die ganze Route
+ * flach von oben. Norden ist immer oben.
+ */
 @Composable
 fun KidMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier) {
     val route = state.route
-    val pos = state.position
+    val pos = rememberSmoothPosition(state.position)
+    val bearing = rememberSmoothBearing(state.bearing)
     val along = state.guidance?.alongMeters ?: 0.0
     val colors = KiloTheme.colors
     val bg = MaterialTheme.colorScheme.surfaceVariant
     val grid = MaterialTheme.colorScheme.outlineVariant
     val routeColor = colors.route
     val casing = MaterialTheme.colorScheme.surface
+    // zurueckgelegt: mit dem Hintergrund gemischt statt durchsichtig (sonst sieht man bei runden Enden Punkte)
+    val doneColor = androidx.compose.ui.graphics.lerp(bg, routeColor, 0.3f)
     val avatar = state.avatar
     val flag = "🏁"
     val desc = stringResource(R.string.map_live_desc)
 
+    val infinite = androidx.compose.animation.core.rememberInfiniteTransition(label = "kidmap")
+    val pulse by infinite.animateFloat(
+        0f, 1f,
+        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1600, easing = androidx.compose.animation.core.LinearEasing)),
+        label = "pulse",
+    )
+    val bob by infinite.animateFloat(
+        0f, 1f,
+        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1100, easing = androidx.compose.animation.core.FastOutSlowInEasing), androidx.compose.animation.core.RepeatMode.Reverse),
+        label = "bob",
+    )
+
     Canvas(modifier.background(bg).semantics { contentDescription = desc }) {
         val w = size.width
         val h = size.height
-        // Mittelpunkt und Massstab (Meter pro Pixel) je Modus
+        val dp = density
+        // Mittelpunkt und Massstab (Meter pro Pixel auf Bodenhoehe) je Modus
         val center: LatLon
         val metersPerPx: Double
         if (mode == MapMode.FOLLOW || route == null) {
@@ -93,80 +159,133 @@ fun KidMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier) {
             metersPerPx = max(spanX / (w * 0.8), spanY / (h * 0.8))
         }
         val cosLat0 = cos(center.lat * PI / 180)
-        // Nord ist oben; die Figur zeigt die Fahrtrichtung (siehe Avatars.pose)
-        val theta = 0.0
 
-        fun project(p: LatLon): Offset {
+        // 3D: Kartenebene nach hinten gekippt (Perspektive); in der Gesamtansicht flach von oben
+        val tilt = if (mode == MapMode.FOLLOW) 52.0 * PI / 180 else 0.0
+        val sinT = sin(tilt).toFloat(); val cosT = cos(tilt).toFloat()
+        val camD = h * 1.1f
+        val cy0 = if (tilt > 0) h * 0.66f else h / 2f
+
+        class P(val o: Offset, val s: Float)
+        // Bodenpunkt in Pixeln relativ zur Mitte (x nach Osten, y nach Sueden) -> Bildschirm
+        fun proj(gx: Float, gy: Float): P {
+            val z = -gy * sinT
+            val scale = camD / (camD + z).coerceAtLeast(camD * 0.3f)
+            return P(Offset(w / 2 + gx * scale, cy0 + gy * cosT * scale), scale)
+        }
+        fun ground(p: LatLon): Pair<Float, Float> {
             val x = (p.lon - center.lon) * cosLat0 * 111_320.0
             val y = -(p.lat - center.lat) * M_PER_DEG_LAT
-            val rx = x * cos(theta) - y * sin(theta)
-            val ry = x * sin(theta) + y * cos(theta)
-            return Offset((w / 2 + rx / metersPerPx).toFloat(), (h / 2 + ry / metersPerPx).toFloat())
+            return (x / metersPerPx).toFloat() to (y / metersPerPx).toFloat()
         }
+        fun proj(p: LatLon): P { val (gx, gy) = ground(p); return proj(gx, gy) }
 
-        // Raster als Orientierung (alle 500 m im Nahmodus), dreht mit
+        // Raster am Boden (alle 500 m) als Orientierung; es scrollt mit der Fahrt
         if (mode == MapMode.FOLLOW) {
-            val step = (500.0 / metersPerPx).toFloat()
-            if (step > 24f) {
-                val ox = (w / 2) % step
-                val oy = (h / 2) % step
-                var x = ox
-                while (x < w) { drawLine(grid, Offset(x, 0f), Offset(x, h), strokeWidth = 1f); x += step }
-                var y = oy
-                while (y < h) { drawLine(grid, Offset(0f, y), Offset(w, y), strokeWidth = 1f); y += step }
+            val stepPx = (500.0 / metersPerPx).toFloat()
+            if (stepPx > 12f) {
+                val centerE = center.lon * cosLat0 * 111_320.0
+                val centerN = center.lat * M_PER_DEG_LAT
+                val offX = (-(centerE % 500.0) / metersPerPx).toFloat()
+                val offY = ((centerN % 500.0) / metersPerPx).toFloat()
+                val reach = w * 1.6f
+                var k = -(reach / stepPx).toInt() - 1
+                while (k <= (reach / stepPx).toInt() + 1) {
+                    val x = offX + k * stepPx
+                    drawLine(grid, proj(x, -reach).o, proj(x, reach).o, strokeWidth = 1f)
+                    val y = offY + k * stepPx
+                    drawLine(grid, proj(-reach, y).o, proj(reach, y).o, strokeWidth = 1f)
+                    k++
+                }
             }
         }
 
         if (route != null) {
             val line = route.line
             val lenM = line.lengthMeters
-            // Nur den sichtbaren Ausschnitt zeichnen (Nahmodus: Umgebung der Position)
-            val from = if (mode == MapMode.FOLLOW) (along - FOLLOW_WINDOW_M * 1.2).coerceAtLeast(0.0) else 0.0
-            val to = if (mode == MapMode.FOLLOW) (along + FOLLOW_WINDOW_M * 1.2).coerceAtMost(lenM) else lenM
+            val from = if (mode == MapMode.FOLLOW) (along - FOLLOW_WINDOW_M * 1.6).coerceAtLeast(0.0) else 0.0
+            val to = if (mode == MapMode.FOLLOW) (along + FOLLOW_WINDOW_M * 1.6).coerceAtMost(lenM) else lenM
             val pts = line.slice(from, to, 500)
             if (pts.size >= 2) {
-                val done = Path(); val todo = Path()
-                var doneStarted = false; var todoStarted = false
-                var travelled = from
                 val total = max(to - from, 1.0)
-                pts.forEachIndexed { i, p ->
-                    val o = project(p)
-                    val frac = i.toDouble() / (pts.size - 1)
-                    val atM = from + total * frac
-                    if (atM <= along) { if (!doneStarted) { done.moveTo(o.x, o.y); doneStarted = true } else done.lineTo(o.x, o.y) }
-                    if (atM >= along - total / pts.size) { if (!todoStarted) { todo.moveTo(o.x, o.y); todoStarted = true } else todo.lineTo(o.x, o.y) }
-                    travelled = atM
+                val projected = pts.map { proj(it) }
+                val baseW = if (mode == MapMode.FOLLOW) 14.dp.toPx() else 8.dp.toPx()
+                for (pass in 0..1) { // erst weisse Kontur, dann Linie
+                    for (i in 0 until projected.size - 1) {
+                        val a0 = projected[i]; val b0 = projected[i + 1]
+                        val atM = from + total * (i.toDouble() / (pts.size - 1))
+                        val done = atM < along
+                        val sw = baseW * (a0.s + b0.s) / 2
+                        if (pass == 0) {
+                            if (!done) drawLine(casing, a0.o, b0.o, strokeWidth = sw + 6.dp.toPx() * a0.s, cap = StrokeCap.Round)
+                        } else {
+                            drawLine(if (done) doneColor else routeColor, a0.o, b0.o, strokeWidth = sw, cap = StrokeCap.Round)
+                        }
+                    }
                 }
-                val widthPx = if (mode == MapMode.FOLLOW) 14.dp.toPx() else 8.dp.toPx()
-                val st = { c: Color, wpx: Float -> Stroke(width = wpx, cap = StrokeCap.Round, join = StrokeJoin.Round) }
-                drawPath(done, routeColor.copy(alpha = 0.28f), style = st(routeColor, widthPx))
-                drawPath(todo, casing, style = st(casing, widthPx + 6.dp.toPx()))
-                drawPath(todo, routeColor, style = st(routeColor, widthPx))
             }
-            // Start-Punkt und Ziel-Flagge
-            val first = line.points.first()
-            drawCircle(routeColor.copy(alpha = 0.5f), 6.dp.toPx(), project(first))
-            val dest = state.destination?.position ?: line.points.last()
-            val d = project(dest)
-            drawEmoji(flag, d.x, d.y, 28.dp.toPx())
+            val first = proj(line.points.first())
+            drawOval(routeColor.copy(alpha = 0.5f), Offset(first.o.x - 6.dp.toPx() * first.s, first.o.y - 6.dp.toPx() * first.s * cosT), androidx.compose.ui.geometry.Size(12.dp.toPx() * first.s, 12.dp.toPx() * first.s * cosT))
         }
 
-        // Eigene Figur
-        val pp = pos?.let { project(it) } ?: Offset(w / 2, h / 2)
-        drawCircle(Color.White.copy(alpha = 0.85f), 26.dp.toPx(), pp)
-        drawCircle(routeColor.copy(alpha = 0.35f), 26.dp.toPx(), pp, style = Stroke(width = 3.dp.toPx()))
-        val pose = app.kiloquest.game.Avatars.pose(avatar, state.bearing)
-        drawEmoji(avatar, pp.x, pp.y, 34.dp.toPx(), pose.rotationDegrees, pose.mirrored)
+        // Nebel am Horizont: ferne Teile der Karte blenden aus
+        if (tilt > 0) {
+            drawRect(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(bg, bg.copy(alpha = 0f)), startY = 0f, endY = h * 0.34f), size = androidx.compose.ui.geometry.Size(w, h * 0.34f))
+        }
 
-        // Kompass: kleiner Pfeil "Norden" oben links (dreht mit, wenn die Karte nach Fahrtrichtung zeigt)
+        // Ziel-Flagge steht aufrecht auf der Karte (mit kleinem Schatten)
+        if (route != null) {
+            val dest = state.destination?.position ?: route.line.points.last()
+            val d = proj(dest)
+            if (d.o.x in -40f..w + 40f && d.o.y in -40f..h + 40f) {
+                drawOval(Color.Black.copy(alpha = 0.2f), Offset(d.o.x - 10.dp.toPx() * d.s, d.o.y - 4.dp.toPx() * d.s), androidx.compose.ui.geometry.Size(20.dp.toPx() * d.s, 8.dp.toPx() * d.s))
+                drawEmoji(flag, d.o.x, d.o.y - 14.dp.toPx() * d.s, 30.dp.toPx() * d.s.coerceIn(0.5f, 1.4f))
+            }
+        }
+
+        // Eigene Figur: Schatten am Boden, pulsierender Ring, Lichtkegel in Fahrtrichtung, schwebende Figur
+        val me = if (pos != null) proj(pos) else P(Offset(w / 2, cy0), 1f)
+        val hover = (10f + 5f * bob) * dp                       // Schwebehoehe in px
+        val r = 24.dp.toPx() * me.s
+        // Ring (breitet sich am Boden aus und blendet aus)
+        val ringR = r * (0.9f + 1.6f * pulse)
+        drawOval(
+            routeColor.copy(alpha = 0.55f * (1f - pulse)),
+            Offset(me.o.x - ringR, me.o.y - ringR * cosT.coerceAtLeast(0.55f)),
+            androidx.compose.ui.geometry.Size(ringR * 2, ringR * 2 * cosT.coerceAtLeast(0.55f)),
+            style = Stroke(width = 3.dp.toPx()),
+        )
+        // Lichtkegel (am Boden) in Fahrtrichtung
+        if (bearing != null) {
+            val rad = bearing * PI.toFloat() / 180f
+            val dx = sin(rad); val dy = -cos(rad)
+            val len = 70.dp.toPx(); val half = 22.dp.toPx()
+            val gx0 = if (pos != null) ground(pos).first else 0f
+            val gy0 = if (pos != null) ground(pos).second else 0f
+            val tip = proj(gx0 + dx * len, gy0 + dy * len)
+            val l = proj(gx0 - dy * half, gy0 + dx * half)
+            val rr = proj(gx0 + dy * half, gy0 - dx * half)
+            val cone = Path().apply { moveTo(l.o.x, l.o.y); lineTo(tip.o.x, tip.o.y); lineTo(rr.o.x, rr.o.y); close() }
+            drawPath(cone, androidx.compose.ui.graphics.Brush.linearGradient(listOf(routeColor.copy(alpha = 0.40f), routeColor.copy(alpha = 0f)), start = me.o, end = tip.o))
+        }
+        // Schatten: je hoeher die Figur schwebt, desto kleiner und blasser
+        val shrink = 1f - 0.18f * bob
+        drawOval(Color.Black.copy(alpha = 0.16f), Offset(me.o.x - r * 1.15f * shrink, me.o.y - r * 0.5f * cosT * shrink), androidx.compose.ui.geometry.Size(r * 2.3f * shrink, r * 1.0f * cosT * shrink))
+        drawOval(Color.Black.copy(alpha = 0.22f), Offset(me.o.x - r * 0.8f * shrink, me.o.y - r * 0.35f * cosT * shrink), androidx.compose.ui.geometry.Size(r * 1.6f * shrink, r * 0.7f * cosT * shrink))
+        // Figur: heller Kreis (Blase) mit Emoji, schwebend ueber dem Schatten
+        val cy = me.o.y - hover - r
+        drawCircle(Color.White.copy(alpha = 0.92f), r, Offset(me.o.x, cy))
+        drawCircle(routeColor.copy(alpha = 0.35f), r, Offset(me.o.x, cy), style = Stroke(width = 3.dp.toPx()))
+        val pose = app.kiloquest.game.Avatars.pose(avatar, bearing)
+        drawEmoji(avatar, me.o.x, cy, r * 1.3f, pose.rotationDegrees, pose.mirrored)
+
+        // Kompass: Norden ist immer oben
         val cc = Offset(26.dp.toPx(), 26.dp.toPx())
         drawCircle(Color.White.copy(alpha = 0.8f), 18.dp.toPx(), cc)
-        rotate(degrees = Math.toDegrees(theta).toFloat(), pivot = cc) {
-            val tri = Path().apply {
-                moveTo(cc.x, cc.y - 12.dp.toPx()); lineTo(cc.x - 6.dp.toPx(), cc.y + 6.dp.toPx()); lineTo(cc.x + 6.dp.toPx(), cc.y + 6.dp.toPx()); close()
-            }
-            drawPath(tri, Color(0xFFB3261E))
+        val tri = Path().apply {
+            moveTo(cc.x, cc.y - 12.dp.toPx()); lineTo(cc.x - 6.dp.toPx(), cc.y + 6.dp.toPx()); lineTo(cc.x + 6.dp.toPx(), cc.y + 6.dp.toPx()); close()
         }
+        drawPath(tri, Color(0xFFB3261E))
     }
 }
 
