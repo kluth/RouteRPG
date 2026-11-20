@@ -320,4 +320,10 @@
     <string name="link_status_lost">Verbindung verloren. Neuer Versuch …</string>
     <string name="link_copilot_idle">Gerade gibt es nichts zu entscheiden.</string>
     <string name="link_menu">Menü</string>
+    <string name="link_notif_channel">Geräte-Kopplung</string>
+    <string name="link_notif_waiting">Wartet auf verbindende Geräte</string>
+    <string name="link_notif_host">%1$d Gerät(e) verbunden</string>
+    <string name="link_notif_client">Verbunden mit %1$s</string>
+    <string name="link_notif_client_connecting">Verbinde mit dem Hauptgerät …</string>
+    <string name="link_notif_stop">Beenden</string>
 </resources>

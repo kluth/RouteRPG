@@ -113,5 +113,13 @@ class BtHost(private val ctx: Context, private val scope: CoroutineScope, privat
         }
 
         fun hasPermissions(ctx: Context) = missingPermissions(ctx).isEmpty()
+
+        /** Rechte, die beim Start abgefragt werden: Bluetooth (noetig) plus Benachrichtigungen (optional, fuer die Dienst-Anzeige). */
+        fun permissionsToRequest(ctx: Context): List<String> {
+            val notif = android.Manifest.permission.POST_NOTIFICATIONS
+            val needNotif = android.os.Build.VERSION.SDK_INT >= 33 &&
+                androidx.core.content.ContextCompat.checkSelfPermission(ctx, notif) != android.content.pm.PackageManager.PERMISSION_GRANTED
+            return missingPermissions(ctx) + if (needNotif) listOf(notif) else emptyList()
+        }
     }
 }

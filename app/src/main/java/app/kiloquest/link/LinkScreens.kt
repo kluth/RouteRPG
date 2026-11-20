@@ -64,8 +64,9 @@ fun LinkHostCard() {
     val discoverable = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { _ ->
         error = !app.link.startHosting()
     }
-    val permissions = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
-        if (granted.values.all { it }) {
+    val permissions = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { _ ->
+        // Benachrichtigungen sind optional; nur Bluetooth muss erlaubt sein
+        if (BtHost.hasPermissions(ctx)) {
             discoverable.launch(Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300))
         } else error = true
     }
@@ -104,9 +105,9 @@ fun LinkHostCard() {
             Button(
                 onClick = {
                     error = false
-                    val missing = BtHost.missingPermissions(ctx)
-                    if (missing.isEmpty()) discoverable.launch(Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300))
-                    else permissions.launch(missing.toTypedArray())
+                    val toAsk = BtHost.permissionsToRequest(ctx)
+                    if (toAsk.isEmpty()) discoverable.launch(Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE).putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300))
+                    else permissions.launch(toAsk.toTypedArray())
                 },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
             ) { Text(stringResource(R.string.link_start)) }
@@ -127,8 +128,8 @@ fun LinkClientCard(ageBand: AgeBand) {
     val nearby by client.nearby.collectAsState()
     var error by remember { mutableStateOf(false) }
 
-    val permissions = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { granted ->
-        if (granted.values.all { it }) client.scan() else error = true
+    val permissions = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { _ ->
+        if (BtHost.hasPermissions(ctx)) client.scan() else error = true
     }
     val deviceName = remember { android.os.Build.MODEL ?: "KiloQuest" }
 
@@ -155,8 +156,8 @@ fun LinkClientCard(ageBand: AgeBand) {
             OutlinedButton(
                 onClick = {
                     error = false
-                    val missing = BtHost.missingPermissions(ctx)
-                    if (missing.isEmpty()) client.scan() else permissions.launch(missing.toTypedArray())
+                    val toAsk = BtHost.permissionsToRequest(ctx)
+                    if (toAsk.isEmpty()) client.scan() else permissions.launch(toAsk.toTypedArray())
                 },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
             ) { Text(stringResource(R.string.link_search)) }

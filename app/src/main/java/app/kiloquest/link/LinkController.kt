@@ -45,6 +45,7 @@ class LinkController(private val app: Application, private val nav: NavControlle
     fun startHosting(): Boolean {
         if (!host.start()) return false
         _state.update { it.copy(hosting = true) }
+        LinkService.start(app) // Prozess am Leben halten, auch wenn die App im Hintergrund ist
         pushJob?.cancel()
         pushJob = scope.launch {
             var last: UiState? = null

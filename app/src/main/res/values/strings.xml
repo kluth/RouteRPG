@@ -320,4 +320,10 @@
     <string name="link_status_lost">Connection lost. Trying again…</string>
     <string name="link_copilot_idle">Nothing to decide right now.</string>
     <string name="link_menu">Menu</string>
+    <string name="link_notif_channel">Device pairing</string>
+    <string name="link_notif_waiting">Waiting for devices to connect</string>
+    <string name="link_notif_host">%1$d device(s) connected</string>
+    <string name="link_notif_client">Connected to %1$s</string>
+    <string name="link_notif_client_connecting">Connecting to the main device…</string>
+    <string name="link_notif_stop">Stop</string>
 </resources>
