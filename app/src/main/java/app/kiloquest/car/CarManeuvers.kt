@@ -42,4 +42,19 @@ fun carManeuver(ctx: CarContext, m: Maneuver?): CarManeuver {
     return b.build()
 }
 
+/** Gemeinsames Symbol fuer Handy und Auto. */
+fun maneuverIconRes(kind: ManeuverKind): Int = when (kind) {
+    ManeuverKind.SLIGHT_LEFT, ManeuverKind.EXIT_LEFT, ManeuverKind.RAMP_LEFT, ManeuverKind.KEEP_LEFT -> R.drawable.ic_man_slight_left
+    ManeuverKind.LEFT -> R.drawable.ic_man_left
+    ManeuverKind.SHARP_LEFT -> R.drawable.ic_man_sharp_left
+    ManeuverKind.SLIGHT_RIGHT, ManeuverKind.EXIT_RIGHT, ManeuverKind.RAMP_RIGHT, ManeuverKind.KEEP_RIGHT -> R.drawable.ic_man_slight_right
+    ManeuverKind.RIGHT -> R.drawable.ic_man_right
+    ManeuverKind.SHARP_RIGHT -> R.drawable.ic_man_sharp_right
+    ManeuverKind.UTURN_LEFT, ManeuverKind.UTURN_RIGHT -> R.drawable.ic_man_uturn
+    ManeuverKind.ROUNDABOUT -> R.drawable.ic_man_roundabout
+    ManeuverKind.FERRY -> R.drawable.ic_man_ferry
+    ManeuverKind.DESTINATION, ManeuverKind.DESTINATION_LEFT, ManeuverKind.DESTINATION_RIGHT -> R.drawable.ic_man_destination
+    else -> R.drawable.ic_man_straight
+}
+
 fun carIcon(ctx: CarContext, res: Int): CarIcon = CarIcon.Builder(IconCompat.createWithResource(ctx, res)).build()

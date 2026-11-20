@@ -248,4 +248,6 @@
     <string name="hint_hazard">Hazard in %1$s</string>
     <string name="hint_break">Break in %1$s</string>
     <string name="hint_more">+%1$d</string>
+    <string name="speed_unlimited">No speed limit</string>
+    <string name="speed_limit_desc">Speed limit %1$d</string>
 </resources>
