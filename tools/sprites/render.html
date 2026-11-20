@@ -10,7 +10,7 @@ const canvas = document.getElementById('c');
 const renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true, preserveDrawingBuffer:true});
 renderer.setPixelRatio(1); renderer.outputColorSpace = THREE.SRGBColorSpace;
 window.ready = false;
-window.renderModel = async (url, angles, size, elevDeg, yawOffset) => {
+window.renderModel = async (url, angles, size, elevDeg, yawOffset, clipName, nFrames) => {
   renderer.setSize(size, size, false);
   let gltf;
   if (url.endsWith('.obj')) {
@@ -34,11 +34,20 @@ window.renderModel = async (url, angles, size, elevDeg, yawOffset) => {
   const el = elevDeg * Math.PI/180, dist = 3.2;
   cam.position.set(0, Math.sin(el)*dist, Math.cos(el)*dist); cam.lookAt(0, 0, 0);
   const out = [];
+  let mixer = null, clip = null;
+  if (clipName && gltf.animations) {
+    clip = gltf.animations.find(c => c.name === clipName);
+    if (clip) { mixer = new THREE.AnimationMixer(gltf.scene); mixer.clipAction(clip).play(); }
+  }
+  const frames = mixer ? nFrames : 1;
   for (const a of angles) {
+   for (let f = 0; f < frames; f++) {
+    if (mixer) { mixer.setTime(clip.duration * f / frames); gltf.scene.updateMatrixWorld(true); }
     pivot.rotation.y = (180 - a + yawOffset) * Math.PI/180;   // a = Fahrtrichtung (0 = Norden = von der Kamera weg)
     renderer.setClearColor(0x000000, 0); renderer.clear();
     renderer.render(scene, cam);
     out.push(canvas.toDataURL('image/png'));
+   }
   }
   return out;
 };

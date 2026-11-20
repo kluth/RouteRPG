@@ -9,6 +9,23 @@ enum class AvatarCategory { VEHICLES, AIR_SEA_SPACE, ANIMALS, HEROES, FUN }
  */
 enum class Orient { UPRIGHT, SIDE_LEFT, POINTER }
 
+enum class ModelKind { VEHICLE, WALKER }
+
+/**
+ * 3D-Modell einer Figur als vorgerechnete Drehbilder. Fahrzeuge: [headings] = 36 Bilder (je 10 Grad). Laufende Figuren (Tiere,
+ * Personen): 24 Richtungen (je 15 Grad) mit je [walkFrames] = 6 Bildern des Gehzyklus; gespeichert ist nur die Haelfte Norden bis
+ * Sueden ueber Osten (13 Richtungen), die andere Haelfte entsteht durch Spiegeln.
+ */
+data class Model3D(val id: String, val kind: ModelKind) {
+    val headings: Int get() = if (kind == ModelKind.VEHICLE) 36 else 24
+    val walkFrames: Int get() = if (kind == ModelKind.VEHICLE) 1 else 6
+
+    /** Dateinamen in `assets/figures3d/`. */
+    fun assetNames(): List<String> =
+        if (kind == ModelKind.VEHICLE) (0 until headings).map { "${id}_${it.toString().padStart(2, '0')}.webp" }
+        else (0..headings / 2).flatMap { h -> (0 until walkFrames).map { w -> "${id}_h${h.toString().padStart(2, '0')}_w$w.webp" } }
+}
+
 /** Darstellung einer Figur auf der Karte: [rotationDegrees] im Uhrzeigersinn, [mirrored] = links/rechts gespiegelt. */
 data class MarkerPose(val rotationDegrees: Float, val mirrored: Boolean)
 
@@ -34,9 +51,11 @@ object Avatars {
         ) + a(
             AvatarCategory.ANIMALS,
             "🦊", "🦉", "🫎", "🦌", "🐻", "🦔", "🦢", "🦭", "🐋", "🐶", "🐱", "🐴", "🦄", "🐉", "🦖", "🐢", "🐧", "🦁", "🐯", "🐼", "🐸", "🦋", "🐝", "🐙",
+            "🐰", "🐘", "🦒", "🐷", "🐮", "🐒", "🐠", "🦜", "🐥", "🐛", "🐗",
         ) + a(
             AvatarCategory.HEROES,
             "🦸", "🦹", "🥷", "🧙", "🧚", "🧜", "🧛", "🧞", "🤖", "👽", "👻", "🤴", "👸", "🧑‍🚀", "🧑‍🚒", "🧑‍✈️", "🏴‍☠️", "🥷🏽", "🎅", "⛄",
+            "👨", "👴", "👮", "🤓", "👦", "🧔", "👧", "👩", "💁", "👱", "👷", "💂", "🧟",
         ) + a(
             AvatarCategory.FUN,
             "⭐", "🌈", "🔥", "⚡", "🍕", "🍦", "🍩", "⚽", "🏆", "🎸", "🎯", "👑", "💎", "🌟",
@@ -70,25 +89,42 @@ object Avatars {
      * als `figures3d/<id>_NN.webp` in den App-Assets; NN = Fahrtrichtung / 10 (00 = Norden, im Uhrzeigersinn).
      */
     const val FRAMES_3D = 36
-    private val models: Map<String, String> = mapOf(
+    private val vehicles: Map<String, String> = mapOf(
         "🚗" to "sedan", "🚕" to "taxi", "🚙" to "suv", "🏎️" to "race", "🚓" to "police", "🚑" to "ambulance", "🚒" to "firetruck",
         "🚐" to "van", "🛻" to "pickup", "🚚" to "delivery", "🚛" to "garbage", "🚜" to "tractor",
         "🚆" to "train_bullet", "🚋" to "train_city", "🚂" to "train_city_b",
         "⛵" to "sailboat", "🚤" to "speedboat", "🚢" to "liner", "🛶" to "rowboat", "⛴️" to "cargoship", "🏴‍☠️" to "galleon",
         "🚀" to "rocket", "🛸" to "ufo",
     )
+    /** Tiere (Kenney Cube Pets) und Personen (Kenney Mini Characters), beide CC0, mit Gehzyklus. */
+    private val walkers: Map<String, String> = mapOf(
+        "🐶" to "dog", "🐱" to "cat", "🦁" to "lion", "🐯" to "tiger", "🐰" to "bunny", "🐘" to "elephant", "🦒" to "giraffe",
+        "🐷" to "pig", "🐮" to "cow", "🐒" to "monkey", "🐠" to "fish", "🦜" to "parrot", "🐥" to "chick", "🐛" to "caterpillar", "🐗" to "hog",
+        "👨" to "male_a", "👴" to "male_b", "👮" to "male_c", "🦹" to "male_d", "🤓" to "male_e", "👦" to "male_f", "🧔" to "male_g",
+        "👧" to "female_a", "👩" to "female_b", "💁" to "female_c", "👸" to "female_d", "🥷" to "female_e", "👱" to "female_f",
+        "👷" to "worker", "🤖" to "robot", "💂" to "soldier", "🤴" to "knight", "👽" to "alien", "🧟" to "zombie", "🦸" to "raider",
+    )
 
-    /** Alle Modell-IDs (fuer den Test, dass jede Datei vorhanden ist). */
-    val modelIds: Set<String> get() = models.values.toSet()
+    /** Alle 3D-Modelle (fuer den Test, dass jede Datei vorhanden ist). */
+    val models3d: List<Model3D> =
+        vehicles.values.map { Model3D(it, ModelKind.VEHICLE) } + walkers.values.map { Model3D(it, ModelKind.WALKER) }
 
-    /** Modell-ID des Emoji oder null, wenn es nur als Emoji dargestellt wird (Tiere, Personen, Flugzeuge ...). */
-    fun modelOf(emoji: String): String? = models[emoji]
+    /** IDs der Fahrzeug-Modelle (Kompatibilitaet). */
+    val modelIds: Set<String> get() = models3d.map { it.id }.toSet()
 
-    /** Nummer des Drehbilds (0 bis 35) fuer die Fahrtrichtung; ohne Richtung blickt das Modell nach Osten (Bild 9). */
-    fun frameFor(headingDegrees: Float?): Int {
-        val h = headingDegrees ?: return FRAMES_3D / 4
-        return Math.round((((h % 360f) + 360f) % 360f) / (360f / FRAMES_3D)) % FRAMES_3D
+    fun model3d(emoji: String): Model3D? =
+        vehicles[emoji]?.let { Model3D(it, ModelKind.VEHICLE) } ?: walkers[emoji]?.let { Model3D(it, ModelKind.WALKER) }
+
+    /** Modell-ID des Emoji oder null, wenn es nur als Emoji dargestellt wird (Flugzeuge, Fantasiewesen ...). */
+    fun modelOf(emoji: String): String? = model3d(emoji)?.id
+
+    /** Nummer des Drehbilds (0 bis [headings]-1) fuer die Fahrtrichtung; ohne Richtung blickt das Modell nach Osten. */
+    fun headingIndex(headingDegrees: Float?, headings: Int): Int {
+        val h = headingDegrees ?: return headings / 4
+        return Math.round((((h % 360f) + 360f) % 360f) / (360f / headings)) % headings
     }
+
+    fun frameFor(headingDegrees: Float?): Int = headingIndex(headingDegrees, FRAMES_3D)
 
     fun byCategory(c: AvatarCategory): List<Avatar> = all.filter { it.category == c }
 

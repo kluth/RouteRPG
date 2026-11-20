@@ -67,19 +67,39 @@ class AvatarsTest {
     }
 
     @Test fun threeDModelsAreMappedToCatalogEmoji() {
-        val withModel = Avatars.all.filter { Avatars.modelOf(it.emoji) != null }
-        assertTrue(withModel.size >= 20, "vehicles with 3D models: ${withModel.size}")
-        assertEquals(Avatars.modelIds.size, withModel.map { Avatars.modelOf(it.emoji) }.toSet().size, "one model per emoji")
+        val withModel = Avatars.all.filter { Avatars.model3d(it.emoji) != null }
+        assertTrue(withModel.size >= 55, "figures with 3D models: ${withModel.size}")
+        assertEquals(Avatars.models3d.size, withModel.size, "every 3D model is reachable from the catalog, one emoji each")
+        assertEquals(Avatars.models3d.size, Avatars.models3d.map { it.id }.toSet().size)
         assertNull(Avatars.modelOf("🦊"))
         assertEquals("sedan", Avatars.modelOf("🚗"))
+        assertEquals(ModelKind.WALKER, Avatars.model3d("🐱")!!.kind)
+        assertEquals(ModelKind.VEHICLE, Avatars.model3d("🚒")!!.kind)
     }
 
     @Test fun everyModelHasAllRotationFrames() {
         val dir = java.io.File("../app/src/main/assets/figures3d")
-        for (id in Avatars.modelIds) for (i in 0 until Avatars.FRAMES_3D) {
-            val f = java.io.File(dir, "${id}_${i.toString().padStart(2, '0')}.webp")
-            assertTrue(f.isFile && f.length() > 500, "missing sprite ${f.name}")
+        for (m in Avatars.models3d) for (name in m.assetNames()) {
+            val f = java.io.File(dir, name)
+            assertTrue(f.isFile && f.length() > 300, "missing sprite $name")
         }
+    }
+
+    @Test fun walkersStoreHalfTheHeadingsAndMirrorTheRest() {
+        val cat = Avatars.model3d("🐱")!!
+        assertEquals(24, cat.headings); assertEquals(6, cat.walkFrames)
+        assertEquals(13 * 6, cat.assetNames().size)
+        assertTrue("cat_h12_w5.webp" in cat.assetNames())
+        assertEquals(36, Avatars.model3d("🚗")!!.assetNames().size)
+    }
+
+    @Test fun headingIndexScalesWithHeadings() {
+        assertEquals(6, Avatars.headingIndex(90f, 24))
+        assertEquals(12, Avatars.headingIndex(180f, 24))
+        assertEquals(18, Avatars.headingIndex(270f, 24))
+        assertEquals(0, Avatars.headingIndex(353f, 24))
+        assertEquals(6, Avatars.headingIndex(null, 24))
+        assertEquals(9, Avatars.headingIndex(null, 36))
     }
 
     @Test fun frameFollowsHeading() {

@@ -4,6 +4,7 @@ import android.animation.ValueAnimator
 import android.content.Context
 import android.view.animation.LinearInterpolator
 import app.kiloquest.game.Avatars
+import app.kiloquest.game.ModelKind
 import app.kiloquest.nav.LatLon
 import app.kiloquest.nav.haversine
 import org.maplibre.android.geometry.LatLng
@@ -50,7 +51,10 @@ class AvatarMarker(private val ctx: Context, private val prefix: String, private
     private var icon: SymbolLayer? = null
 
     private var emoji = Avatars.DEFAULT
-    private var frames = false          // true = 3D-Drehbilder, false = Emoji
+    private var sheet: FigureSheet? = null   // 3D-Drehbilder, sonst Emoji
+    private var walkFrame = 0
+    private var walkPhase = 0f
+    private var lastTickNs = 0L
     private var flier = false           // schwebt statt zu federn
     private var lat = 0.0
     private var lon = 0.0
@@ -109,22 +113,22 @@ class AvatarMarker(private val ctx: Context, private val prefix: String, private
         emoji = newEmoji
         val st = style ?: return
         runCatching { addedImages.forEach { st.removeImage(it) } }
-        val sprites = Figures3D.frames(ctx, newEmoji)
+        val sh = Figures3D.sheet(ctx, newEmoji)
+        sheet = sh
         val names = ArrayList<String>()
-        if (sprites != null) {
+        if (sh != null) {
             val map = HashMap<String, android.graphics.Bitmap>()
-            sprites.forEachIndexed { i, b -> val n = "$imgPrefix-f$i"; map[n] = b; names += n }
+            sh.all().forEachIndexed { h, row -> row.forEachIndexed { w, b -> val n = "$imgPrefix-f$h-$w"; map[n] = b; names += n } }
             st.addImages(map)
-            frames = true
         } else {
             st.addImage("$imgPrefix-e", emojiBitmap(newEmoji, 128)); names += "$imgPrefix-e"
             st.addImage("$imgPrefix-e-flip", emojiBitmap(newEmoji, 128, mirrored = true)); names += "$imgPrefix-e-flip"
-            frames = false
         }
         addedImages = names
         val id = Avatars.modelOf(newEmoji)
-        flier = id == "rocket" || id == "ufo" || (!frames && Avatars.orientOf(newEmoji) != app.kiloquest.game.Orient.SIDE_LEFT)
-        icon?.setProperties(PropertyFactory.iconSize(if (frames) 0.5f else 0.7f))
+        flier = id == "rocket" || id == "ufo" || (sh == null && Avatars.orientOf(newEmoji) != app.kiloquest.game.Orient.SIDE_LEFT)
+        // Fahrzeug-Bilder sind 192 px, Gehfiguren 128 px: gleiche Bildschirmgroesse
+        icon?.setProperties(PropertyFactory.iconSize(when { sh == null -> 0.7f; sh.model.kind == ModelKind.WALKER -> 0.65f; else -> 0.5f }))
         puffLayer?.setProperties(PropertyFactory.circleColor(puffColor(newEmoji)))
         lastImage = null; lastRotation = Float.NaN
         applyPose()
@@ -184,9 +188,11 @@ class AvatarMarker(private val ctx: Context, private val prefix: String, private
         val ic = icon ?: return
         val image: String
         val rotation: Float
-        if (frames) {
-            image = "$imgPrefix-f${Avatars.frameFor(bearing)}"
-            rotation = roll // Neigung in Kurven
+        val sh = sheet
+        if (sh != null) {
+            image = "$imgPrefix-f${sh.heading(bearing)}-${walkFrame.mod(sh.frames)}"
+            // Neigung in Kurven nur bei Fahrzeugen; Gehfiguren bleiben aufrecht
+            rotation = if (sh.model.kind == ModelKind.VEHICLE) roll else 0f
         } else {
             val pose = Avatars.pose(emoji, bearing)
             image = if (pose.mirrored) "$imgPrefix-e-flip" else "$imgPrefix-e"
@@ -208,8 +214,23 @@ class AvatarMarker(private val ctx: Context, private val prefix: String, private
                 val t = a.animatedValue as Float
                 val now = System.currentTimeMillis()
                 val moving = speedMps > 1.0 && hasPos
+                // Gehzyklus: schneller bei hoeherem Tempo, im Stand das erste Bild
+                val sh = sheet
+                if (sh != null && sh.frames > 1) {
+                    val nowNs = System.nanoTime()
+                    val dtS = if (lastTickNs == 0L) 0f else (nowNs - lastTickNs) / 1e9f
+                    lastTickNs = nowNs
+                    if (moving) {
+                        val cycle = (0.95f - speedMps.toFloat() * 0.035f).coerceIn(0.3f, 0.95f)
+                        walkPhase = (walkPhase + dtS / cycle) % 1f
+                        walkFrame = (walkPhase * sh.frames).toInt() % sh.frames
+                    } else { walkFrame = 0; walkPhase = 0f }
+                    applyPose()
+                }
                 // Federn (schnell, klein) fuer Bodenfahrzeuge; Schweben (langsam, gross) fuer Raumschiffe und Emoji
+                val walkerFig = sheet?.model?.kind == ModelKind.WALKER
                 val bob = if (flier) 3.5f * sin(t * 2 * PI).toFloat()
+                else if (walkerFig) 0.3f * sin(t * 2 * PI).toFloat()
                 else (if (moving) min(1.8f, 0.5f + speedMps.toFloat() * 0.04f) else 0.35f) * sin(t * 2 * PI * 5).toFloat()
                 ring?.setProperties(PropertyFactory.circleRadius(14f + 26f * t), PropertyFactory.circleStrokeOpacity(0.55f * (1f - t)))
                 shadow?.setProperties(PropertyFactory.circleRadius(13f - 1.2f * bob), PropertyFactory.circleOpacity(0.25f - 0.03f * bob))
@@ -238,6 +259,6 @@ class AvatarMarker(private val ctx: Context, private val prefix: String, private
         moveAnim?.cancel(); moveAnim = null
         idleAnim?.cancel(); idleAnim = null
         style = null; source = null; puffSource = null; puffLayer = null; shadow = null; ring = null; icon = null
-        lastImage = null; addedImages = emptyList(); puffs.clear()
+        lastImage = null; addedImages = emptyList(); puffs.clear(); sheet = null; lastTickNs = 0L
     }
 }

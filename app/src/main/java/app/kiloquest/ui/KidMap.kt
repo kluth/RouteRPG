@@ -133,7 +133,8 @@ fun KidMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier) {
     val moving = rememberMoving(state.position)
     val context = androidx.compose.ui.platform.LocalContext.current
     // 3D-Fahrzeug: Drehbilder (siehe Figures3D); sonst Emoji
-    val sprites = remember(state.avatar) { Figures3D.frames(context, state.avatar)?.map { it.asImageBitmap() } }
+    val sheet = remember(state.avatar) { Figures3D.sheet(context, state.avatar) }
+    val images = remember(sheet) { sheet?.all()?.map { row -> row.map { it.asImageBitmap() } } }
     val along = state.guidance?.alongMeters ?: 0.0
     val colors = KiloTheme.colors
     val bg = MaterialTheme.colorScheme.surfaceVariant
@@ -151,6 +152,11 @@ fun KidMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier) {
         0f, 1f,
         androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1600, easing = androidx.compose.animation.core.LinearEasing)),
         label = "pulse",
+    )
+    val walk by infinite.animateFloat(
+        0f, 1f,
+        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(600, easing = androidx.compose.animation.core.LinearEasing)),
+        label = "walk",
     )
     val shake by infinite.animateFloat(
         0f, 1f,
@@ -314,14 +320,16 @@ fun KidMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier) {
         }
 
         // Figur schwebt bzw. federt, ohne Untergrund: 3D-Fahrzeuge als Drehbild, sonst Emoji
-        val isFlier = sprites == null || avatar == "🚀" || avatar == "🛸"
+        val isFlier = images == null || avatar == "🚀" || avatar == "🛸"
+        val walker = sheet?.model?.kind == app.kiloquest.game.ModelKind.WALKER
         val springAmp = if (moving) 1.6f else 0.4f
-        val lift = if (isFlier) hover else 2.dp.toPx() + springAmp * dp * sin(shake * 2f * PI.toFloat())
+        val lift = if (isFlier) hover else if (walker) 1.dp.toPx() else 2.dp.toPx() + springAmp * dp * sin(shake * 2f * PI.toFloat())
         // Kurvenlage: zu Beginn einer Drehung neigt sich die Figur, dann richtet sie sich auf
         val turn = if (state.bearing != null && bearing != null) ((state.bearing - bearing + 540f) % 360f - 180f) else 0f
-        val roll = if (moving) (turn * 0.25f).coerceIn(-12f, 12f) else 0f
-        if (sprites != null) {
-            val img = sprites[app.kiloquest.game.Avatars.frameFor(bearing)]
+        val roll = if (moving && !walker) (turn * 0.25f).coerceIn(-12f, 12f) else 0f
+        if (images != null && sheet != null) {
+            val frame = if (moving && sheet.frames > 1) (walk * sheet.frames).toInt() % sheet.frames else 0
+            val img = images[sheet.heading(bearing)][frame]
             val sz = (96.dp.toPx() * me.s.coerceIn(0.8f, 1.25f)).toInt()
             val topLeft = androidx.compose.ui.unit.IntOffset((me.o.x - sz / 2f).toInt(), (me.o.y - sz * 0.88f - lift).toInt())
             rotate(roll, pivot = Offset(me.o.x, me.o.y - sz * 0.35f - lift)) {

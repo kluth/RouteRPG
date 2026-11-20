@@ -173,4 +173,20 @@ class LayoutShotsTest {
     @Test fun fig3dRocketNE() = shot("fig-rocket-ne", 390, 500, state = { withMap.copy(avatar = "🚀", bearing = 45f) }, custom = { s -> app.kiloquest.ui.KidMap(s, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize()) })
     @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
     @Test fun avatarPickerVehicles() = shot("avatar-vehicles-390x844", 390, 844, state = { withMap.copy(avatar = "🚜") }, custom = { s -> app.kiloquest.ui.AvatarPicker(s.avatar, {}, {}) })
+
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi")
+    @Test fun walkerCatEast() = shot("walk-cat-east", 390, 500, state = { withMap.copy(avatar = "🐱", bearing = 90f) }, custom = { s -> app.kiloquest.ui.KidMap(s, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize()) })
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi")
+    @Test fun walkerRobotNorth() = shot("walk-robot-north", 390, 500, state = { withMap.copy(avatar = "🤖", bearing = 0f) }, custom = { s -> app.kiloquest.ui.KidMap(s, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize()) })
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi")
+    @Test fun walkerKnightWest() = shot("walk-knight-west", 390, 500, state = { withMap.copy(avatar = "🤴", bearing = 270f) }, custom = { s -> app.kiloquest.ui.KidMap(s, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize()) })
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi")
+    @Test fun walkerElephantSE() = shot("walk-elephant-se", 390, 500, state = { withMap.copy(avatar = "🐘", bearing = 135f) }, custom = { s -> app.kiloquest.ui.KidMap(s, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize()) })
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun avatarPickerHeroes() = shot("avatar-heroes-390x844", 390, 844, state = { withMap.copy(avatar = "🦸") }, custom = { s ->
+        // Kategorie Helden vorwaehlen: der Picker waehlt die Kategorie der aktuellen Figur
+        app.kiloquest.ui.AvatarPicker(s.avatar, {}, {})
+    })
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun avatarPickerAnimals() = shot("avatar-animals-390x844", 390, 844, state = { withMap.copy(avatar = "🐱") }, custom = { s -> app.kiloquest.ui.AvatarPicker(s.avatar, {}, {}) })
 }
