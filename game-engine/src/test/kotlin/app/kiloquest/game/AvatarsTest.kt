@@ -65,4 +65,31 @@ class AvatarsTest {
         assertEquals(Avatars.pose("🚀", 45f), Avatars.pose("🚀", 405f))
         assertEquals(Avatars.pose("🚀", 350f), Avatars.pose("🚀", -10f))
     }
+
+    @Test fun threeDModelsAreMappedToCatalogEmoji() {
+        val withModel = Avatars.all.filter { Avatars.modelOf(it.emoji) != null }
+        assertTrue(withModel.size >= 20, "vehicles with 3D models: ${withModel.size}")
+        assertEquals(Avatars.modelIds.size, withModel.map { Avatars.modelOf(it.emoji) }.toSet().size, "one model per emoji")
+        assertNull(Avatars.modelOf("🦊"))
+        assertEquals("sedan", Avatars.modelOf("🚗"))
+    }
+
+    @Test fun everyModelHasAllRotationFrames() {
+        val dir = java.io.File("../app/src/main/assets/figures3d")
+        for (id in Avatars.modelIds) for (i in 0 until Avatars.FRAMES_3D) {
+            val f = java.io.File(dir, "${id}_${i.toString().padStart(2, '0')}.webp")
+            assertTrue(f.isFile && f.length() > 500, "missing sprite ${f.name}")
+        }
+    }
+
+    @Test fun frameFollowsHeading() {
+        assertEquals(0, Avatars.frameFor(0f))
+        assertEquals(9, Avatars.frameFor(90f))
+        assertEquals(18, Avatars.frameFor(180f))
+        assertEquals(27, Avatars.frameFor(270f))
+        assertEquals(0, Avatars.frameFor(359f))   // rundet auf Norden
+        assertEquals(0, Avatars.frameFor(364f))
+        assertEquals(35, Avatars.frameFor(-10f))
+        assertEquals(9, Avatars.frameFor(null))
+    }
 }

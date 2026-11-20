@@ -460,7 +460,7 @@ private fun MapScreen(route: List<LatLon>?, position: LatLon?, follow: Boolean, 
     var styleReady by remember { mutableStateOf(false) }
 
     val followState by androidx.compose.runtime.rememberUpdatedState(follow)
-    val marker = remember { app.kiloquest.ui.AvatarMarker("host") { ll -> if (followState) map?.moveCamera(CameraUpdateFactory.newLatLng(ll)) } }
+    val marker = remember { app.kiloquest.ui.AvatarMarker(context, "host") { ll -> if (followState) map?.moveCamera(CameraUpdateFactory.newLatLng(ll)) } }
 
     val mapView = remember {
         MapView(context).apply {

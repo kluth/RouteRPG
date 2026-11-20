@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -87,6 +88,21 @@ private fun rememberSmoothPosition(target: LatLon?): LatLon? {
     return LatLon(a.lat + north.value / M_PER_DEG_LAT, a.lon + east.value / (111_320.0 * cos(a.lat * PI / 180)))
 }
 
+/** Faehrt das Auto gerade? (Position hat sich in den letzten 3 s um mehr als 3 m geaendert) */
+@Composable
+private fun rememberMoving(pos: LatLon?): Boolean {
+    var last by remember { mutableStateOf<LatLon?>(null) }
+    var moving by remember { mutableStateOf(false) }
+    androidx.compose.runtime.LaunchedEffect(pos) {
+        val p = pos ?: return@LaunchedEffect
+        val l = last
+        if (l == null || app.kiloquest.nav.haversine(l, p) > 3.0) { moving = l != null; last = p }
+        kotlinx.coroutines.delay(3000)
+        moving = false
+    }
+    return moving
+}
+
 /** Richtung weich drehen (immer den kuerzeren Weg, auch ueber Norden). */
 @Composable
 private fun rememberSmoothBearing(target: Float?): Float? {
@@ -114,6 +130,10 @@ fun KidMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier) {
     val route = state.route
     val pos = rememberSmoothPosition(state.position)
     val bearing = rememberSmoothBearing(state.bearing)
+    val moving = rememberMoving(state.position)
+    val context = androidx.compose.ui.platform.LocalContext.current
+    // 3D-Fahrzeug: Drehbilder (siehe Figures3D); sonst Emoji
+    val sprites = remember(state.avatar) { Figures3D.frames(context, state.avatar)?.map { it.asImageBitmap() } }
     val along = state.guidance?.alongMeters ?: 0.0
     val colors = KiloTheme.colors
     val bg = MaterialTheme.colorScheme.surfaceVariant
@@ -131,6 +151,11 @@ fun KidMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier) {
         0f, 1f,
         androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1600, easing = androidx.compose.animation.core.LinearEasing)),
         label = "pulse",
+    )
+    val shake by infinite.animateFloat(
+        0f, 1f,
+        androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(220, easing = androidx.compose.animation.core.LinearEasing)),
+        label = "shake",
     )
     val bob by infinite.animateFloat(
         0f, 1f,
@@ -272,12 +297,40 @@ fun KidMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier) {
         val shrink = 1f - 0.18f * bob
         drawOval(Color.Black.copy(alpha = 0.16f), Offset(me.o.x - r * 1.15f * shrink, me.o.y - r * 0.5f * cosT * shrink), androidx.compose.ui.geometry.Size(r * 2.3f * shrink, r * 1.0f * cosT * shrink))
         drawOval(Color.Black.copy(alpha = 0.22f), Offset(me.o.x - r * 0.8f * shrink, me.o.y - r * 0.35f * cosT * shrink), androidx.compose.ui.geometry.Size(r * 1.6f * shrink, r * 0.7f * cosT * shrink))
-        // Figur: heller Kreis (Blase) mit Emoji, schwebend ueber dem Schatten
-        val cy = me.o.y - hover - r
-        drawCircle(Color.White.copy(alpha = 0.92f), r, Offset(me.o.x, cy))
-        drawCircle(routeColor.copy(alpha = 0.35f), r, Offset(me.o.x, cy), style = Stroke(width = 3.dp.toPx()))
-        val pose = app.kiloquest.game.Avatars.pose(avatar, bearing)
-        drawEmoji(avatar, me.o.x, cy, r * 1.3f, pose.rotationDegrees, pose.mirrored)
+        // Spur hinter der Figur (nur bei Fahrt): Staub, Schaum, Rauch oder Flamme je nach Fahrzeug
+        if (moving && bearing != null) {
+            val rad = bearing * PI.toFloat() / 180f
+            val dx = sin(rad); val dy = -cos(rad)
+            val gx0 = if (pos != null) ground(pos).first else 0f
+            val gy0 = if (pos != null) ground(pos).second else 0f
+            val c = puffColorFor(avatar)
+            for (i in 0 until 6) {
+                val f = ((pulse * 2f + i / 6f) % 1f)
+                val back = f * 80.dp.toPx()
+                val q = proj(gx0 - dx * back, gy0 - dy * back)
+                val rr = (4.dp.toPx() + 11.dp.toPx() * f) * q.s
+                drawOval(c.copy(alpha = 0.45f * (1f - f) * (1f - f)), Offset(q.o.x - rr, q.o.y - rr * cosT.coerceAtLeast(0.55f)), androidx.compose.ui.geometry.Size(rr * 2, rr * 2 * cosT.coerceAtLeast(0.55f)))
+            }
+        }
+
+        // Figur schwebt bzw. federt, ohne Untergrund: 3D-Fahrzeuge als Drehbild, sonst Emoji
+        val isFlier = sprites == null || avatar == "🚀" || avatar == "🛸"
+        val springAmp = if (moving) 1.6f else 0.4f
+        val lift = if (isFlier) hover else 2.dp.toPx() + springAmp * dp * sin(shake * 2f * PI.toFloat())
+        // Kurvenlage: zu Beginn einer Drehung neigt sich die Figur, dann richtet sie sich auf
+        val turn = if (state.bearing != null && bearing != null) ((state.bearing - bearing + 540f) % 360f - 180f) else 0f
+        val roll = if (moving) (turn * 0.25f).coerceIn(-12f, 12f) else 0f
+        if (sprites != null) {
+            val img = sprites[app.kiloquest.game.Avatars.frameFor(bearing)]
+            val sz = (96.dp.toPx() * me.s.coerceIn(0.8f, 1.25f)).toInt()
+            val topLeft = androidx.compose.ui.unit.IntOffset((me.o.x - sz / 2f).toInt(), (me.o.y - sz * 0.88f - lift).toInt())
+            rotate(roll, pivot = Offset(me.o.x, me.o.y - sz * 0.35f - lift)) {
+                drawImage(img, dstOffset = topLeft, dstSize = androidx.compose.ui.unit.IntSize(sz, sz), filterQuality = androidx.compose.ui.graphics.FilterQuality.Medium)
+            }
+        } else {
+            val pose = app.kiloquest.game.Avatars.pose(avatar, bearing)
+            drawEmoji(avatar, me.o.x, me.o.y - r - lift, r * 2.1f, pose.rotationDegrees, pose.mirrored)
+        }
 
         // Kompass: Norden ist immer oben
         val cc = Offset(26.dp.toPx(), 26.dp.toPx())
@@ -287,6 +340,13 @@ fun KidMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier) {
         }
         drawPath(tri, Color(0xFFB3261E))
     }
+}
+
+private fun puffColorFor(emoji: String): Color = when (app.kiloquest.game.Avatars.modelOf(emoji)) {
+    "sailboat", "speedboat", "liner", "rowboat", "cargoship", "galleon" -> Color.White
+    "rocket", "ufo" -> Color(0xFFFFC247)
+    "train_bullet", "train_city", "train_city_b" -> Color(0xFFE8E8E8)
+    else -> if (app.kiloquest.game.Avatars.orientOf(emoji) == app.kiloquest.game.Orient.POINTER) Color.White else Color(0xFFCFC6B4)
 }
 
 private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawEmoji(
@@ -353,8 +413,8 @@ private fun MapRoundButton(icon: Int, description: String, onClick: () -> Unit, 
 /** Rundes Feld mit der aktuellen Figur; Tippen oeffnet die Auswahl. */
 @Composable
 fun AvatarBadge(avatar: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(onClick = onClick, modifier = modifier.size(52.dp), shape = CircleShape, color = MaterialTheme.colorScheme.surface, shadowElevation = 3.dp) {
-        Box(contentAlignment = Alignment.Center) { Text(avatar, style = androidx.compose.ui.text.TextStyle(fontSize = androidx.compose.ui.unit.TextUnit(28f, androidx.compose.ui.unit.TextUnitType.Sp))) }
+    Surface(onClick = onClick, modifier = modifier.size(56.dp), shape = CircleShape, color = MaterialTheme.colorScheme.surface, shadowElevation = 3.dp) {
+        Box(contentAlignment = Alignment.Center) { AvatarImage(avatar, 40.dp) }
     }
 }
 
@@ -387,5 +447,18 @@ fun KidMapFull(state: UiState, onClose: () -> Unit, onPickAvatar: () -> Unit, on
                 }
             }
         }
+    }
+}
+
+
+/** Figur als Bild: 3D-Vorschau (Fahrt nach Osten), sonst Emoji. */
+@Composable
+fun AvatarImage(emoji: String, size: androidx.compose.ui.unit.Dp, modifier: Modifier = Modifier) {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val bmp = remember(emoji) { Figures3D.preview(ctx, emoji)?.asImageBitmap() }
+    if (bmp != null) {
+        androidx.compose.foundation.Image(bmp, contentDescription = null, modifier = modifier.size(size * 1.25f))
+    } else {
+        Text(emoji, modifier, style = androidx.compose.ui.text.TextStyle(fontSize = androidx.compose.ui.unit.TextUnit(size.value * 0.72f, androidx.compose.ui.unit.TextUnitType.Sp)))
     }
 }

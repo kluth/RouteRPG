@@ -4,3 +4,4 @@
 - **Schriften:** Atkinson Hyperlegible (Braille Institute, OFL 1.1, Datei in diesem Ordner), Nunito (OFL 1.1).
 - **Symbole:** Material Symbols (Apache 2.0).
 - **Karte:** (c) OpenStreetMap-Mitwirkende, OpenFreeMap, MapLibre (bleibt in der App sichtbar).
+- **3D-Fahrzeuge der Karten-Figuren** (`app/src/main/assets/figures3d/`): Modelle von Kenney (https://kenney.nl), Lizenz **CC0** (Public Domain): Car Kit 3.1, Train Kit, Watercraft Kit, Space Kit, geladen von OpenGameArt. In Drehbilder umgerechnet (siehe `tools/sprites/README.md`). Eine Namensnennung ist bei CC0 nicht noetig, wird aber gern gegeben: "3D-Fahrzeuge von Kenney.nl".

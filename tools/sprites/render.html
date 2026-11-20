@@ -1,0 +1,46 @@
+<!doctype html><html><body style="margin:0;background:transparent">
+<canvas id="c" width="256" height="256"></canvas>
+<script type="importmap">{"imports":{"three":"/three/build/three.module.js","three/addons/":"/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true, preserveDrawingBuffer:true});
+renderer.setPixelRatio(1); renderer.outputColorSpace = THREE.SRGBColorSpace;
+window.ready = false;
+window.renderModel = async (url, angles, size, elevDeg, yawOffset) => {
+  renderer.setSize(size, size, false);
+  let gltf;
+  if (url.endsWith('.obj')) {
+    const base = url.slice(0, -4);
+    const mats = await new MTLLoader().loadAsync(base + '.mtl'); mats.preload();
+    const obj = await new OBJLoader().setMaterials(mats).loadAsync(url);
+    gltf = { scene: obj };
+  } else gltf = await new GLTFLoader().loadAsync(url);
+  const scene = new THREE.Scene();
+  const pivot = new THREE.Group(); scene.add(pivot);
+  pivot.add(gltf.scene);
+  // zentrieren und auf Einheitsgroesse skalieren
+  const box = new THREE.Box3().setFromObject(gltf.scene);
+  const center = box.getCenter(new THREE.Vector3()); const sz = box.getSize(new THREE.Vector3());
+  gltf.scene.position.sub(center);
+  const maxDim = Math.max(sz.x, sz.y, sz.z);
+  const s = 1.0 / maxDim; pivot.scale.setScalar(s);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 1.6));
+  const sun = new THREE.DirectionalLight(0xffffff, 2.2); sun.position.set(-2, 3, 2.5); scene.add(sun);
+  const cam = new THREE.PerspectiveCamera(22, 1, 0.1, 50);
+  const el = elevDeg * Math.PI/180, dist = 3.2;
+  cam.position.set(0, Math.sin(el)*dist, Math.cos(el)*dist); cam.lookAt(0, 0, 0);
+  const out = [];
+  for (const a of angles) {
+    pivot.rotation.y = (180 - a + yawOffset) * Math.PI/180;   // a = Fahrtrichtung (0 = Norden = von der Kamera weg)
+    renderer.setClearColor(0x000000, 0); renderer.clear();
+    renderer.render(scene, cam);
+    out.push(canvas.toDataURL('image/png'));
+  }
+  return out;
+};
+window.ready = true;
+</script></body></html>

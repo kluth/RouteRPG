@@ -65,6 +65,31 @@ object Avatars {
         }
     }
 
+    /**
+     * Fahrzeuge mit echtem 3D-Modell (Kenney, CC0). Das Modell wurde in [FRAMES_3D] Drehbilder (je 10 Grad) gerechnet und liegt
+     * als `figures3d/<id>_NN.webp` in den App-Assets; NN = Fahrtrichtung / 10 (00 = Norden, im Uhrzeigersinn).
+     */
+    const val FRAMES_3D = 36
+    private val models: Map<String, String> = mapOf(
+        "🚗" to "sedan", "🚕" to "taxi", "🚙" to "suv", "🏎️" to "race", "🚓" to "police", "🚑" to "ambulance", "🚒" to "firetruck",
+        "🚐" to "van", "🛻" to "pickup", "🚚" to "delivery", "🚛" to "garbage", "🚜" to "tractor",
+        "🚆" to "train_bullet", "🚋" to "train_city", "🚂" to "train_city_b",
+        "⛵" to "sailboat", "🚤" to "speedboat", "🚢" to "liner", "🛶" to "rowboat", "⛴️" to "cargoship", "🏴‍☠️" to "galleon",
+        "🚀" to "rocket", "🛸" to "ufo",
+    )
+
+    /** Alle Modell-IDs (fuer den Test, dass jede Datei vorhanden ist). */
+    val modelIds: Set<String> get() = models.values.toSet()
+
+    /** Modell-ID des Emoji oder null, wenn es nur als Emoji dargestellt wird (Tiere, Personen, Flugzeuge ...). */
+    fun modelOf(emoji: String): String? = models[emoji]
+
+    /** Nummer des Drehbilds (0 bis 35) fuer die Fahrtrichtung; ohne Richtung blickt das Modell nach Osten (Bild 9). */
+    fun frameFor(headingDegrees: Float?): Int {
+        val h = headingDegrees ?: return FRAMES_3D / 4
+        return Math.round((((h % 360f) + 360f) % 360f) / (360f / FRAMES_3D)) % FRAMES_3D
+    }
+
     fun byCategory(c: AvatarCategory): List<Avatar> = all.filter { it.category == c }
 
     private fun isEmojiCodePoint(cp: Int): Boolean =

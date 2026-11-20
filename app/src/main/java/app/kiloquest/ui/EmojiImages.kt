@@ -9,7 +9,7 @@ import android.graphics.Paint
  * (Fahrzeuge in Seitenansicht schauen dann nach rechts). [disc] legt einen hellen Kreis dahinter, damit die Figur auf jeder
  * Karte zu sehen ist.
  */
-fun emojiBitmap(emoji: String, px: Int, mirrored: Boolean = false, disc: Boolean = true): Bitmap {
+fun emojiBitmap(emoji: String, px: Int, mirrored: Boolean = false, disc: Boolean = false): Bitmap {
     val bmp = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
     val c = Canvas(bmp)
     if (disc) c.drawCircle(px / 2f, px / 2f, px / 2f - 2f, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xE6FFFFFF.toInt() })

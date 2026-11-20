@@ -162,4 +162,15 @@ class LayoutShotsTest {
     @Test fun poseRocketNorth() = shot("pose-rocket-north", 390, 500, state = { withMap.copy(avatar = "🚀", bearing = 0f) }, custom = { s -> app.kiloquest.ui.KidMap(s, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize()) })
     @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi")
     @Test fun poseRocketSouthEast() = shot("pose-rocket-se", 390, 500, state = { withMap.copy(avatar = "🚀", bearing = 135f) }, custom = { s -> app.kiloquest.ui.KidMap(s, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize()) })
+
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi")
+    @Test fun fig3dSedanEast() = shot("fig-sedan-east", 390, 500, state = { withMap.copy(avatar = "🚗", bearing = 90f) }, custom = { s -> app.kiloquest.ui.KidMap(s, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize()) })
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi")
+    @Test fun fig3dFiretruckNorth() = shot("fig-firetruck-north", 390, 500, state = { withMap.copy(avatar = "🚒", bearing = 0f) }, custom = { s -> app.kiloquest.ui.KidMap(s, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize()) })
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi")
+    @Test fun fig3dBoatSouthWest() = shot("fig-sailboat-sw", 390, 500, state = { withMap.copy(avatar = "⛵", bearing = 225f) }, custom = { s -> app.kiloquest.ui.KidMap(s, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize()) })
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi")
+    @Test fun fig3dRocketNE() = shot("fig-rocket-ne", 390, 500, state = { withMap.copy(avatar = "🚀", bearing = 45f) }, custom = { s -> app.kiloquest.ui.KidMap(s, app.kiloquest.ui.MapMode.FOLLOW, Modifier.fillMaxSize()) })
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun avatarPickerVehicles() = shot("avatar-vehicles-390x844", 390, 844, state = { withMap.copy(avatar = "🚜") }, custom = { s -> app.kiloquest.ui.AvatarPicker(s.avatar, {}, {}) })
 }

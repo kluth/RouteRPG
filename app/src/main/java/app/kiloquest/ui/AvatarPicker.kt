@@ -62,7 +62,7 @@ fun AvatarPicker(current: String, onPick: (String) -> Unit, onClose: () -> Unit)
         Column(Modifier.screenColumn().padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 3.dp, modifier = Modifier.size(72.dp)) {
-                    Box(contentAlignment = Alignment.Center) { Text(current, style = TextStyle(fontSize = 44.sp)) }
+                    Box(contentAlignment = Alignment.Center) { AvatarImage(current, 56.dp) }
                 }
                 Text(stringResource(R.string.avatar_title), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
             }
@@ -79,7 +79,7 @@ fun AvatarPicker(current: String, onPick: (String) -> Unit, onClose: () -> Unit)
                         color = if (a.emoji == current) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
                         shadowElevation = 2.dp,
                         modifier = Modifier.size(64.dp),
-                    ) { Box(contentAlignment = Alignment.Center) { Text(a.emoji, style = TextStyle(fontSize = 34.sp)) } }
+                    ) { Box(contentAlignment = Alignment.Center) { AvatarImage(a.emoji, 44.dp) } }
                 }
             }
             // Eigenes Emoji: alles, was die Emoji-Tastatur anbietet

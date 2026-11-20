@@ -53,7 +53,7 @@ fun KidTileMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier, int
     var styleReady by remember { mutableStateOf(false) }
     val currentMode by androidx.compose.runtime.rememberUpdatedState(mode)
     // Animierte 3D-Figur; die Kamera faehrt in der Nah-Ansicht mit jeder weichen Zwischenposition mit
-    val marker = remember { AvatarMarker("kid") { ll -> if (currentMode == MapMode.FOLLOW) map?.moveCamera(CameraUpdateFactory.newLatLng(ll)) } }
+    val marker = remember { AvatarMarker(context, "kid") { ll -> if (currentMode == MapMode.FOLLOW) map?.moveCamera(CameraUpdateFactory.newLatLng(ll)) } }
 
     val mapView = remember {
         MapView(context).apply {
