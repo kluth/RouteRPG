@@ -240,4 +240,6 @@
     <string name="pkg_ready">Offline-Paket bereit: Karte, Tempolimits und Länder sind gespeichert.</string>
     <string name="pkg_error">Offline-Paket fehlgeschlagen. Bitte mit Netz erneut versuchen.</string>
     <string name="pkg_clear">Offline-Karten löschen</string>
+    <string name="car_simple_map">Einfache Karte im Auto</string>
+    <string name="car_simple_map_hint">Nutzen, falls das Auto-Display eine schwarze oder fehlerhafte Karte zeigt. Gilt ab der nächsten Verbindung.</string>
 </resources>

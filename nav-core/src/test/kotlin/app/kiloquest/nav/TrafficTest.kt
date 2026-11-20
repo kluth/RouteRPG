@@ -257,3 +257,45 @@ class CorridorTest {
         assertNull(CountryTimeline(emptyList()).countryAt(1.0))
     }
 }
+
+class CarMapHelpersTest {
+    private val line = Polyline((0..1000).map { LatLon(50.0 + it * 0.0001, 8.0) }) // ca. 11 km
+
+    @Test
+    fun `maps valhalla types to kinds`() {
+        assertEquals(ManeuverKind.LEFT, ManeuverKind.fromValhalla(15))
+        assertEquals(ManeuverKind.RIGHT, ManeuverKind.fromValhalla(10))
+        assertEquals(ManeuverKind.RAMP_RIGHT, ManeuverKind.fromValhalla(18)) // Auffahrt rechts, wie in echter Antwort
+        assertEquals(ManeuverKind.ROUNDABOUT, ManeuverKind.fromValhalla(26))
+        assertEquals(ManeuverKind.DESTINATION_RIGHT, ManeuverKind.fromValhalla(5))
+        assertEquals(ManeuverKind.UNKNOWN, ManeuverKind.fromValhalla(99))
+    }
+
+    @Test
+    fun `parsed real route exposes maneuver kinds`() {
+        val route = ValhallaApi.parseRoute(javaClass.classLoader.getResource("valhalla_route_speed.json")!!.readText())
+        assertTrue(route.maneuvers.any { it.kind == ManeuverKind.LEFT })
+        assertEquals(ManeuverKind.DESTINATION, route.maneuvers.last().kind)
+    }
+
+    @Test
+    fun `slice returns the stretch between two positions`() {
+        val s = line.slice(1_000.0, 3_000.0)
+        assertTrue(s.first().lat in 50.008..50.0095)
+        assertTrue(s.last().lat in 50.027..50.0285)
+        assertTrue(s.size in 150..200, "size=${s.size}")
+    }
+
+    @Test
+    fun `slice thins out long stretches but keeps both ends`() {
+        val s = line.slice(0.0, 1e9, maxPoints = 50)
+        assertEquals(50, s.size)
+        assertEquals(line.points.first(), s.first())
+        assertEquals(line.points.last(), s.last())
+    }
+
+    @Test
+    fun `slice at the very end returns a point`() {
+        assertEquals(1, line.slice(1e9, 1e9 + 10).size)
+    }
+}

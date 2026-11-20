@@ -9,7 +9,11 @@ data class Maneuver(
     /** Distanz vom Routenstart bis zum Manoever in Metern. */
     val atMeters: Double,
     val lengthMeters: Double,
-)
+    /** Ausfahrt im Kreisverkehr (1 = erste), falls Kreisverkehr. */
+    val roundaboutExit: Int? = null,
+) {
+    val kind: ManeuverKind get() = ManeuverKind.fromValhalla(type)
+}
 
 data class Route(
     val line: Polyline,

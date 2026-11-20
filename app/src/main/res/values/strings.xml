@@ -240,4 +240,6 @@
     <string name="pkg_ready">Offline package ready: map, speed limits and countries are saved.</string>
     <string name="pkg_error">Offline package failed. Please try again with a network connection.</string>
     <string name="pkg_clear">Delete offline maps</string>
+    <string name="car_simple_map">Simple map in the car</string>
+    <string name="car_simple_map_hint">Use this if the car display shows a black or broken map. Applies on the next connection.</string>
 </resources>

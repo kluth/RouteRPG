@@ -38,6 +38,20 @@ class Polyline(val points: List<LatLon>) {
     }
     val lengthMeters: Double get() = cumulative.last()
 
+    /**
+     * Punkte der Strecke zwischen [fromMeters] und [toMeters] (fuer die Kartenanzeige); hoechstens [maxPoints],
+     * bei mehr Punkten wird gleichmaessig ausgeduennt (Start und Ende bleiben erhalten).
+     */
+    fun slice(fromMeters: Double, toMeters: Double, maxPoints: Int = 2000): List<LatLon> {
+        val a = indexAtMeters(fromMeters.coerceAtLeast(0.0))
+        val b = (indexAtMeters(toMeters.coerceAtMost(lengthMeters)) + 1).coerceAtMost(points.size - 1)
+        if (b <= a) return listOf(points[a])
+        val count = b - a + 1
+        if (count <= maxPoints) return points.subList(a, b + 1)
+        val step = (count - 1).toDouble() / (maxPoints - 1)
+        return (0 until maxPoints).map { points[a + Math.round(it * step).toInt().coerceAtMost(count - 1)] }
+    }
+
     /** Index des letzten Punktes, der hoechstens [meters] vom Start entfernt liegt. */
     fun indexAtMeters(meters: Double): Int {
         var lo = 0

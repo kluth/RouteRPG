@@ -72,6 +72,7 @@ object ValhallaApi {
                 streetNames = m.streetNames,
                 atMeters = line.cumulative[idx],
                 lengthMeters = m.length * 1000.0,
+                roundaboutExit = m.roundaboutExitCount,
             )
         }
         return Route(line, maneuvers, trip.summary.length * 1000.0, trip.summary.time)
@@ -94,5 +95,6 @@ object ValhallaApi {
         @kotlinx.serialization.SerialName("street_names") val streetNames: List<String> = emptyList(),
         @kotlinx.serialization.SerialName("begin_shape_index") val beginShapeIndex: Int = 0,
         val length: Double = 0.0,
+        @kotlinx.serialization.SerialName("roundabout_exit_count") val roundaboutExitCount: Int? = null,
     )
 }

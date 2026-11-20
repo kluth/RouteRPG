@@ -172,6 +172,10 @@ data class UiState(
     val voiceAvailable: Boolean = false,
     val listening: Boolean = false,
     val pkg: PackageState = PackageState(),
+    /** Fahrtrichtung in Grad (0 = Norden), solange man sich bewegt. */
+    val bearing: Float? = null,
+    /** Notausgang: im Auto die einfache Zeichnung statt der MapLibre-Karte nutzen. */
+    val carSimpleMap: Boolean = false,
 )
 
 private const val TRAFFIC_REFRESH_MS = 5 * 60_000L
@@ -236,6 +240,7 @@ class NavController(private val app: Application) {
             riddles = loadRiddles(),
             voiceMode = prefs.getBoolean("voice_mode", false),
             voiceAvailable = VoiceAnswers.isAvailable(app),
+            carSimpleMap = prefs.getBoolean("car_simple_map", false),
         ),
     )
     val state: StateFlow<UiState> = _state
@@ -420,6 +425,11 @@ class NavController(private val app: Application) {
         if (r != null && !_state.value.navigating) newAdventure(r)
     }
 
+    fun setCarSimpleMap(on: Boolean) {
+        prefs.edit().putBoolean("car_simple_map", on).apply()
+        _state.update { it.copy(carSimpleMap = on) }
+    }
+
     fun showKids(show: Boolean) = _state.update { it.copy(kidsScreen = show) }
 
     fun answerQuest(choice: Int? = null) {
@@ -508,7 +518,7 @@ class NavController(private val app: Application) {
 
     private fun onLocation(loc: Location) {
         val pos = LatLon(loc.latitude, loc.longitude)
-        _state.update { it.copy(position = pos) }
+        _state.update { it.copy(position = pos, bearing = if (loc.hasBearing() && loc.speed > 1.5f) loc.bearing else it.bearing) }
         val eng = engine ?: return
         if (!_state.value.navigating) return
         val g = eng.update(pos)

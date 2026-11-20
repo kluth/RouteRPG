@@ -76,6 +76,11 @@ fun KidsScreen(state: UiState, nav: NavController) {
                     Text(stringResource(R.string.voice_mode), style = MaterialTheme.typography.titleMedium)
                 }
                 if (!state.voiceAvailable) Text(stringResource(R.string.voice_unavailable), style = MaterialTheme.typography.bodySmall)
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Switch(checked = state.carSimpleMap, onCheckedChange = nav::setCarSimpleMap)
+                    Text(stringResource(R.string.car_simple_map), style = MaterialTheme.typography.titleMedium)
+                }
+                Text(stringResource(R.string.car_simple_map_hint), style = MaterialTheme.typography.bodySmall)
                 AgePicker(state.ageBand, nav::setAgeBand)
                 PlayerPicker(state.players, nav::setPlayers)
             }
