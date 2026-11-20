@@ -71,6 +71,12 @@ import app.kiloquest.nav.haversine
 import app.kiloquest.nav.DayPlanner
 import app.kiloquest.nav.LodgingFinder
 import app.kiloquest.nav.LodgingOption
+import app.kiloquest.nav.Itinerary
+import app.kiloquest.nav.ItineraryPlanner
+import app.kiloquest.nav.PlanPlace
+import app.kiloquest.nav.PlanStay
+import app.kiloquest.nav.PlanStore
+import app.kiloquest.nav.PlannedTrip
 import app.kiloquest.nav.LaneGuidance
 import app.kiloquest.nav.LaneHint
 import app.kiloquest.nav.LaneParser
@@ -148,7 +154,28 @@ data class BreakProposal(val stop: RestStop, val aheadMeters: Double)
 
 /** Route samt Spurinformation. */
 /** Unterkunftssuche fuer die Uebernachtung am Ende von Etappe [stopIndex]. */
-data class LodgingUi(val stopIndex: Int, val loading: Boolean = true, val options: List<LodgingOption> = emptyList(), val failed: Boolean = false)
+data class LodgingUi(
+    val stopIndex: Int,
+    val loading: Boolean = true,
+    val options: List<LodgingOption> = emptyList(),
+    val failed: Boolean = false,
+    /** Gesetzt, wenn die Suche fuer eine Uebernachtung einer geplanten Reise laeuft (Tag als Epochentag). */
+    val planDay: Int? = null,
+)
+
+/** Uebernachtung unterwegs ohne Buchung: Vorschlagspunkt auf der Route mit Datum. */
+data class PlanNight(val legIndex: Int, val day: Int, val point: LatLon, val name: String)
+
+data class PlanResult(
+    val loading: Boolean = false,
+    @StringRes val error: Int? = null,
+    val itinerary: Itinerary? = null,
+    val nights: List<PlanNight> = emptyList(),
+    /** Zusatzfahrzeit ueber alle Buchungen gegenueber der direkten Route. */
+    val extraMinutes: Int? = null,
+    /** Abstand jeder Buchung zur direkten Route in km. */
+    val offRouteKm: List<Pair<String, Int>> = emptyList(),
+)
 
 private data class LoadedRoute(val route: Route, val lanes: List<LaneGuidance>)
 
@@ -210,6 +237,11 @@ data class UiState(
     /** Bereits gebuchte Unterkuenfte; die Aufteilung der Route richtet sich danach. */
     val booked: List<Place> = emptyList(),
     val lodging: LodgingUi? = null,
+    /** Fest geplante Reisen mit Datum (auch Monate im Voraus). */
+    val plans: List<PlannedTrip> = emptyList(),
+    val plansScreen: Boolean = false,
+    val planOpenId: String? = null,
+    val planResult: PlanResult? = null,
     /** Hinweise zur letzten Aufteilung (z. B. Umweg, lange Etappe). */
     val tripNotes: List<String> = emptyList(),
     /** Land der aktuellen Position (ISO-Code), falls erkannt. */
@@ -306,6 +338,7 @@ class NavController(private val app: Application) : KidsActions {
             trip = loadTrip(),
             favorites = loadPlaces("favorites"),
             booked = loadPlaces("booked"),
+            plans = PlanStore.decode(prefs.getString("plans", null)),
             riddles = loadRiddles(),
             voiceMode = prefs.getBoolean("voice_mode", false),
             voiceAvailable = VoiceAnswers.isAvailable(app),
@@ -1107,11 +1140,152 @@ class NavController(private val app: Application) : KidsActions {
         }
     }
 
+    // --- Fest geplante Reisen
+
+    private fun savePlans(list: List<PlannedTrip>) {
+        prefs.edit().putString("plans", PlanStore.encode(list)).apply()
+        _state.update { it.copy(plans = list) }
+    }
+
+    fun showPlans(show: Boolean) = _state.update { it.copy(plansScreen = show, planOpenId = if (show) it.planOpenId else null, planResult = null, results = emptyList()) }
+
+    fun openPlan(id: String?) = _state.update { it.copy(planOpenId = id, planResult = null, results = emptyList()) }
+
+    fun newPlan() {
+        val today = java.time.LocalDate.now().toEpochDay().toInt()
+        val p = PlannedTrip(java.util.UUID.randomUUID().toString(), "", today + 60)
+        savePlans(_state.value.plans + p)
+        openPlan(p.id)
+    }
+
+    fun deletePlan(id: String) {
+        savePlans(_state.value.plans.filterNot { it.id == id })
+        openPlan(null)
+    }
+
+    /** Aendert die gerade geoeffnete Reise; ein altes Ergebnis wird verworfen, weil es nicht mehr passt. */
+    fun updatePlan(transform: (PlannedTrip) -> PlannedTrip) {
+        val id = _state.value.planOpenId ?: return
+        savePlans(_state.value.plans.map { if (it.id == id) transform(it) else it })
+        _state.update { it.copy(planResult = null) }
+    }
+
+    fun setPlanPlace(place: Place, asOrigin: Boolean) = updatePlan {
+        val pp = PlanPlace(place.name, place.position.lat, place.position.lon)
+        if (asOrigin) it.copy(origin = pp) else it.copy(destination = pp)
+    }
+
+    fun setPlanOriginHere() {
+        val pos = _state.value.position ?: return
+        updatePlan { it.copy(origin = PlanPlace(app.getString(R.string.plan_my_position), pos.lat, pos.lon)) }
+    }
+
+    fun addPlanStay(place: Place) = updatePlan { p ->
+        val last = p.stays.maxByOrNull { it.checkInDay }
+        val day = if (last != null) last.checkOutDay + 1 else p.startDay + 1
+        p.copy(stays = p.stays + PlanStay(place.name, place.position.lat, place.position.lon, day, 1))
+    }
+
+    fun clearPlanStay(index: Int) = updatePlan { p -> p.copy(stays = p.stays.filterIndexed { i, _ -> i != index }) }
+
+    fun changePlanStay(index: Int, transform: (PlanStay) -> PlanStay) =
+        updatePlan { p -> p.copy(stays = p.stays.mapIndexed { i, s -> if (i == index) transform(s) else s }) }
+
+    /** Plant die Reise: Route durch alle Buchungen, Tage und Naechte, Vorschlaege fuer fehlende Uebernachtungen, Umweg. */
+    fun calculatePlan() {
+        val t = _state.value.plans.firstOrNull { it.id == _state.value.planOpenId } ?: return
+        val o = t.origin
+        val d = t.destination
+        if (o == null || d == null) {
+            _state.update { it.copy(planResult = PlanResult(error = R.string.plan_need_places)) }
+            return
+        }
+        if (BuildConfig.VALHALLA_URL.isBlank()) {
+            _state.update { it.copy(planResult = PlanResult(error = R.string.error_no_server)) }
+            return
+        }
+        scope.launch {
+            _state.update { it.copy(planResult = PlanResult(loading = true)) }
+            val result = runCatching {
+                val lang = Locale.getDefault().toLanguageTag()
+                val sorted = t.stays.sortedWith(compareBy({ it.checkInDay }, { it.name }))
+                val via = ValhallaApi.parseLegRoutes(fetchRoute(ValhallaApi.buildRequest(listOf(o.position) + sorted.map { it.position } + d.position, lang)))
+                val direct = if (sorted.isNotEmpty()) ValhallaApi.parseRoute(fetchRoute(ValhallaApi.buildRouteRequest(o.position, d.position, lang))) else null
+                val budget = _state.value.settings.dailyDriveHours * 3600.0
+                val it = ItineraryPlanner.build(t.startDay, o.name, d.name, sorted, via.map { r -> LegSummary(r.lengthMeters, r.durationSeconds) }, budget)
+                val nights = ArrayList<PlanNight>()
+                val code = Locale.getDefault().language
+                it.legs.forEach { lp ->
+                    if (lp.roadNights.isNotEmpty()) {
+                        val cuts = DayPlanner.split(via[lp.index], budget).filterNot { c -> c.isFinal }
+                        lp.roadNights.forEachIndexed { k, day ->
+                            cuts.getOrNull(k)?.let { c -> nights += PlanNight(lp.index, day, c.point, fetchPlaceName(c.point.lat, c.point.lon, code).orEmpty()) }
+                        }
+                    }
+                }
+                PlanResult(
+                    itinerary = it,
+                    nights = nights,
+                    extraMinutes = direct?.let { r -> (ItineraryPlanner.extraSeconds(via.sumOf { v -> v.durationSeconds }, r.durationSeconds) / 60).toInt() },
+                    offRouteKm = direct?.let { r -> sorted.zip(ItineraryPlanner.offRouteMeters(r.line, sorted)).map { (s, m) -> s.name to (m / 1000).toInt() } }.orEmpty(),
+                )
+            }.getOrElse { PlanResult(error = R.string.error_route) }
+            _state.update { it.copy(planResult = result) }
+        }
+    }
+
+    /** Suche nach einer Unterkunft fuer eine noch unbelegte Nacht der geplanten Reise. */
+    fun findPlanLodging(night: PlanNight) {
+        _state.update { it.copy(lodging = LodgingUi(-1, planDay = night.day)) }
+        scope.launch {
+            val found = runCatching {
+                withContext(Dispatchers.IO) {
+                    var r = LodgingFinder.parse(fetchOverpass(LodgingFinder.buildQuery(night.point, 8000, includeCamping = true)))
+                    if (r.isEmpty()) r = LodgingFinder.parse(fetchOverpass(LodgingFinder.buildQuery(night.point, 20000, includeCamping = true)))
+                    r
+                }
+            }
+            val ui = found.fold(
+                { LodgingUi(-1, loading = false, options = LodgingFinder.rank(it, night.point), planDay = night.day) },
+                { LodgingUi(-1, loading = false, failed = true, planDay = night.day) },
+            )
+            if (_state.value.lodging?.planDay == night.day) _state.update { it.copy(lodging = ui) }
+        }
+    }
+
+    /** Uebernimmt die berechnete Reise als aktuelle Reise (Etappen: Uebernachtungsvorschlaege, Buchungen, Ziel). */
+    fun usePlanAsTrip() {
+        val s = _state.value
+        val t = s.plans.firstOrNull { it.id == s.planOpenId } ?: return
+        val res = s.planResult?.itinerary ?: return
+        val o = t.origin ?: return
+        val d = t.destination ?: return
+        val sorted = t.stays.sortedWith(compareBy({ it.checkInDay }, { it.name }))
+        val stops = ArrayList<Place>()
+        res.legs.forEach { lp ->
+            s.planResult.nights.filter { n -> n.legIndex == lp.index }.forEach { n ->
+                stops += Place(if (n.name.isBlank()) app.getString(R.string.trip_day_label, stops.size + 1) else app.getString(R.string.trip_overnight_near, n.name), n.point)
+            }
+            val stay = sorted.getOrNull(lp.index)
+            stops += if (stay != null) Place(stay.name, stay.position) else Place(d.name, d.position)
+        }
+        val trip = TripState(origin = o.position, stops = stops)
+        _state.update { it.copy(trip = trip, plansScreen = false, tripScreen = true, planOpenId = null, planResult = null) }
+        saveTrip(trip)
+        planTrip()
+    }
+
     fun closeLodging() = _state.update { it.copy(lodging = null) }
 
     /** Uebernimmt die gewaehlte Unterkunft als Etappenziel (Ort und Name ersetzt). */
     fun chooseLodging(option: LodgingOption) {
         val ui = _state.value.lodging ?: return
+        if (ui.planDay != null) {
+            _state.update { it.copy(lodging = null) }
+            updatePlan { p -> p.copy(stays = p.stays + PlanStay(option.name, option.position.lat, option.position.lon, ui.planDay, 1)) }
+            calculatePlan()
+            return
+        }
         val t = _state.value.trip ?: return
         if (ui.stopIndex < t.currentStage || ui.stopIndex !in t.stops.indices) return
         val updated = t.copy(stops = t.stops.mapIndexed { i, p -> if (i == ui.stopIndex) Place(option.name, option.position) else p })

@@ -485,4 +485,41 @@
     <string name="booked_empty">Noch keine gebuchten Unterkünfte.</string>
     <string name="trip_split_booked_info">%1$d gebuchte Unterkünfte werden berücksichtigt.</string>
     <string name="dlg_close_short">Schließen</string>
+    <string name="plans_open">Reisen</string>
+    <string name="plans_title">Geplante Reisen</string>
+    <string name="plans_hint">Plane Reisen Monate im Voraus mit festen Terminen und gebuchten Unterkünften. Die Route führt durch deine Buchungen, damit keine Umwege nötig sind.</string>
+    <string name="plans_empty">Noch keine geplanten Reisen.</string>
+    <string name="plan_new">Neue Reise</string>
+    <string name="plan_open">Öffnen</string>
+    <string name="plan_unnamed">Reise</string>
+    <string name="plan_stays_count">%1$d gebuchte Unterkünfte</string>
+    <plurals name="plan_in_days"><item quantity="one">in %1$d Tag</item><item quantity="other">in %1$d Tagen</item></plurals>
+    <plurals name="plan_nights"><item quantity="one">%1$d Nacht</item><item quantity="other">%1$d Nächte</item></plurals>
+    <plurals name="plan_drive_days"><item quantity="one">%1$d Fahrtag</item><item quantity="other">%1$d Fahrtage</item></plurals>
+    <plurals name="plan_spare_days"><item quantity="one">%1$d freier Tag vor der Abfahrt</item><item quantity="other">%1$d freie Tage vor der Abfahrt</item></plurals>
+    <plurals name="plan_issue_days"><item quantity="one">%1$s → %2$s: Vor dem Check-in fehlt noch %3$d Tag.</item><item quantity="other">%1$s → %2$s: Vor dem Check-in fehlen noch %3$d Tage.</item></plurals>
+    <string name="plan_issue_overlap">%1$s überschneidet sich mit der vorherigen Buchung.</string>
+    <string name="plan_edit_title">Reise bearbeiten</string>
+    <string name="plan_name">Name</string>
+    <string name="plan_start_date">Abreise</string>
+    <string name="plan_check_in">Check-in</string>
+    <string name="plan_from">Start</string>
+    <string name="plan_to">Ziel</string>
+    <string name="plan_not_set">nicht gesetzt</string>
+    <string name="plan_my_position">Meine Position</string>
+    <string name="plan_use_position">Meine Position als Start</string>
+    <string name="plan_search_hint">Start, Ziel oder Unterkunft suchen</string>
+    <string name="plan_calculate">Route und Tage planen</string>
+    <string name="plan_loading">Planung läuft…</string>
+    <string name="plan_need_places">Bitte zuerst Start und Ziel setzen.</string>
+    <string name="plan_result_title">Zeitplan</string>
+    <string name="plan_arrival">Ankunft: %1$s</string>
+    <string name="plan_detour">Die Route über deine Buchungen dauert etwa %1$d Min. länger als die direkte Route.</string>
+    <string name="plan_detour_none">Deine Buchungen liegen auf dem Weg, kein nennenswerter Umweg.</string>
+    <string name="plan_night_open">%1$s: Nacht noch offen bei %2$s</string>
+    <string name="plan_on_route">der Route</string>
+    <string name="plan_book">Hier buchen</string>
+    <string name="plan_use_as_trip">Als aktuelle Reise übernehmen</string>
+    <string name="plan_delete">Reise löschen</string>
+    <string name="dlg_ok">OK</string>
 </resources>

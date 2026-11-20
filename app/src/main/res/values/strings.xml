@@ -485,4 +485,41 @@
     <string name="booked_empty">No booked stays yet.</string>
     <string name="trip_split_booked_info">%1$d booked stays will be respected.</string>
     <string name="dlg_close_short">Close</string>
+    <string name="plans_open">Plans</string>
+    <string name="plans_title">Planned trips</string>
+    <string name="plans_hint">Plan trips months ahead with fixed dates and booked stays. The route goes through your bookings so you do not need detours.</string>
+    <string name="plans_empty">No planned trips yet.</string>
+    <string name="plan_new">New trip</string>
+    <string name="plan_open">Open</string>
+    <string name="plan_unnamed">Trip</string>
+    <string name="plan_stays_count">%1$d booked stays</string>
+    <plurals name="plan_in_days"><item quantity="one">in %1$d day</item><item quantity="other">in %1$d days</item></plurals>
+    <plurals name="plan_nights"><item quantity="one">%1$d night</item><item quantity="other">%1$d nights</item></plurals>
+    <plurals name="plan_drive_days"><item quantity="one">%1$d driving day</item><item quantity="other">%1$d driving days</item></plurals>
+    <plurals name="plan_spare_days"><item quantity="one">%1$d spare day before departure</item><item quantity="other">%1$d spare days before departure</item></plurals>
+    <plurals name="plan_issue_days"><item quantity="one">%1$s → %2$s: %3$d more day needed before check-in.</item><item quantity="other">%1$s → %2$s: %3$d more days needed before check-in.</item></plurals>
+    <string name="plan_issue_overlap">%1$s overlaps with the previous booking.</string>
+    <string name="plan_edit_title">Edit trip</string>
+    <string name="plan_name">Name</string>
+    <string name="plan_start_date">Departure</string>
+    <string name="plan_check_in">Check-in</string>
+    <string name="plan_from">Start</string>
+    <string name="plan_to">Destination</string>
+    <string name="plan_not_set">not set</string>
+    <string name="plan_my_position">My position</string>
+    <string name="plan_use_position">Use my position as start</string>
+    <string name="plan_search_hint">Search start, destination or stay</string>
+    <string name="plan_calculate">Plan route and days</string>
+    <string name="plan_loading">Planning…</string>
+    <string name="plan_need_places">Please set a start and a destination first.</string>
+    <string name="plan_result_title">Schedule</string>
+    <string name="plan_arrival">Arrival: %1$s</string>
+    <string name="plan_detour">The route through your bookings takes about %1$d min longer than the direct route.</string>
+    <string name="plan_detour_none">Your bookings lie on the way, no real detour.</string>
+    <string name="plan_night_open">%1$s: night still open near %2$s</string>
+    <string name="plan_on_route">the route</string>
+    <string name="plan_book">Book here</string>
+    <string name="plan_use_as_trip">Use as current trip</string>
+    <string name="plan_delete">Delete trip</string>
+    <string name="dlg_ok">OK</string>
 </resources>

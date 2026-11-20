@@ -78,6 +78,21 @@ object ValhallaApi {
         return Route(line, maneuvers, trip.summary.length * 1000.0, trip.summary.time)
     }
 
+    /** Jede Etappe (leg) einer Mehrpunkt-Anfrage als eigene Route; Laenge und Zeit stammen aus der Etappen-Summe. */
+    fun parseLegRoutes(body: String): List<Route> {
+        val trip = json.decodeFromString<Response>(body).trip
+        require(trip.status == 0) { "Valhalla status ${trip.status}: ${trip.statusMessage}" }
+        return trip.legs.map { leg ->
+            val points = PolylineCodec.decode(leg.shape)
+            val line = Polyline(points)
+            val maneuvers = leg.maneuvers.map { m ->
+                val idx = m.beginShapeIndex.coerceIn(0, points.size - 1)
+                Maneuver(m.type, m.instruction, m.verbalPreTransitionInstruction, m.verbalPostTransitionInstruction, m.streetNames, line.cumulative[idx], m.length * 1000.0, m.roundaboutExitCount)
+            }
+            Route(line, maneuvers, leg.summary.length * 1000.0, leg.summary.time)
+        }
+    }
+
     @Serializable private data class Response(val trip: Trip)
     @Serializable private data class Trip(
         val status: Int = 0,
@@ -86,7 +101,7 @@ object ValhallaApi {
         val summary: Summary = Summary(),
     )
     @Serializable private data class Summary(val length: Double = 0.0, val time: Double = 0.0)
-    @Serializable private data class Leg(val shape: String, val maneuvers: List<RawManeuver> = emptyList())
+    @Serializable private data class Leg(val shape: String, val maneuvers: List<RawManeuver> = emptyList(), val summary: Summary = Summary())
     @Serializable private data class RawManeuver(
         val type: Int = 0,
         val instruction: String = "",

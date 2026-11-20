@@ -480,3 +480,8 @@ Spec: `docs/specs/001-geraete-koppeln.md`. Modul `:link-core` (Protokoll, Rollen
 
 ## 40. Nächste Feature-Runde
 Siehe `docs/specs/002-naechste-features.md`: Mehrtagesreise, Offline-Paket, Hörgeschichten & Reisetagebuch, Sprachbedienung, Blitzer-Länder-Policy mit Erlaubnisliste. E-Auto-Ladeplanung vorerst nur als Idee.
+
+## 41. Mehrtagesreise und feste Planung
+Umgesetzt: Tagesaufteilung (`DayPlanner`), Favoriten, Unterkunftssuche (`LodgingFinder`), gebuchte Unterkünfte (`BookedPlanner`)
+und fest geplante Reisen mit Datum (`PlannedTrip`, `ItineraryPlanner`, Spec 003). Die Route führt als Mehrpunkt-Anfrage durch
+alle Buchungen. Offen: Erinnerungen vor Reisebeginn, Etappen-Übersicht im Eltern-Bildschirm, Quests pro Tag vorladen.
