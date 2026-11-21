@@ -249,7 +249,7 @@ internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
             if (client.role == app.kiloquest.link.Role.COPILOT) {
                 app.kiloquest.link.CopilotRemoteScreen(snap, client.drive, client.extras, client.photoRequest, client.pos, snap?.toUiStateFor(state.ageBand, state.avatar, state.realMap, client.route, client.pos)) { vm.showParent(true) }
             } else if (snap != null) {
-                KidsScreen(snap.toUiStateFor(state.ageBand, state.avatar, state.realMap, client.route, client.pos).copy(linkLost = kidReconnecting), app.kiloquest.link.RemoteActions(linkApp.linkClient, vm))
+                KidsScreen(snap.toUiStateFor(state.ageBand, state.avatar, state.realMap, client.route, client.pos).copy(linkLost = kidReconnecting, settings = state.settings), app.kiloquest.link.RemoteActions(linkApp.linkClient, vm))
             }
         }
     }

@@ -89,3 +89,12 @@ class KidsPaletteTest {
         assertTrue(mini.target.value >= 72f && pro.target.value >= 48f && mini.buttonHeight > pro.buttonHeight)
     }
 }
+
+class SelfTestTest {
+    private fun c(l: app.kiloquest.CheckLevel) = app.kiloquest.SelfCheck(0, 0, l)
+    @org.junit.Test fun overallIsWorstLevel() {
+        org.junit.Assert.assertEquals(app.kiloquest.CheckLevel.OK, app.kiloquest.SelfTest.overall(listOf(c(app.kiloquest.CheckLevel.OK))))
+        org.junit.Assert.assertEquals(app.kiloquest.CheckLevel.WARN, app.kiloquest.SelfTest.overall(listOf(c(app.kiloquest.CheckLevel.OK), c(app.kiloquest.CheckLevel.WARN))))
+        org.junit.Assert.assertEquals(app.kiloquest.CheckLevel.FAIL, app.kiloquest.SelfTest.overall(listOf(c(app.kiloquest.CheckLevel.WARN), c(app.kiloquest.CheckLevel.FAIL))))
+    }
+}

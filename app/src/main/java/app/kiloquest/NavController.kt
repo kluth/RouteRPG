@@ -2818,7 +2818,7 @@ class NavController(private val app: Application) : KidsActions {
         if (q.textKey == WikiStories.TEXT_KEY && q.args.size >= 2) logDiary(DiaryKind.STORY, q.args[0], q.args[1])
         val s = _state.value
         val text = buildString {
-            if (s.players > 1) append(app.getString(R.string.kids_turn, app.getString(R.string.kids_player, s.currentPlayer + 1))).append(' ')
+            if (s.players > 1) append(app.getString(R.string.kids_turn, (s.settings.nameOf(s.currentPlayer) ?: app.getString(R.string.kids_player, s.currentPlayer + 1)))).append(' ')
             // Fuer die Kleinsten (die noch nicht lesen) liest Kilo bei Quizfragen auch die Antworten vor
             val band = kidBands.getOrNull(s.currentPlayer) ?: s.ageBand
             append(app.questSpeech(q, withOptions = band == AgeBand.MINI))

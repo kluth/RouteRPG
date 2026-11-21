@@ -49,7 +49,20 @@ data class AppSettings(
     val dynamicNotifIcons: Boolean = true,
     /** Ruhige Ansicht fuer Kinder: kein Huepfen, Konfetti oder bewegte Figuren. */
     val calmView: Boolean = false,
-)
+    /** Eigene Namen der Kinder (bis zu 4, nur auf diesem Geraet gespeichert, nie im Export); leer = "Spieler N". */
+    val playerNames: List<String> = emptyList(),
+) {
+    /** Name des Spielers [index] (0-basiert) oder null, wenn keiner vergeben ist. */
+    fun nameOf(index: Int): String? = playerNames.getOrNull(index)?.takeIf { it.isNotBlank() }
+
+    companion object {
+        const val MAX_NAME = 16
+        fun cleanNames(raw: List<String>): List<String> {
+            val cleaned = raw.take(4).map { it.filter { c -> !c.isISOControl() }.trim().take(MAX_NAME) }
+            return if (cleaned.all { it.isBlank() }) emptyList() else cleaned
+        }
+    }
+}
 
 internal object SettingsStore {
     private const val P = "set_"
@@ -80,6 +93,7 @@ internal object SettingsStore {
             cloudSpeech = p.getBoolean(P + "cloud_speech", d.cloudSpeech),
             dynamicNotifIcons = p.getBoolean(P + "dyn_notif_icons", d.dynamicNotifIcons),
             calmView = p.getBoolean(P + "calm_view", d.calmView),
+            playerNames = AppSettings.cleanNames((p.getString(P + "player_names", null) ?: "").split('\n')),
             powerSaver = runCatching { PowerSaverMode.valueOf(p.getString(P + "power_saver", null) ?: "") }.getOrDefault(d.powerSaver),
         )
     }
@@ -110,6 +124,7 @@ internal object SettingsStore {
             .putBoolean(P + "cloud_speech", s.cloudSpeech)
             .putBoolean(P + "dyn_notif_icons", s.dynamicNotifIcons)
             .putBoolean(P + "calm_view", s.calmView)
+            .putString(P + "player_names", AppSettings.cleanNames(s.playerNames).joinToString("\n"))
             .apply()
     }
 }

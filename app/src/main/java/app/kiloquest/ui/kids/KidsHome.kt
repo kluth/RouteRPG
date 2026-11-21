@@ -186,7 +186,7 @@ private fun QuestCard(state: UiState, q: Quest, style: KidsStyle, nav: KidsActio
     Surface(shape = RoundedCornerShape(36.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 6.dp, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 18.dp, vertical = 20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(if (mini && q.kind == QuestKind.CHOICE) 10.dp else 14.dp)) {
             if (state.players > 1) {
-                Text(stringResource(R.string.kids_turn_marker, stringResource(R.string.kids_player, state.currentPlayer + 1)), style = kidsText(20), color = style.text)
+                Text(stringResource(R.string.kids_turn_marker, state.settings.nameOf(state.currentPlayer) ?: stringResource(R.string.kids_player, state.currentPlayer + 1)), style = kidsText(20), color = style.text)
             }
             val disc = if (mini && q.kind != QuestKind.CHOICE) 132.dp else if (mini) 88.dp else 92.dp
             Box(Modifier.size(disc).background(style.container, CircleShape).clearAndSetSemantics { }, contentAlignment = Alignment.Center) {
@@ -283,7 +283,7 @@ private fun Scoreboard(state: UiState, style: KidsStyle) {
             val active = state.quest != null && i == state.currentPlayer
             // Nicht nur Farbe: der aktive Spieler hat zusaetzlich ein Dreieck davor und fetteren Text
             Text(
-                (if (active) "▶ " else "") + stringResource(R.string.kids_player, i + 1) + ": " + stringResource(R.string.kids_points, pts),
+                (if (active) "▶ " else "") + (state.settings.nameOf(i) ?: stringResource(R.string.kids_player, i + 1)) + ": " + stringResource(R.string.kids_points, pts),
                 style = kidsText(if (active) 22 else 18, if (active) androidx.compose.ui.text.font.FontWeight.ExtraBold else androidx.compose.ui.text.font.FontWeight.Medium),
                 color = if (active) style.text else MaterialTheme.colorScheme.onSurface,
             )

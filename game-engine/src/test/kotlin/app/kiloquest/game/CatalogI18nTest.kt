@@ -13,7 +13,7 @@ class CatalogI18nTest {
 
     @Test
     fun `all catalog texts exist in every language`() {
-        val dirs = resDir.listFiles { f -> f.isDirectory && f.name.startsWith("values") }.orEmpty()
+        val dirs = resDir.listFiles { f -> f.isDirectory && f.name.startsWith("values") && File(f, "strings.xml").exists() }.orEmpty()
         assertTrue(dirs.size >= 2, "expected values/ and values-de/")
         val needed = QuestCatalog.default.flatMap { listOf(it.textKey) + it.optionKeys } + RouteFacts.textKeys + WikiStories.textKeys + NatureSpotting.textKeys + LanguageCourses.textKeys + PlaneSpotting.textKeys
         for (d in dirs) {
@@ -25,7 +25,7 @@ class CatalogI18nTest {
 
     @Test
     fun `all languages define the same string keys`() {
-        val dirs = resDir.listFiles { f -> f.isDirectory && f.name.startsWith("values") }.orEmpty()
+        val dirs = resDir.listFiles { f -> f.isDirectory && f.name.startsWith("values") && File(f, "strings.xml").exists() }.orEmpty()
         val sets = dirs.associate { it.name to keys(File(it, "strings.xml")) }
         val all = sets.values.flatten().toSet()
         for ((name, set) in sets) assertTrue((all - set).isEmpty(), "$name lacks ${all - set}")

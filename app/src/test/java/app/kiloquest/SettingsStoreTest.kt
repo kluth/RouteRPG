@@ -21,7 +21,7 @@ class SettingsStoreTest {
     @Test fun roundTrip() {
         val s = AppSettings(
             theme = ThemeMode.DARK, naviVoice = false, kiloVoice = false, keepScreenOn = false, showSpeedLimit = false,
-            laneHints = false, detourSuggestions = false, weatherHints = false, breakSuggestions = false, liveQuests = false, toiletCorridorKm = 4, powerSaver = app.kiloquest.nav.PowerSaverMode.ON, cloudSpeech = true, dynamicNotifIcons = false, calmView = true,
+            laneHints = false, detourSuggestions = false, weatherHints = false, breakSuggestions = false, liveQuests = false, toiletCorridorKm = 4, powerSaver = app.kiloquest.nav.PowerSaverMode.ON, cloudSpeech = true, dynamicNotifIcons = false, calmView = true, playerNames = listOf("Mia", "", "Ben"),
         )
         SettingsStore.save(prefs, s)
         assertEquals(s, SettingsStore.load(prefs))

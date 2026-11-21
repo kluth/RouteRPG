@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -40,7 +41,7 @@ import app.kiloquest.ui.SettingSwitch
 import app.kiloquest.ui.SettingsSection
 import app.kiloquest.ui.screenColumn
 
-private enum class Dlg { NONE, CAMERAS, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES, SERVER, POWER, STORAGE, VOICE_HELP, CLOUD_WARN, APP_ICON }
+private enum class Dlg { NONE, CAMERAS, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES, SERVER, POWER, STORAGE, VOICE_HELP, CLOUD_WARN, APP_ICON, NAMES, SELFTEST }
 
 /** Einstellungen: alles, was sich dauerhaft einstellen laesst, mit Abfragen vor dem Loeschen. */
 @Composable
@@ -148,6 +149,8 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 SettingDivider()
                 SettingRow(stringResource(R.string.set_players), value = state.players.toString()) { dialog = Dlg.PLAYERS }
                 SettingDivider()
+                SettingRow(stringResource(R.string.set_names), value = s.playerNames.filter { it.isNotBlank() }.joinToString(", ").ifBlank { stringResource(R.string.set_names_none) }) { dialog = Dlg.NAMES }
+                SettingDivider()
                 SettingRow(stringResource(R.string.set_avatar), value = state.avatar) { picker = true }
                 SettingDivider()
                 SettingSwitch(stringResource(R.string.set_kilo_voice), stringResource(R.string.set_kilo_voice_hint), s.kiloVoice) { v -> nav.updateSettings { it.copy(kiloVoice = v) } }
@@ -204,6 +207,8 @@ fun SettingsScreen(state: UiState, nav: NavController) {
             }
 
             SettingsSection(stringResource(R.string.sec_about)) {
+                SettingRow(stringResource(R.string.set_selftest), stringResource(R.string.set_selftest_hint)) { dialog = Dlg.SELFTEST }
+                SettingDivider()
                 SettingRow(stringResource(R.string.set_version), value = versionName(ctx)) { }
                 SettingDivider()
                 SettingRow(stringResource(R.string.set_licenses), stringResource(R.string.set_licenses_hint)) { dialog = Dlg.LICENSES }
@@ -378,6 +383,45 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                         if (ServerConfig.save(prefs, url, token.ifBlank { ServerConfig.token })) dialog = Dlg.NONE else bad = true
                     }) { Text(stringResource(R.string.dlg_save)) }
                 },
+                dismissButton = { androidx.compose.material3.TextButton(onClick = { dialog = Dlg.NONE }) { Text(cancel) } },
+            )
+        }
+        Dlg.SELFTEST -> {
+            val checks = remember { SelfTest.run(ctx, state) }
+            val ok = stringResource(R.string.st_ok); val warn = stringResource(R.string.st_warn); val fail = stringResource(R.string.st_fail)
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { dialog = Dlg.NONE },
+                title = { Text(stringResource(R.string.set_selftest)) },
+                text = {
+                    Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        checks.forEach { c ->
+                            // Nicht nur Farbe: Symbol und Wort
+                            val mark = when (c.level) { CheckLevel.OK -> "✓ $ok"; CheckLevel.WARN -> "! $warn"; CheckLevel.FAIL -> "✗ $fail" }
+                            Column {
+                                Text(stringResource(c.titleRes) + " – " + mark, style = MaterialTheme.typography.titleSmall)
+                                if (c.level != CheckLevel.OK) Text(stringResource(c.hintRes), style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                },
+                confirmButton = { androidx.compose.material3.TextButton(onClick = { dialog = Dlg.NONE }) { Text(close) } },
+            )
+        }
+        Dlg.NAMES -> {
+            val names = remember { mutableStateListOf(*Array(4) { s.playerNames.getOrNull(it).orEmpty() }) }
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { dialog = Dlg.NONE },
+                title = { Text(stringResource(R.string.set_names)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(R.string.set_names_info), style = MaterialTheme.typography.bodyMedium)
+                        for (i in 0 until 4) androidx.compose.material3.OutlinedTextField(
+                            names[i], { names[i] = it.take(AppSettings.MAX_NAME) }, singleLine = true,
+                            label = { Text(stringResource(R.string.kids_player, i + 1)) },
+                        )
+                    }
+                },
+                confirmButton = { androidx.compose.material3.TextButton(onClick = { nav.updateSettings { it.copy(playerNames = AppSettings.cleanNames(names.toList())) }; dialog = Dlg.NONE }) { Text(stringResource(R.string.dlg_save)) } },
                 dismissButton = { androidx.compose.material3.TextButton(onClick = { dialog = Dlg.NONE }) { Text(cancel) } },
             )
         }
