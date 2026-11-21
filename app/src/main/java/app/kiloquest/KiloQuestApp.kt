@@ -17,6 +17,7 @@ class KiloQuestApp : Application() {
         // Die Karte im Auto laeuft auch, wenn die Handy-Activity nie gestartet wurde
         MapLibre.getInstance(this)
         ServerConfig.load(getSharedPreferences("kq", MODE_PRIVATE))
+        VoiceCloudConfig.load(getSharedPreferences("kq", MODE_PRIVATE))
         ReminderScheduler.sync(this, SettingsStore.load(getSharedPreferences("kq", MODE_PRIVATE)).tripReminders)
     }
 }

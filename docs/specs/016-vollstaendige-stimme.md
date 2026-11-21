@@ -44,7 +44,13 @@ Straßennamen sind ein Long-Tail: allein in NRW 96.838 verschiedene Namen, die h
 - `AnnouncementPlanner.nextSpoken` und `KiloVoicePlayer.playSlots` (Bausteine aus Assets, Namen aus `filesDir/voice_cache/<lang>/<hash>.ogg`): Sätze nur mit aufgenommenen Clips, wenn ALLE Teile vorhanden sind, sonst ganzer Satz per Sprachausgabe.
 - Einstellung „Kurze Abbiegeansagen“, Standard **an** (abschaltbar); der zusammengesetzte Text ist kürzer als Valhalla-Anweisungen.
 - **Aufgenommen:** die 36 Bausteine je Sprache in Kilos Stimme (Entscheidung: Navigation = Kilo; 1.613 Zeichen). Fehlt der Name-Clip (bisher immer, bis das Pro-Fahrt-Paket existiert), entfällt der Name samt „auf die/den/das“ (`dropMissingNames`), Kilo spricht dann ohne Straßenname. Fehlt ein Baustein, spricht die Geräte-Stimme den ganzen Satz (mit Namen).
-- Noch nicht gemacht: Namenclips (Pro-Fahrt-Paket, braucht die Proxy-Entscheidung).
+## Stand Stufe 3 (Pro-Fahrt-Namenpaket, umgesetzt; Cloud-Anbindung vom Nutzer freigegeben, opt-in)
+- `nav/VoicePack.kt`: `neededNames` (Name-Slots der Route ohne Clip, ohne Duplikate, max. 150), `nameHash` (= `VoiceIndex.hash`, Test im App-Modul).
+- App: `VoiceCloud.kt` (URL/Token zur Laufzeit, nur https), `NavController.prepareVoicePack` (beim Einrichten der Route und beim Einschalten; 3 parallel; Fortschritt in der Routenvorschau), Ablage `filesDir/voice_cache/<lang>/<hash>.mp3`, Player spielt Namen von dort, fehlt ein Name, entfällt er.
+- Einstellungen: „Stimmen-Server“, „Kilo spricht Straßennamen (Cloud)“ (Standard aus, Warnhinweis).
+- `tools/voice-proxy/`: Node-Proxy mit Token, Namensfilter, Cache, Tageslimit, Rate-Limit; siehe README dort.
+- **Nicht getestet:** Proxy nur gegen simulierten Upstream; echte ElevenLabs-REST-API (Modellname `eleven_v4`?), Netz im Auto, Kosten je Fahrt, Klang der zusammengesetzten Sätze mit Namen. Deployment und Schlüssel sind Aufgabe des Nutzers.
+- Noch offen: Ortsnamen (Ziel, Stopps), Kindernamen, Wikipedia-Geschichten über den Proxy; Aufräumen/Löschen des `voice_cache` in der Speicheranzeige.
 
 ## Offene Entscheidungen (Nutzer)
 - Server-Proxy mit Cloud-Anbindung akzeptabel (opt-in)?

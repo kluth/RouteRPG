@@ -23,6 +23,9 @@ Der Server-Token liegt nur in den privaten SharedPreferences, nicht in der APK (
 ## Bluetooth-Kopplung
 Gekoppelte Geräte tauschen Spielstand, Route, Position des Autos (`pos`), Tempo und Strecke (`drive`) nur direkt per Bluetooth und nur mit erlaubten Geräten.
 
+## Optionale Cloud-Stimme für Straßennamen
+Standard aus, nur nach Warnhinweis. Dann sendet die App vor einer Fahrt die **Namen der Straßen der Route** (und die Sprache, kein Konto, keine Position, keine Kindernamen) an den vom Nutzer eingetragenen **eigenen Stimmen-Server**, der sie an ElevenLabs weiterleitet, um Aufnahmen zu erzeugen. Die Straßennamen lassen Rückschlüsse auf die Reiseroute zu. Aufnahmen liegen auf dem Handy und auf dem Server des Nutzers. Betreiber = Nutzer; die Bedingungen von ElevenLabs gelten für die dortige Verarbeitung. Für eine Veröffentlichung (Play-Familienrichtlinie, Datensicherheitsangaben) gesondert bewerten.
+
 ## Kamera, Mikrofon
 Kamera nur nach Tippen auf „Foto machen“. Mikrofon für Sprachantworten, Hörspiele und optional Befehle mit „Kilo“; Erkennung standardmäßig nur auf dem Gerät (Android 12+, Offline-Sprachpaket), keine Speicherung durch KiloQuest.
 **Option „Spracherkennung ohne Offline-Paket“** (Standard aus, nur nach Warnhinweis): nutzt den normalen Spracherkennungsdienst des Handys (meist Google/Hersteller). Dann kann das Audio, auch von Kindern, an dessen Server gehen und unterliegt dessen Datenschutzbedingungen. KiloQuest sendet selbst nichts. Für eine Veröffentlichung (Play-Familienrichtlinie, Datensicherheitsangaben) ist das gesondert zu bewerten.

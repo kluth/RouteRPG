@@ -59,6 +59,7 @@ import app.kiloquest.nav.SpeechArbiter
 import kotlin.random.Random
 import kotlinx.coroutines.withContext
 import app.kiloquest.nav.AnnouncementPlanner
+import app.kiloquest.nav.VoicePack
 import app.kiloquest.nav.Spoken
 import app.kiloquest.nav.SpokenLang
 import app.kiloquest.nav.Corridor
@@ -225,6 +226,11 @@ data class BreakProposal(val stop: RestStop, val aheadMeters: Double)
 /** stopIndex <= diesem Wert: Suche aus dem Tagesplan (Tag = BASE - stopIndex). */
 const val OVERVIEW_LODGING_BASE = -100
 
+/** Stimmenpaket der Fahrt (Spec 016): Namens-Clips fuer die Strassen der Route, vorab vom eigenen Proxy geholt. */
+enum class VoicePackPhase { IDLE, RUNNING, DONE, PARTIAL }
+
+data class VoicePackState(val phase: VoicePackPhase = VoicePackPhase.IDLE, val total: Int = 0, val done: Int = 0, val failed: Int = 0)
+
 data class LodgingUi(
     val stopIndex: Int,
     val loading: Boolean = true,
@@ -316,6 +322,7 @@ data class UiState(
     /** Bereits gebuchte Unterkuenfte; die Aufteilung der Route richtet sich danach. */
     val booked: List<Place> = emptyList(),
     val lodging: LodgingUi? = null,
+    val voicePack: VoicePackState = VoicePackState(),
     /** Fest geplante Reisen mit Datum (auch Monate im Voraus). */
     val plans: List<PlannedTrip> = emptyList(),
     val plansScreen: Boolean = false,
@@ -617,10 +624,42 @@ class NavController(private val app: Application) : KidsActions {
         return LoadedRoute(route, lanes)
     }
 
+    private var voicePackJob: kotlinx.coroutines.Job? = null
+
+    /**
+     * Holt (nur mit Einwilligung, Proxy-Zugang und eingeschalteten Kurzansagen) die noch fehlenden Strassennamen der Route als Clips.
+     * Gesendet werden nur Name und Sprache; schon vorhandene Clips werden nicht erneut geholt.
+     */
+    private fun prepareVoicePack(route: Route) {
+        voicePackJob?.cancel()
+        val s = _state.value.settings
+        val lang = SpokenLang.of(Locale.getDefault().language)
+        if (!s.cloudVoice || !s.composedNavVoice || lang == null || !VoiceCloudConfig.configured) {
+            _state.update { it.copy(voicePack = VoicePackState()) }
+            return
+        }
+        val clips = NameClips(app)
+        val needed = VoicePack.neededNames(route, lang) { clips.has(lang.tag, it) }
+        if (needed.isEmpty()) { _state.update { it.copy(voicePack = VoicePackState(VoicePackPhase.DONE)) }; return }
+        _state.update { it.copy(voicePack = VoicePackState(VoicePackPhase.RUNNING, needed.size)) }
+        voicePackJob = scope.launch {
+            var done = 0
+            var failed = 0
+            for (chunk in needed.chunked(3)) {
+                chunk.map { name -> async { name to VoiceCloud.fetchName(lang.tag, name) } }.awaitAll().forEach { (name, bytes) ->
+                    if (bytes != null) { clips.save(lang.tag, name, bytes); done++ } else failed++
+                }
+                _state.update { it.copy(voicePack = VoicePackState(VoicePackPhase.RUNNING, needed.size, done, failed)) }
+            }
+            _state.update { it.copy(voicePack = VoicePackState(if (failed == 0) VoicePackPhase.DONE else VoicePackPhase.PARTIAL, needed.size, done, failed)) }
+        }
+    }
+
     /** Richtet Fuehrung, Spuren und Tempolimit-Cache fuer eine neue Route ein. */
     private fun installRoute(l: LoadedRoute) {
         engine = GuidanceEngine(l.route)
         planner = AnnouncementPlanner(l.route, spokenLang = SpokenLang.of(Locale.getDefault().language))
+        prepareVoicePack(l.route)
         laneAnnouncer = LaneAnnouncer(l.lanes)
         currentLanes = l.lanes
         offlineToilets = emptyList()
@@ -687,7 +726,9 @@ class NavController(private val app: Application) : KidsActions {
         SettingsStore.save(prefs, next)
         ReminderScheduler.sync(app, next.tripReminders)
         VoiceAnswers.allowCloud = next.cloudSpeech
+        val cloudChanged = next.cloudVoice != _state.value.settings.cloudVoice
         _state.update { it.copy(settings = next, voiceAvailable = VoiceAnswers.isAvailable(app)) }
+        if (cloudChanged) _state.value.route?.let(::prepareVoicePack)
     }
 
     /** Zuletzt gesuchte Ziele und Reise-Etappen vergessen. */

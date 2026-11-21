@@ -274,7 +274,7 @@ internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
                 floating = win.wide,
                 modifier = if (win.wide) Modifier.align(Alignment.BottomStart).widthIn(max = 460.dp).fillMaxWidth().padding(12.dp)
                 else Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
-                extra = { PackageLine(state.pkg, vm) },
+                extra = { PackageLine(state.pkg, vm); VoicePackLine(state.voicePack) },
             )
         }
     } else if (overlays) {
@@ -359,6 +359,17 @@ private fun WeatherCard(state: UiState, vm: NavController) {
 }
 
 /** Offline-Reise-Paket: Knopf mit Groessenschaetzung, Fortschritt, Bereit-Hinweis. */
+/** Fortschritt von Kilos Strassennamen fuer diese Fahrt (nur sichtbar, wenn die Cloud-Stimme an ist). */
+@Composable
+internal fun VoicePackLine(vp: VoicePackState) {
+    when (vp.phase) {
+        VoicePackPhase.IDLE -> Unit
+        VoicePackPhase.RUNNING -> Text(stringResource(R.string.voicepack_progress, vp.done + vp.failed, vp.total), style = MaterialTheme.typography.bodySmall)
+        VoicePackPhase.DONE -> Text(stringResource(R.string.voicepack_ready), style = MaterialTheme.typography.bodySmall)
+        VoicePackPhase.PARTIAL -> Text(stringResource(R.string.voicepack_partial, vp.done, vp.total), style = MaterialTheme.typography.bodySmall)
+    }
+}
+
 @Composable
 internal fun PackageLine(pkg: PackageState, vm: NavController) {
     when (pkg.phase) {

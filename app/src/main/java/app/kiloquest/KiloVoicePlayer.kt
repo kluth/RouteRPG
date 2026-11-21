@@ -79,7 +79,7 @@ class KiloVoicePlayer(private val context: Context) {
         release()
     }
 
-    private fun nameFile(lang: String, text: String) = java.io.File(context.filesDir, "voice_cache/$lang/${VoiceIndex.hash(text)}.ogg")
+    private fun nameFile(lang: String, text: String) = java.io.File(context.filesDir, "voice_cache/$lang/${app.kiloquest.nav.VoicePack.nameHash(text)}.mp3")
 
     private fun isFile(path: String) = path.startsWith("/")
 

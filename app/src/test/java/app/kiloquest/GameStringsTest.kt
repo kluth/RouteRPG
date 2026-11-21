@@ -112,3 +112,11 @@ class ParkedGamesTest {
     }
     private fun app.kiloquest.UiState.isParkedForGamesForTest() = isParkedForGames()
 }
+
+class NameHashTest {
+    @org.junit.Test fun nameFileHashMatchesIndexHash() {
+        for (t in listOf("Hauptstraße", "  Bahnhofstraße ", "A 44", "Straße des 17. Juni")) {
+            org.junit.Assert.assertEquals(app.kiloquest.game.VoiceIndex.hash(t), app.kiloquest.nav.VoicePack.nameHash(t))
+        }
+    }
+}

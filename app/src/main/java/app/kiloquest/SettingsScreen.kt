@@ -41,7 +41,7 @@ import app.kiloquest.ui.SettingSwitch
 import app.kiloquest.ui.SettingsSection
 import app.kiloquest.ui.screenColumn
 
-private enum class Dlg { NONE, CAMERAS, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES, SERVER, POWER, STORAGE, VOICE_HELP, CLOUD_WARN, APP_ICON, NAMES, SELFTEST }
+private enum class Dlg { NONE, CAMERAS, CORRIDOR, DAILY, THEME, AGE, PLAYERS, OFFLINE, RECENTS, MEMORY, RESET, PRIVACY, LICENSES, SERVER, POWER, STORAGE, VOICE_HELP, CLOUD_WARN, APP_ICON, NAMES, SELFTEST, VOICE_SERVER, VOICE_WARN }
 
 /** Einstellungen: alles, was sich dauerhaft einstellen laesst, mit Abfragen vor dem Loeschen. */
 @Composable
@@ -184,6 +184,12 @@ fun SettingsScreen(state: UiState, nav: NavController) {
 
             SettingsSection(stringResource(R.string.sec_server)) {
                 SettingRow(stringResource(R.string.set_server), stringResource(if (ServerConfig.token.isBlank()) R.string.set_server_hint_missing else R.string.set_server_hint_ok)) { dialog = Dlg.SERVER }
+                SettingDivider()
+                SettingRow(stringResource(R.string.set_voice_server), stringResource(if (VoiceCloudConfig.configured) R.string.set_server_hint_ok else R.string.set_server_hint_missing)) { dialog = Dlg.VOICE_SERVER }
+                SettingDivider()
+                SettingSwitch(stringResource(R.string.set_cloud_voice), stringResource(R.string.set_cloud_voice_hint), s.cloudVoice) { v ->
+                    if (v) dialog = Dlg.VOICE_WARN else nav.updateSettings { it.copy(cloudVoice = false) }
+                }
             }
 
             SettingsSection(stringResource(R.string.sec_devices)) {
@@ -328,6 +334,36 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                     }
                 },
                 confirmButton = { androidx.compose.material3.TextButton(onClick = { AppIcon.apply(ctx, AppIcon.Variant.valueOf(chosen)); dialog = Dlg.NONE }) { Text(stringResource(R.string.dlg_save)) } },
+                dismissButton = { androidx.compose.material3.TextButton(onClick = { dialog = Dlg.NONE }) { Text(cancel) } },
+            )
+        }
+        Dlg.VOICE_WARN -> androidx.compose.material3.AlertDialog(
+            onDismissRequest = { dialog = Dlg.NONE },
+            title = { Text(stringResource(R.string.voice_warn_title)) },
+            text = { Column(Modifier.verticalScroll(rememberScrollState())) { Text(stringResource(R.string.voice_warn_text), style = MaterialTheme.typography.bodyMedium) } },
+            confirmButton = { androidx.compose.material3.TextButton(onClick = { nav.updateSettings { it.copy(cloudVoice = true) }; dialog = Dlg.NONE }) { Text(stringResource(R.string.voice_warn_allow), color = MaterialTheme.colorScheme.error) } },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { dialog = Dlg.NONE }) { Text(cancel) } },
+        )
+        Dlg.VOICE_SERVER -> {
+            val prefs = ctx.getSharedPreferences("kq", android.content.Context.MODE_PRIVATE)
+            var url by rememberSaveable { mutableStateOf(VoiceCloudConfig.url) }
+            var token by rememberSaveable { mutableStateOf("") }
+            var bad by rememberSaveable { mutableStateOf(false) }
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { dialog = Dlg.NONE },
+                title = { Text(stringResource(R.string.set_voice_server)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(R.string.set_voice_server_info), style = MaterialTheme.typography.bodyMedium)
+                        androidx.compose.material3.OutlinedTextField(url, { url = it; bad = false }, singleLine = true, label = { Text(stringResource(R.string.set_server_url)) }, isError = bad, supportingText = { if (bad) Text(stringResource(R.string.set_server_https)) })
+                        androidx.compose.material3.OutlinedTextField(
+                            token, { token = it }, singleLine = true, label = { Text(stringResource(R.string.set_server_token)) },
+                            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Password),
+                        )
+                    }
+                },
+                confirmButton = { androidx.compose.material3.TextButton(onClick = { if (VoiceCloudConfig.save(prefs, url, token)) dialog = Dlg.NONE else bad = true }) { Text(stringResource(R.string.dlg_save)) } },
                 dismissButton = { androidx.compose.material3.TextButton(onClick = { dialog = Dlg.NONE }) { Text(cancel) } },
             )
         }
