@@ -1009,4 +1009,10 @@
     <string name="trip_overview_reminder">Reminder: %1$s</string>
     <string name="trip_overview_long">This day is longer than your daily driving time.</string>
     <string name="trip_overview_find">Find a place to stay</string>
+    <string name="set_car_games">Quiz on the car screen (parked only)</string>
+    <string name="set_car_games_hint">Shows a small animal quiz on the car display, only while the car stands still (under 3 km/h) with navigation running. It closes by itself as soon as you drive. Off by default. The driver should never play.</string>
+    <string name="car_games_title">Animal quiz</string>
+    <string name="car_games_stopped">The quiz closed because the car is moving.</string>
+    <string name="car_games_next">Next question</string>
+    <string name="car_games_open">Quiz</string>
 </resources>

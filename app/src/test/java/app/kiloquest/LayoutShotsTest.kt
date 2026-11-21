@@ -147,6 +147,15 @@ class LayoutShotsTest {
         }
     })
 
+    @Config(qualifiers = "w390dp-h500dp-port-notnight-xxhdpi")
+    @Test fun albumShot() = shot("album-390x500", 390, 500, state = { mini }, custom = { _ ->
+        androidx.compose.material3.Surface(color = app.kiloquest.ui.kids.KidsPalette.style(AgeBand.MINI, false).bg) {
+            androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.padding(16.dp)) {
+                app.kiloquest.ui.StickerGrid(app.kiloquest.game.StickerBook.ALL, app.kiloquest.game.StickerBook.ALL.map { it.id }.toSet(), size = 72.dp)
+            }
+        }
+    })
+
     @Test fun miniDarkShot() = shot("mini-dark-390x844", 390, 844, dark = true, state = { mini }, screen = true)
 
     @Config(qualifiers = "w360dp-h780dp-port-notnight-xxhdpi")

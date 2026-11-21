@@ -41,6 +41,13 @@ private fun stickerRes(id: String): Int? = when (id) {
     "whale" -> R.drawable.sticker_whale
     "hedgehog" -> R.drawable.sticker_hedgehog
     "swan" -> R.drawable.sticker_swan
+    "wolf" -> R.drawable.sticker_wolf
+    "penguin" -> R.drawable.sticker_penguin
+    "rabbit" -> R.drawable.sticker_rabbit
+    "snowflake" -> R.drawable.sticker_snowflake
+    "aurora" -> R.drawable.sticker_aurora
+    "castle" -> R.drawable.sticker_castle
+    "ship" -> R.drawable.sticker_ship
     else -> null
 }
 

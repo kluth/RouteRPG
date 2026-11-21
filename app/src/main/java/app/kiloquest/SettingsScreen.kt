@@ -169,6 +169,8 @@ fun SettingsScreen(state: UiState, nav: NavController) {
             }
 
             SettingsSection(stringResource(R.string.sec_car)) {
+                SettingSwitch(stringResource(R.string.set_car_games), stringResource(R.string.set_car_games_hint), s.carParkedGames) { v -> nav.updateSettings { it.copy(carParkedGames = v) } }
+                SettingDivider()
                 SettingSwitch(stringResource(R.string.car_simple_map), stringResource(R.string.car_simple_map_hint), state.carSimpleMap, onChange = nav::setCarSimpleMap)
             }
 

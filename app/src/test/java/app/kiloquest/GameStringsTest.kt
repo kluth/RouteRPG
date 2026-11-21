@@ -1,4 +1,5 @@
 package app.kiloquest
+import app.kiloquest.car.isParkedForGames
 
 import app.kiloquest.game.KiloSeries
 import app.kiloquest.game.StoryRelay
@@ -97,4 +98,17 @@ class SelfTestTest {
         org.junit.Assert.assertEquals(app.kiloquest.CheckLevel.WARN, app.kiloquest.SelfTest.overall(listOf(c(app.kiloquest.CheckLevel.OK), c(app.kiloquest.CheckLevel.WARN))))
         org.junit.Assert.assertEquals(app.kiloquest.CheckLevel.FAIL, app.kiloquest.SelfTest.overall(listOf(c(app.kiloquest.CheckLevel.WARN), c(app.kiloquest.CheckLevel.FAIL))))
     }
+}
+
+class ParkedGamesTest {
+    private fun st(on: Boolean, nav: Boolean, kmh: Int?) = app.kiloquest.UiState(settings = app.kiloquest.AppSettings(carParkedGames = on), navigating = nav, speedKmh = kmh)
+    @org.junit.Test fun onlyWhenEnabledNavigatingAndStanding() {
+        org.junit.Assert.assertTrue(st(true, true, 0).isParkedForGamesForTest())
+        org.junit.Assert.assertFalse(st(false, true, 0).isParkedForGamesForTest())
+        org.junit.Assert.assertFalse(st(true, false, 0).isParkedForGamesForTest())
+        org.junit.Assert.assertFalse(st(true, true, 3).isParkedForGamesForTest())
+        org.junit.Assert.assertFalse(st(true, true, 50).isParkedForGamesForTest())
+        org.junit.Assert.assertFalse("ohne Messwert gesperrt", st(true, true, null).isParkedForGamesForTest())
+    }
+    private fun app.kiloquest.UiState.isParkedForGamesForTest() = isParkedForGames()
 }

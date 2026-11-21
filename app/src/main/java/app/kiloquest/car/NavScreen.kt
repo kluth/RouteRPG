@@ -114,6 +114,8 @@ class NavScreen(carContext: CarContext, private val nav: NavController, private 
         // Waehrend der Fahrt keine Zoom-Tasten (Ablenkung); die Karte zoomt selbst nach Tempo.
         if (nav.state.value.navigating) {
             b.addAction(iconAction(R.drawable.ic_car_recenter) { map.recenter() })
+            // Quiz nur im Stand, nur wenn in den Einstellungen eingeschaltet (siehe ParkedQuizScreen)
+            if (nav.state.value.isParkedForGames()) b.addAction(iconAction(R.drawable.ic_apps) { screenManager.push(ParkedQuizScreen(carContext, nav)) })
         } else {
             b.addAction(iconAction(R.drawable.ic_car_zoom_in) { map.zoomIn() })
                 .addAction(iconAction(R.drawable.ic_car_zoom_out) { map.zoomOut() })

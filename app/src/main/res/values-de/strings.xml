@@ -1009,4 +1009,10 @@
     <string name="trip_overview_reminder">Erinnerung: %1$s</string>
     <string name="trip_overview_long">Dieser Tag ist länger als eure Tagesfahrzeit.</string>
     <string name="trip_overview_find">Unterkunft suchen</string>
+    <string name="set_car_games">Quiz auf dem Auto-Display (nur im Stand)</string>
+    <string name="set_car_games_hint">Zeigt ein kleines Tierquiz auf dem Auto-Display, nur wenn das Auto steht (unter 3 km/h) und die Navigation läuft. Es schließt sich von selbst, sobald ihr fahrt. Standardmäßig aus. Der Fahrer spielt nie mit.</string>
+    <string name="car_games_title">Tierquiz</string>
+    <string name="car_games_stopped">Das Quiz wurde beendet, weil das Auto fährt.</string>
+    <string name="car_games_next">Nächste Frage</string>
+    <string name="car_games_open">Quiz</string>
 </resources>

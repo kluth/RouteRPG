@@ -9,11 +9,12 @@
 - **DATEX-II-Parser** (`nav/TrafficDatex.kt`): Baustellen/Staus entlang der Route, nur als Logik mit Test-Fixture.
 - **Selbsttest** (Einstellungen > Selbsttest): Server-Token, Standort, Mikrofon, Spracherkennung, Bluetooth, Benachrichtigungen, Offline-Paket, Kamera; Symbol + Wort statt nur Farbe.
 
+- **Grafische Sticker:** 7 neue Vektor-Sticker (Wolf, Pinguin, Hase, Schneeflocke, Nordlicht, Schloss, Schiff) im Stil der vorhandenen; jetzt hat jeder der 16 Sticker ein Bild.
+- **Quiz im Auto-Display (nur im Stand):** `car/ParkedQuizScreen.kt`, erlaubtes ListTemplate, Knopf in der Kartenleiste. Nur wenn in den Einstellungen eingeschaltet (Standard aus), Navigation läuft und gemessene Geschwindigkeit < 3 km/h; ohne Messwert gesperrt. Schließt sich von selbst, sobald das Auto fährt. Kein `distractionOptimized`, Fragen offline.
+
 ## Nicht umgesetzt
 - **Baustellen/Stau live:** Der Parser ist gegen ein selbst gebautes Beispiel getestet, nicht gegen echte Mobilithek-Daten. Zugang, Zertifikat und Lizenz je Datensatz sind offen, daher keine Anbindung in der App.
-- **Spiele im Auto-Display im Stand:** nicht gebaut (Fahrsicherheit, Regel 4; braucht Test im DHU/Auto).
-- **Grafische Sticker:** nicht gebaut (braucht Gestaltung).
 - ISS-Überflüge.
 
 ## Ungetestet
-Echte Geräte, GBIF-Netzabruf, TalkBack, Schriftgröße 2,0.
+Echte Geräte, Android Auto/DHU (Quiz-Knopf, Template-Grenzen, Schließen beim Losfahren), GBIF-Netzabruf, TalkBack, Schriftgröße 2,0.
