@@ -49,3 +49,31 @@ object KiloPraise {
     /** Schluessel der String-Ressource, z. B. `kilo_praise_3`. */
     fun key(correct: Boolean, n: Int) = (if (correct) "kilo_praise_" else "kilo_retry_") + n
 }
+
+/**
+ * Bausteine fuer Saetze mit Zahlen oder Wetterlage: aufgenommene Teilclips werden nacheinander gespielt (Ids siehe tools/voice).
+ * Bewusst klein: nur dort, wo der Klang ohne Grammatik-Probleme gelingt. Liefert null, wenn ein Wert ausserhalb des
+ * aufgenommenen Bereichs liegt (dann spricht die Geraete-Sprachausgabe den ganzen Satz).
+ */
+object VoiceParts {
+    /** Zahlen 0..MAX_NUMBER sind als Einzelclips `num_<n>` aufgenommen. */
+    const val MAX_NUMBER = 130
+
+    fun number(n: Int): String? = if (n in 0..MAX_NUMBER) "num_$n" else null
+
+    /** "Das Tempolimit ist N." */
+    fun speedLimitIs(kmh: Int): List<String>? = number(kmh)?.let { listOf("part_limit_is", it) }
+
+    /** "Wetter am Ziel: <Lage>, N Grad." - [condition] ist der Schluessel der Lage (clear, cloudy, fog, drizzle, rain, snow, showers, storm). */
+    fun weatherAtDestination(condition: String, tempC: Int): List<String>? {
+        if (condition !in CONDITIONS) return null
+        val num = number(kotlin.math.abs(tempC)) ?: return null
+        return buildList {
+            add("part_weather_at_dest"); add("wcond_$condition")
+            if (tempC < 0) add("part_minus")
+            add(num); add("part_degrees")
+        }
+    }
+
+    val CONDITIONS = setOf("clear", "cloudy", "fog", "drizzle", "rain", "snow", "showers", "storm")
+}

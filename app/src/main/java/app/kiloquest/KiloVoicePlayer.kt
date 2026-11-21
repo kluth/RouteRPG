@@ -36,6 +36,27 @@ class KiloVoicePlayer(private val context: Context) {
         return true
     }
 
+    /** Spielt mehrere Saetze nacheinander, aber nur, wenn es fuer ALLE eine Aufnahme gibt (sonst false, nichts wird eingereiht). */
+    fun playAll(texts: List<String>): Boolean {
+        val lang = Locale.getDefault().language
+        val paths = texts.map { t -> index.idFor(lang, t)?.let { "kilo_voice/$lang/$it.ogg" } ?: return false }
+        return enqueue(paths)
+    }
+
+    /** Spielt Teilclips (Ids aus tools/voice, z. B. `part_limit_is`, `num_80`) nacheinander; false, wenn eine Datei fehlt. */
+    fun playParts(ids: List<String>?): Boolean {
+        ids ?: return false
+        val lang = Locale.getDefault().language
+        return enqueue(ids.map { "kilo_voice/$lang/$it.ogg" })
+    }
+
+    private fun enqueue(paths: List<String>): Boolean {
+        if (paths.isEmpty() || !paths.all { exists(it) }) return false
+        paths.forEach { queue.addLast(it) }
+        if (player == null) next()
+        return true
+    }
+
     fun stop() {
         queue.clear()
         release()

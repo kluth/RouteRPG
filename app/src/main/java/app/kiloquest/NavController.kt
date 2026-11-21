@@ -15,6 +15,7 @@ import android.content.Context
 import app.kiloquest.game.AdventureSession
 import app.kiloquest.game.AudioGameType
 import app.kiloquest.game.ParentPhrase
+import app.kiloquest.game.VoiceParts
 import app.kiloquest.game.ParentPhrases
 import app.kiloquest.game.FrustrationGuard
 import app.kiloquest.game.KiloSeries
@@ -891,7 +892,7 @@ class NavController(private val app: Application) : KidsActions {
             _state.value.toilet?.let { t ->
                 if (t.phase == ToiletPhase.HEADING) {
                     _state.update { it.copy(toilet = t.copy(phase = ToiletPhase.ARRIVED)) }
-                    speak(app.getString(R.string.toilet_arrived))
+                    say(app.getString(R.string.toilet_arrived))
                 }
                 return
             }
@@ -1353,7 +1354,20 @@ class NavController(private val app: Application) : KidsActions {
     }
 
     /** Sprachausgabe fuer Rueckmeldungen auf Sprachbefehle und Intents (nur Audio; Navigationsstimme, folgt deren Einstellung). */
-    private fun say(text: String) = speak(text)
+    /** Kilo-Antwort/Info: aufgenommene Stimme, wenn es eine Aufnahme gibt, sonst Geraete-Sprachausgabe (Navigationsansagen nutzen weiter [speak]). */
+    private fun say(text: String) = sayKilo { it.play(text) } ?: speak(text)
+
+    /** Fuehrt [play] aus, wenn Sprachansagen an sind; Ergebnis null = keine Aufnahme (Aufrufer nutzt die Sprachausgabe). */
+    private fun sayKilo(play: (KiloVoicePlayer) -> Boolean): Unit? {
+        if (!_state.value.settings.naviVoice) return Unit
+        kiloClips.stop()
+        if (!play(kiloClips)) return null
+        tts?.stop()
+        arbiter.navSpoken(System.currentTimeMillis())
+        lastNavSpokenAt = System.currentTimeMillis()
+        return Unit
+    }
+
 
     /** Einstiegspunkt fuer Intents von Gemini/Assistant (`geo:`, `geo.action:`, `google.navigation:`) und `kiloquest://cmd/...`. */
     fun handleIntent(action: String?, uri: String?) {
@@ -1452,6 +1466,7 @@ class NavController(private val app: Application) : KidsActions {
 
     private fun sayLimit() {
         val limit = _state.value.speedLimit
+        if (limit != null && limit < SpeedProfile.UNLIMITED && sayKilo { it.playParts(VoiceParts.speedLimitIs(limit)) } != null) return
         say(if (limit == null || limit >= SpeedProfile.UNLIMITED) app.getString(R.string.cmd_no_limit) else app.getString(R.string.cmd_limit, limit))
     }
 
@@ -1775,7 +1790,10 @@ class NavController(private val app: Application) : KidsActions {
         val s = _state.value
         val tolls = s.tolls
         when {
-            tolls.isNotEmpty() -> say(app.getString(R.string.toll_intro) + " " + tolls.joinToString(" ") { tollLine(it) } + " " + app.getString(R.string.toll_check))
+            tolls.isNotEmpty() -> {
+                val parts = listOf(app.getString(R.string.toll_intro)) + tolls.map { tollLine(it) } + app.getString(R.string.toll_check)
+                if (sayKilo { it.playAll(parts) } == null) speak(parts.joinToString(" "))
+            }
             s.tripInfoReady -> say(app.getString(R.string.toll_none))
             else -> say(app.getString(R.string.toll_checking))
         }
@@ -2322,7 +2340,11 @@ class NavController(private val app: Application) : KidsActions {
         if (!announce) return
         val dest = summary.destination
         if (speakSummary && dest?.tempC != null) {
-            speakQuest(app.getString(R.string.weather_speech, conditionName(dest.condition), dest.tempC!!.toInt()))
+            val temp = dest.tempC!!.toInt()
+            // Mit Teilclips (Lage + Zahl) in Kilos Stimme, wenn alles aufgenommen ist; sonst der ganze Satz per Sprachausgabe
+            val parts = VoiceParts.weatherAtDestination(dest.condition.name.lowercase(), temp)
+            val played = _state.value.settings.kiloVoice && !gameActive && kiloClips.playParts(parts)
+            if (!played) speakQuest(app.getString(R.string.weather_speech, conditionName(dest.condition), temp))
         }
         for ((hazard, at) in summary.hazardsAhead) {
             if (announcedHazards.add(hazard)) {
@@ -2366,7 +2388,7 @@ class NavController(private val app: Application) : KidsActions {
             adventure?.forceQuest(q)
             breakPlanner.reset()
             _state.update { it.copy(breakTarget = null, quest = q, feedback = null, newSticker = null) }
-            speak(app.getString(R.string.break_arrived))
+            say(app.getString(R.string.break_arrived))
             announceQuest(q)
         } else if (ahead < -800.0) {
             // vorbeigefahren: spaeter erneut erinnern
@@ -3020,18 +3042,18 @@ class NavController(private val app: Application) : KidsActions {
             when (t.phase) {
                 ToiletPhase.SEARCHING -> return
                 ToiletPhase.HEADING -> { speak(app.getString(R.string.toilet_found, t.label, app.getString(R.string.unit_min, ((t.seconds ?: 60.0) / 60).toInt().coerceAtLeast(1)))); return }
-                ToiletPhase.ARRIVED -> { speak(app.getString(R.string.toilet_arrived)); return }
+                ToiletPhase.ARRIVED -> { say(app.getString(R.string.toilet_arrived)); return }
                 ToiletPhase.NONE -> Unit
             }
         }
         toiletJob?.cancel()
         _state.update { it.copy(toilet = ToiletState(ToiletPhase.SEARCHING), toiletRequest = null, error = null) }
-        speak(app.getString(R.string.toilet_searching))
+        say(app.getString(R.string.toilet_searching))
         toiletJob = scope.launch {
             toiletOnlyClosed = false
             val choice = findToilet(pos)
             if (choice == null) {
-                speak(app.getString(if (toiletOnlyClosed) R.string.toilet_none_open else R.string.toilet_none))
+                say(app.getString(if (toiletOnlyClosed) R.string.toilet_none_open else R.string.toilet_none))
                 _state.update { it.copy(toilet = ToiletState(ToiletPhase.NONE)) }
                 delay(8_000)
                 _state.update { if (it.toilet?.phase == ToiletPhase.NONE) it.copy(toilet = null) else it }
@@ -3059,7 +3081,7 @@ class NavController(private val app: Application) : KidsActions {
                 speak(app.getString(R.string.toilet_found, label, app.getString(R.string.unit_min, minutes)))
                 scope.launch { refreshTraffic() }
             }.onFailure {
-                speak(app.getString(R.string.toilet_none))
+                say(app.getString(R.string.toilet_none))
                 _state.update { it.copy(toilet = null) }
             }
         }
@@ -3156,7 +3178,7 @@ class NavController(private val app: Application) : KidsActions {
         toiletResume = null
         if (t.phase == ToiletPhase.NONE || resume == null) { stopNavigation(); return }
         _state.update { it.copy(destination = resume, toilet = null) }
-        speak(app.getString(R.string.toilet_resume))
+        say(app.getString(R.string.toilet_resume))
         calculateRoute()
     }
 

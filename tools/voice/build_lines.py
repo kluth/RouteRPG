@@ -19,6 +19,48 @@ FIXED += [
     "team_goal_25", "team_goal_50", "team_goal_75", "team_goal_100", "kilo_adapt_easier", "kilo_adapt_harder", "kilo_adapt_calm",
     "series_wait", "series_done", "stopover_resume", "toll_check",
 ] + [f"audio_story_start_{i}" for i in range(1, 5)] + [f"audio_story_next_{i}" for i in range(1, 5)]
+# Kilo-eigene feste Ansagen (Sprachbefehle, Maut, Klo, Reiseuebelkeit, Pausen, Stopp); Navigation (arrived, rerouting, reroute_speech) bleibt Geraete-Stimme
+FIXED += [
+    "cmd_no_trip", "cmd_unmuted", "cmd_muted", "cmd_unknown_road", "cmd_unknown", "cmd_no_limit", "cmd_navigation_ended", "cmd_help", "cmd_voice_unavailable",
+    "toll_intro", "toll_none", "toll_checking", "toilet_searching", "toilet_none", "toilet_none_open", "toilet_arrived", "toilet_resume",
+    "stopover_none", "intent_unsupported", "intent_unsupported_stop", "intent_search_done", "intent_not_found", "game_need_voice",
+    "sickness_prompt_1", "sickness_prompt_2", "sickness_prompt_3", "break_arrived",
+] + [f"toll_{c}" for c in "at ch cz sk si hu bg ro fr it es pt hr gr pl no dk se nl".split()]
+# Teilclips (Zahlen und Satzstuecke, siehe VoiceParts in :game-engine); Texte stehen hier, nicht in strings.xml
+PARTS = {
+    "part_limit_is": {"de": "Das Tempolimit ist", "en": "The speed limit is"},
+    "part_weather_at_dest": {"de": "Wetter am Ziel:", "en": "Weather at the destination:"},
+    "part_degrees": {"de": "Grad.", "en": "degrees."},
+    "part_minus": {"de": "minus", "en": "minus"},
+}
+CONDITIONS = "clear cloudy fog drizzle rain snow showers storm".split()
+MAX_NUMBER = 130
+DE_UNITS = ["null", "eins", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn", "elf", "zwölf", "dreizehn", "vierzehn", "fünfzehn", "sechzehn", "siebzehn", "achtzehn", "neunzehn"]
+DE_TENS = {2: "zwanzig", 3: "dreißig", 4: "vierzig", 5: "fünfzig", 6: "sechzig", 7: "siebzig", 8: "achtzig", 9: "neunzig"}
+EN_UNITS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"]
+EN_TENS = {2: "twenty", 3: "thirty", 4: "forty", 5: "fifty", 6: "sixty", 7: "seventy", 8: "eighty", 9: "ninety"}
+
+
+def de_num(n):
+    if n < 20:
+        return DE_UNITS[n]
+    if n < 100:
+        u, t = n % 10, n // 10
+        return DE_TENS[t] if u == 0 else ("ein" if u == 1 else DE_UNITS[u]) + "und" + DE_TENS[t]
+    rest = n - 100
+    return "hundert" if rest == 0 else "hundert" + ("eins" if rest == 1 else de_num(rest))
+
+
+def en_num(n):
+    if n < 20:
+        return EN_UNITS[n]
+    if n < 100:
+        u, t = n % 10, n // 10
+        return EN_TENS[t] if u == 0 else EN_TENS[t] + "-" + EN_UNITS[u]
+    rest = n - 100
+    return "one hundred" if rest == 0 else "one hundred " + en_num(rest)
+
+
 LANGS = {"en": RES / "values/strings.xml", "de": RES / "values-de/strings.xml"}
 
 
@@ -49,6 +91,12 @@ def main():
             lines.append(("quest_opts", key + ".opts", {l: full(l) for l in strings}))
     for key in FIXED:
         lines.append(("fixed", key, {l: strings[l][key] for l in strings}))
+    for pid, t in PARTS.items():
+        lines.append(("part", pid, t))
+    for c in CONDITIONS:
+        lines.append(("part", f"wcond_{c}", {l: strings[l][f"weather_cond_{c}"] for l in strings}))
+    for n in range(MAX_NUMBER + 1):
+        lines.append(("num", f"num_{n}", {"de": de_num(n), "en": en_num(n)}))
     data = [{"id": i, "group": g, "text": t, "hash": {l: h(t[l]) for l in t}} for g, i, t in lines]
     for d in data:
         for l, t in d["text"].items():

@@ -1030,5 +1030,2273 @@
       "en": "38ee7dda6d80",
       "de": "53dd17d716c9"
     }
+  },
+  {
+    "id": "cmd_no_trip",
+    "group": "fixed",
+    "text": {
+      "en": "There is no trip running.",
+      "de": "Es läuft keine Fahrt."
+    },
+    "hash": {
+      "en": "2392b35da711",
+      "de": "9a6186f40963"
+    }
+  },
+  {
+    "id": "cmd_unmuted",
+    "group": "fixed",
+    "text": {
+      "en": "Voice announcements on.",
+      "de": "Sprachansagen an."
+    },
+    "hash": {
+      "en": "6843532d3bca",
+      "de": "3b4c65dd039d"
+    }
+  },
+  {
+    "id": "cmd_muted",
+    "group": "fixed",
+    "text": {
+      "en": "Voice announcements off.",
+      "de": "Sprachansagen aus."
+    },
+    "hash": {
+      "en": "73bb93d4dea5",
+      "de": "a7c7a920284e"
+    }
+  },
+  {
+    "id": "cmd_unknown_road",
+    "group": "fixed",
+    "text": {
+      "en": "I do not know the name of this road.",
+      "de": "Den Namen dieser Straße kenne ich nicht."
+    },
+    "hash": {
+      "en": "0654705b99aa",
+      "de": "fc0692b40472"
+    }
+  },
+  {
+    "id": "cmd_unknown",
+    "group": "fixed",
+    "text": {
+      "en": "I did not understand that.",
+      "de": "Das habe ich nicht verstanden."
+    },
+    "hash": {
+      "en": "41e85b1cab4f",
+      "de": "3a5ebfb01419"
+    }
+  },
+  {
+    "id": "cmd_no_limit",
+    "group": "fixed",
+    "text": {
+      "en": "No speed limit known here.",
+      "de": "Hier ist kein Tempolimit bekannt."
+    },
+    "hash": {
+      "en": "ef03cab79f05",
+      "de": "cb96700cff99"
+    }
+  },
+  {
+    "id": "cmd_navigation_ended",
+    "group": "fixed",
+    "text": {
+      "en": "Navigation ended.",
+      "de": "Navigation beendet."
+    },
+    "hash": {
+      "en": "54bd5e286670",
+      "de": "f0162f762eda"
+    }
+  },
+  {
+    "id": "cmd_help",
+    "group": "fixed",
+    "text": {
+      "en": "You can say: toilet alert, break, how long, next turn, speed limit, where are we going, tell me a story, announcements off or on, end navigation. Start with Kilo.",
+      "de": "Du kannst sagen: Klo-Alarm, Pause, wie lange noch, nächste Abbiegung, Tempolimit, wohin fahren wir, erzähl eine Geschichte, Ansagen aus oder an, Navigation beenden. Beginne mit Kilo."
+    },
+    "hash": {
+      "en": "619676da6b88",
+      "de": "db3ab3a8d9f6"
+    }
+  },
+  {
+    "id": "cmd_voice_unavailable",
+    "group": "fixed",
+    "text": {
+      "en": "Voice commands need the microphone permission and an offline speech pack.",
+      "de": "Sprachbefehle brauchen die Mikrofon-Erlaubnis und ein Offline-Sprachpaket."
+    },
+    "hash": {
+      "en": "d57e1fc53b9c",
+      "de": "763fb8a4ed55"
+    }
+  },
+  {
+    "id": "toll_intro",
+    "group": "fixed",
+    "text": {
+      "en": "Tolls on this route:",
+      "de": "Maut auf dieser Route:"
+    },
+    "hash": {
+      "en": "6a819ddc06aa",
+      "de": "886fe6196c14"
+    }
+  },
+  {
+    "id": "toll_none",
+    "group": "fixed",
+    "text": {
+      "en": "No vignette or toll for cars is known for the countries on this route.",
+      "de": "Für die Länder auf dieser Route ist keine Vignette oder Pkw-Maut bekannt."
+    },
+    "hash": {
+      "en": "6c379f5fcc4c",
+      "de": "13c7ec7785e8"
+    }
+  },
+  {
+    "id": "toll_checking",
+    "group": "fixed",
+    "text": {
+      "en": "I am still checking the countries on the route. Please ask again in a moment.",
+      "de": "Ich prüfe noch die Länder der Route. Frag gleich noch einmal."
+    },
+    "hash": {
+      "en": "3a6d2119df0c",
+      "de": "5338db5ec849"
+    }
+  },
+  {
+    "id": "toilet_searching",
+    "group": "fixed",
+    "text": {
+      "en": "Toilet alert! Looking for the nearest toilet.",
+      "de": "Klo-Alarm! Ich suche die nächste Toilette."
+    },
+    "hash": {
+      "en": "5a92ddd52cef",
+      "de": "853dd713cecc"
+    }
+  },
+  {
+    "id": "toilet_none",
+    "group": "fixed",
+    "text": {
+      "en": "No toilet found nearby.",
+      "de": "Keine Toilette in der Nähe gefunden."
+    },
+    "hash": {
+      "en": "d5e9ad95606b",
+      "de": "e5f401e28d14"
+    }
+  },
+  {
+    "id": "toilet_none_open",
+    "group": "fixed",
+    "text": {
+      "en": "All toilets nearby are closed right now.",
+      "de": "Alle Toiletten in der Nähe sind gerade geschlossen."
+    },
+    "hash": {
+      "en": "6391d58f8e7e",
+      "de": "d841ef101122"
+    }
+  },
+  {
+    "id": "toilet_arrived",
+    "group": "fixed",
+    "text": {
+      "en": "You are there. Say when it is time to continue.",
+      "de": "Ihr seid da. Sagt Bescheid, wenn es weitergeht."
+    },
+    "hash": {
+      "en": "1541a3d63564",
+      "de": "7d0c8fc1c98b"
+    }
+  },
+  {
+    "id": "toilet_resume",
+    "group": "fixed",
+    "text": {
+      "en": "Back on the way to the destination.",
+      "de": "Weiter zum Ziel."
+    },
+    "hash": {
+      "en": "3351bab103cd",
+      "de": "d1ff4f71767c"
+    }
+  },
+  {
+    "id": "stopover_none",
+    "group": "fixed",
+    "text": {
+      "en": "I did not find a stop ahead.",
+      "de": "Ich habe voraus keinen Stopp gefunden."
+    },
+    "hash": {
+      "en": "f49a053f4037",
+      "de": "909c3ca73d3f"
+    }
+  },
+  {
+    "id": "intent_unsupported",
+    "group": "fixed",
+    "text": {
+      "en": "This voice action is not supported yet.",
+      "de": "Diese Sprachaktion wird noch nicht unterstützt."
+    },
+    "hash": {
+      "en": "4545ac90ad18",
+      "de": "f99dc088e1a5"
+    }
+  },
+  {
+    "id": "intent_unsupported_stop",
+    "group": "fixed",
+    "text": {
+      "en": "Adding a stop by voice is not supported yet.",
+      "de": "Einen Zwischenstopp per Sprache hinzuzufügen wird noch nicht unterstützt."
+    },
+    "hash": {
+      "en": "c7204a9d7ee0",
+      "de": "4c94fbdf76e1"
+    }
+  },
+  {
+    "id": "intent_search_done",
+    "group": "fixed",
+    "text": {
+      "en": "Showing the results. The co-driver can pick one.",
+      "de": "Ich zeige die Ergebnisse. Der Beifahrer kann eines wählen."
+    },
+    "hash": {
+      "en": "a0cba273715f",
+      "de": "f82ea52ea9e6"
+    }
+  },
+  {
+    "id": "intent_not_found",
+    "group": "fixed",
+    "text": {
+      "en": "I could not find that place.",
+      "de": "Diesen Ort habe ich nicht gefunden."
+    },
+    "hash": {
+      "en": "5082765ac412",
+      "de": "572405316191"
+    }
+  },
+  {
+    "id": "game_need_voice",
+    "group": "fixed",
+    "text": {
+      "en": "For this game I need speech recognition on the device. Please allow the microphone and download the offline speech pack in the phone settings.",
+      "de": "Für dieses Spiel brauche ich Spracherkennung auf dem Gerät. Bitte erlaube das Mikrofon und lade in den Handy-Einstellungen das Offline-Sprachpaket herunter."
+    },
+    "hash": {
+      "en": "3aca54e0a419",
+      "de": "32a2ad4768fb"
+    }
+  },
+  {
+    "id": "sickness_prompt_1",
+    "group": "fixed",
+    "text": {
+      "en": "Winding road. Look out of the window at the horizon now.",
+      "de": "Kurvige Strecke. Schaut jetzt aus dem Fenster zum Horizont."
+    },
+    "hash": {
+      "en": "5e09b14ced3c",
+      "de": "e13a1f50fcaa"
+    }
+  },
+  {
+    "id": "sickness_prompt_2",
+    "group": "fixed",
+    "text": {
+      "en": "Tip: look far into the distance and breathe deeply.",
+      "de": "Tipp: Schaut weit in die Ferne und atmet tief durch."
+    },
+    "hash": {
+      "en": "0550c56029f2",
+      "de": "44cdbca2dc43"
+    }
+  },
+  {
+    "id": "sickness_prompt_3",
+    "group": "fixed",
+    "text": {
+      "en": "It will be straighter soon. Until then: eyes outside.",
+      "de": "Gleich wird es wieder gerader. Bis dahin: Blick nach draußen."
+    },
+    "hash": {
+      "en": "aa0901a546d2",
+      "de": "4a0139b6a1bb"
+    }
+  },
+  {
+    "id": "break_arrived",
+    "group": "fixed",
+    "text": {
+      "en": "Break time! Stretch your legs and get some fresh air.",
+      "de": "Pausenzeit! Beine vertreten und frische Luft schnappen."
+    },
+    "hash": {
+      "en": "8f3c3ce4ec4b",
+      "de": "6c6a91d024f6"
+    }
+  },
+  {
+    "id": "toll_at",
+    "group": "fixed",
+    "text": {
+      "en": "Austria: a motorway vignette is required (digital is possible). Some tunnels and mountain roads have extra tolls.",
+      "de": "Österreich: Für Autobahnen ist eine Vignette nötig (digital möglich). Einige Tunnel und Bergstraßen haben zusätzliche Maut."
+    },
+    "hash": {
+      "en": "15b32598bada",
+      "de": "2f3805de5870"
+    }
+  },
+  {
+    "id": "toll_ch",
+    "group": "fixed",
+    "text": {
+      "en": "Switzerland: a motorway vignette is required.",
+      "de": "Schweiz: Für Autobahnen ist eine Vignette nötig."
+    },
+    "hash": {
+      "en": "7a238bdf01c1",
+      "de": "9c237e0eee5d"
+    }
+  },
+  {
+    "id": "toll_cz",
+    "group": "fixed",
+    "text": {
+      "en": "Czech Republic: a digital vignette is required for motorways and expressways.",
+      "de": "Tschechien: Für Autobahnen und Schnellstraßen ist eine digitale Vignette nötig."
+    },
+    "hash": {
+      "en": "3e8f0c832b63",
+      "de": "1ea2676f8bd5"
+    }
+  },
+  {
+    "id": "toll_sk",
+    "group": "fixed",
+    "text": {
+      "en": "Slovakia: a digital vignette is required for motorways and expressways.",
+      "de": "Slowakei: Für Autobahnen und Schnellstraßen ist eine digitale Vignette nötig."
+    },
+    "hash": {
+      "en": "012f0dea3e17",
+      "de": "96dac19220b7"
+    }
+  },
+  {
+    "id": "toll_si",
+    "group": "fixed",
+    "text": {
+      "en": "Slovenia: a digital vignette is required for motorways and expressways.",
+      "de": "Slowenien: Für Autobahnen und Schnellstraßen ist eine digitale Vignette nötig."
+    },
+    "hash": {
+      "en": "79f78eb3ac26",
+      "de": "6f40338f4ac1"
+    }
+  },
+  {
+    "id": "toll_hu",
+    "group": "fixed",
+    "text": {
+      "en": "Hungary: a digital vignette is required for motorways.",
+      "de": "Ungarn: Für Autobahnen ist eine digitale Vignette nötig."
+    },
+    "hash": {
+      "en": "f603553dbcfe",
+      "de": "328e1a1477d4"
+    }
+  },
+  {
+    "id": "toll_bg",
+    "group": "fixed",
+    "text": {
+      "en": "Bulgaria: a digital vignette is required for the road network.",
+      "de": "Bulgarien: Für das Straßennetz ist eine digitale Vignette nötig."
+    },
+    "hash": {
+      "en": "3b5f1739786b",
+      "de": "60bd0f0c8e00"
+    }
+  },
+  {
+    "id": "toll_ro",
+    "group": "fixed",
+    "text": {
+      "en": "Romania: a digital road vignette, called Rovinieta, is required.",
+      "de": "Rumänien: Eine digitale Straßenvignette, die Rovinieta, ist nötig."
+    },
+    "hash": {
+      "en": "2b7b1554223c",
+      "de": "1775f6428360"
+    }
+  },
+  {
+    "id": "toll_fr",
+    "group": "fixed",
+    "text": {
+      "en": "France: many motorways have tolls, payable at the booth or by card.",
+      "de": "Frankreich: Viele Autobahnen kosten Maut, zu zahlen an der Schranke oder mit Karte."
+    },
+    "hash": {
+      "en": "22577f0a402a",
+      "de": "b9218fe91b8a"
+    }
+  },
+  {
+    "id": "toll_it",
+    "group": "fixed",
+    "text": {
+      "en": "Italy: most motorways have tolls, payable at the booth.",
+      "de": "Italien: Die meisten Autobahnen kosten Maut, zu zahlen an der Schranke."
+    },
+    "hash": {
+      "en": "e2c7b0b85c04",
+      "de": "2093807e1a67"
+    }
+  },
+  {
+    "id": "toll_es",
+    "group": "fixed",
+    "text": {
+      "en": "Spain: some motorways have tolls.",
+      "de": "Spanien: Einige Autobahnen kosten Maut."
+    },
+    "hash": {
+      "en": "a5c63812b097",
+      "de": "b8d71fc5fbc5"
+    }
+  },
+  {
+    "id": "toll_pt",
+    "group": "fixed",
+    "text": {
+      "en": "Portugal: many motorways have tolls, some only electronically.",
+      "de": "Portugal: Viele Autobahnen kosten Maut, manche nur elektronisch."
+    },
+    "hash": {
+      "en": "243f28d5efb2",
+      "de": "c7d7da526a01"
+    }
+  },
+  {
+    "id": "toll_hr",
+    "group": "fixed",
+    "text": {
+      "en": "Croatia: motorways have tolls, payable at the booth.",
+      "de": "Kroatien: Autobahnen kosten Maut, zu zahlen an der Schranke."
+    },
+    "hash": {
+      "en": "ce2d943ff2b7",
+      "de": "36972faab045"
+    }
+  },
+  {
+    "id": "toll_gr",
+    "group": "fixed",
+    "text": {
+      "en": "Greece: motorways have tolls.",
+      "de": "Griechenland: Autobahnen kosten Maut."
+    },
+    "hash": {
+      "en": "f79bc979f701",
+      "de": "6b142be70e77"
+    }
+  },
+  {
+    "id": "toll_pl",
+    "group": "fixed",
+    "text": {
+      "en": "Poland: some motorway sections have tolls.",
+      "de": "Polen: Einige Autobahnabschnitte kosten Maut."
+    },
+    "hash": {
+      "en": "1b6dda7bd728",
+      "de": "d2f3ec468d05"
+    }
+  },
+  {
+    "id": "toll_no",
+    "group": "fixed",
+    "text": {
+      "en": "Norway: tolls are charged automatically at AutoPASS gates without stopping. Check how foreign cars register and pay.",
+      "de": "Norwegen: Maut wird automatisch an AutoPASS-Toren ohne Anhalten erhoben. Prüfe, wie ausländische Autos sich anmelden und zahlen."
+    },
+    "hash": {
+      "en": "b7bd28b36cb9",
+      "de": "77ee28e5d112"
+    }
+  },
+  {
+    "id": "toll_dk",
+    "group": "fixed",
+    "text": {
+      "en": "Denmark: the Great Belt bridge and the Oresund bridge have tolls.",
+      "de": "Dänemark: Die Storebælt-Brücke und die Öresundbrücke kosten Maut."
+    },
+    "hash": {
+      "en": "12c0d5cd62e0",
+      "de": "d57ed4a30006"
+    }
+  },
+  {
+    "id": "toll_se",
+    "group": "fixed",
+    "text": {
+      "en": "Sweden: the Oresund bridge has a toll, and Stockholm and Gothenburg charge a congestion tax.",
+      "de": "Schweden: Die Öresundbrücke kostet Maut, und Stockholm und Göteborg erheben eine Staugebühr."
+    },
+    "hash": {
+      "en": "da43bdab54cf",
+      "de": "721dab37334f"
+    }
+  },
+  {
+    "id": "toll_nl",
+    "group": "fixed",
+    "text": {
+      "en": "Netherlands: the Westerschelde tunnel has a toll.",
+      "de": "Niederlande: Der Westerscheldetunnel kostet Maut."
+    },
+    "hash": {
+      "en": "6c8aea40a8cf",
+      "de": "c102a65a4ba6"
+    }
+  },
+  {
+    "id": "part_limit_is",
+    "group": "part",
+    "text": {
+      "de": "Das Tempolimit ist",
+      "en": "The speed limit is"
+    },
+    "hash": {
+      "de": "442f614ad9ba",
+      "en": "b9c53b2ebb20"
+    }
+  },
+  {
+    "id": "part_weather_at_dest",
+    "group": "part",
+    "text": {
+      "de": "Wetter am Ziel:",
+      "en": "Weather at the destination:"
+    },
+    "hash": {
+      "de": "16350de9eed2",
+      "en": "722ad44d924a"
+    }
+  },
+  {
+    "id": "part_degrees",
+    "group": "part",
+    "text": {
+      "de": "Grad.",
+      "en": "degrees."
+    },
+    "hash": {
+      "de": "b010f2373fc0",
+      "en": "3977244e8bd6"
+    }
+  },
+  {
+    "id": "part_minus",
+    "group": "part",
+    "text": {
+      "de": "minus",
+      "en": "minus"
+    },
+    "hash": {
+      "de": "129fa7713adb",
+      "en": "129fa7713adb"
+    }
+  },
+  {
+    "id": "wcond_clear",
+    "group": "part",
+    "text": {
+      "en": "clear",
+      "de": "klar"
+    },
+    "hash": {
+      "en": "913a4cb91be2",
+      "de": "05045ef3745c"
+    }
+  },
+  {
+    "id": "wcond_cloudy",
+    "group": "part",
+    "text": {
+      "en": "cloudy",
+      "de": "bewölkt"
+    },
+    "hash": {
+      "en": "5e9562c786d9",
+      "de": "469ba22c9c97"
+    }
+  },
+  {
+    "id": "wcond_fog",
+    "group": "part",
+    "text": {
+      "en": "fog",
+      "de": "Nebel"
+    },
+    "hash": {
+      "en": "b04216546057",
+      "de": "0d43b079ae70"
+    }
+  },
+  {
+    "id": "wcond_drizzle",
+    "group": "part",
+    "text": {
+      "en": "drizzle",
+      "de": "Nieselregen"
+    },
+    "hash": {
+      "en": "424f22be65be",
+      "de": "78d55ca39249"
+    }
+  },
+  {
+    "id": "wcond_rain",
+    "group": "part",
+    "text": {
+      "en": "rain",
+      "de": "Regen"
+    },
+    "hash": {
+      "en": "319b44c570a4",
+      "de": "ab98e5d7e5cd"
+    }
+  },
+  {
+    "id": "wcond_snow",
+    "group": "part",
+    "text": {
+      "en": "snow",
+      "de": "Schnee"
+    },
+    "hash": {
+      "en": "a746222f09d8",
+      "de": "882ec0ce952f"
+    }
+  },
+  {
+    "id": "wcond_showers",
+    "group": "part",
+    "text": {
+      "en": "showers",
+      "de": "Schauer"
+    },
+    "hash": {
+      "en": "b9c79659094b",
+      "de": "e209d0092e00"
+    }
+  },
+  {
+    "id": "wcond_storm",
+    "group": "part",
+    "text": {
+      "en": "thunderstorm",
+      "de": "Gewitter"
+    },
+    "hash": {
+      "en": "e3dd6fdb8a07",
+      "de": "97b03e9ce109"
+    }
+  },
+  {
+    "id": "num_0",
+    "group": "num",
+    "text": {
+      "de": "null",
+      "en": "zero"
+    },
+    "hash": {
+      "de": "74234e98afe7",
+      "en": "f9194e73f9e9"
+    }
+  },
+  {
+    "id": "num_1",
+    "group": "num",
+    "text": {
+      "de": "eins",
+      "en": "one"
+    },
+    "hash": {
+      "de": "bfd6b995588e",
+      "en": "7692c3ad3540"
+    }
+  },
+  {
+    "id": "num_2",
+    "group": "num",
+    "text": {
+      "de": "zwei",
+      "en": "two"
+    },
+    "hash": {
+      "de": "9dbe3cfc5af7",
+      "en": "3fc4ccfe7458"
+    }
+  },
+  {
+    "id": "num_3",
+    "group": "num",
+    "text": {
+      "de": "drei",
+      "en": "three"
+    },
+    "hash": {
+      "de": "6b70e2d592dd",
+      "en": "8b5b9db0c13d"
+    }
+  },
+  {
+    "id": "num_4",
+    "group": "num",
+    "text": {
+      "de": "vier",
+      "en": "four"
+    },
+    "hash": {
+      "de": "6b8baccb2f21",
+      "en": "04efaf080f5a"
+    }
+  },
+  {
+    "id": "num_5",
+    "group": "num",
+    "text": {
+      "de": "fünf",
+      "en": "five"
+    },
+    "hash": {
+      "de": "d26898598758",
+      "en": "222b0bd51fce"
+    }
+  },
+  {
+    "id": "num_6",
+    "group": "num",
+    "text": {
+      "de": "sechs",
+      "en": "six"
+    },
+    "hash": {
+      "de": "ed8862db32fe",
+      "en": "44778d82365e"
+    }
+  },
+  {
+    "id": "num_7",
+    "group": "num",
+    "text": {
+      "de": "sieben",
+      "en": "seven"
+    },
+    "hash": {
+      "de": "1e9d34deb9f9",
+      "en": "3ba8d02b16fd"
+    }
+  },
+  {
+    "id": "num_8",
+    "group": "num",
+    "text": {
+      "de": "acht",
+      "en": "eight"
+    },
+    "hash": {
+      "de": "fb33ab7105db",
+      "en": "c195d2d87562"
+    }
+  },
+  {
+    "id": "num_9",
+    "group": "num",
+    "text": {
+      "de": "neun",
+      "en": "nine"
+    },
+    "hash": {
+      "de": "d5b7e81295ca",
+      "en": "edcd8e701a2d"
+    }
+  },
+  {
+    "id": "num_10",
+    "group": "num",
+    "text": {
+      "de": "zehn",
+      "en": "ten"
+    },
+    "hash": {
+      "de": "bedd6f98909f",
+      "en": "e4432baa9081"
+    }
+  },
+  {
+    "id": "num_11",
+    "group": "num",
+    "text": {
+      "de": "elf",
+      "en": "eleven"
+    },
+    "hash": {
+      "de": "780d84b20d7a",
+      "en": "e979074ebd56"
+    }
+  },
+  {
+    "id": "num_12",
+    "group": "num",
+    "text": {
+      "de": "zwölf",
+      "en": "twelve"
+    },
+    "hash": {
+      "de": "70f5f8852578",
+      "en": "d1a749ad879b"
+    }
+  },
+  {
+    "id": "num_13",
+    "group": "num",
+    "text": {
+      "de": "dreizehn",
+      "en": "thirteen"
+    },
+    "hash": {
+      "de": "c7c7556a0110",
+      "en": "9ecc81f0a4b6"
+    }
+  },
+  {
+    "id": "num_14",
+    "group": "num",
+    "text": {
+      "de": "vierzehn",
+      "en": "fourteen"
+    },
+    "hash": {
+      "de": "7fd87fbf5eca",
+      "en": "fef8f41cdcd2"
+    }
+  },
+  {
+    "id": "num_15",
+    "group": "num",
+    "text": {
+      "de": "fünfzehn",
+      "en": "fifteen"
+    },
+    "hash": {
+      "de": "86d832a39638",
+      "en": "c463967e5708"
+    }
+  },
+  {
+    "id": "num_16",
+    "group": "num",
+    "text": {
+      "de": "sechzehn",
+      "en": "sixteen"
+    },
+    "hash": {
+      "de": "2cf3fbb812da",
+      "en": "f2ce341fdaa6"
+    }
+  },
+  {
+    "id": "num_17",
+    "group": "num",
+    "text": {
+      "de": "siebzehn",
+      "en": "seventeen"
+    },
+    "hash": {
+      "de": "154020524df6",
+      "en": "2c5abdef2a0e"
+    }
+  },
+  {
+    "id": "num_18",
+    "group": "num",
+    "text": {
+      "de": "achtzehn",
+      "en": "eighteen"
+    },
+    "hash": {
+      "de": "1d5dadc8645b",
+      "en": "34357b18abdd"
+    }
+  },
+  {
+    "id": "num_19",
+    "group": "num",
+    "text": {
+      "de": "neunzehn",
+      "en": "nineteen"
+    },
+    "hash": {
+      "de": "06385de71001",
+      "en": "cde4e100efd2"
+    }
+  },
+  {
+    "id": "num_20",
+    "group": "num",
+    "text": {
+      "de": "zwanzig",
+      "en": "twenty"
+    },
+    "hash": {
+      "de": "cd2a56ee1cb6",
+      "en": "7c2c4df740f7"
+    }
+  },
+  {
+    "id": "num_21",
+    "group": "num",
+    "text": {
+      "de": "einundzwanzig",
+      "en": "twenty-one"
+    },
+    "hash": {
+      "de": "c89c1f59565b",
+      "en": "a69edb489f4e"
+    }
+  },
+  {
+    "id": "num_22",
+    "group": "num",
+    "text": {
+      "de": "zweiundzwanzig",
+      "en": "twenty-two"
+    },
+    "hash": {
+      "de": "f7ecf587ae23",
+      "en": "2a8daa7aac7a"
+    }
+  },
+  {
+    "id": "num_23",
+    "group": "num",
+    "text": {
+      "de": "dreiundzwanzig",
+      "en": "twenty-three"
+    },
+    "hash": {
+      "de": "15175528482f",
+      "en": "328e51fcaeaf"
+    }
+  },
+  {
+    "id": "num_24",
+    "group": "num",
+    "text": {
+      "de": "vierundzwanzig",
+      "en": "twenty-four"
+    },
+    "hash": {
+      "de": "08d45bd49176",
+      "en": "1bcbce780ddd"
+    }
+  },
+  {
+    "id": "num_25",
+    "group": "num",
+    "text": {
+      "de": "fünfundzwanzig",
+      "en": "twenty-five"
+    },
+    "hash": {
+      "de": "6e6dc944a834",
+      "en": "ac3164d59c69"
+    }
+  },
+  {
+    "id": "num_26",
+    "group": "num",
+    "text": {
+      "de": "sechsundzwanzig",
+      "en": "twenty-six"
+    },
+    "hash": {
+      "de": "7f60bc06d7cc",
+      "en": "60b7d1f7ad42"
+    }
+  },
+  {
+    "id": "num_27",
+    "group": "num",
+    "text": {
+      "de": "siebenundzwanzig",
+      "en": "twenty-seven"
+    },
+    "hash": {
+      "de": "25c6fc8bf8fb",
+      "en": "412866d80035"
+    }
+  },
+  {
+    "id": "num_28",
+    "group": "num",
+    "text": {
+      "de": "achtundzwanzig",
+      "en": "twenty-eight"
+    },
+    "hash": {
+      "de": "fbbbc9228ea1",
+      "en": "96c2a8346189"
+    }
+  },
+  {
+    "id": "num_29",
+    "group": "num",
+    "text": {
+      "de": "neunundzwanzig",
+      "en": "twenty-nine"
+    },
+    "hash": {
+      "de": "628c0cd262e6",
+      "en": "a0d9676cc598"
+    }
+  },
+  {
+    "id": "num_30",
+    "group": "num",
+    "text": {
+      "de": "dreißig",
+      "en": "thirty"
+    },
+    "hash": {
+      "de": "211a0073b640",
+      "en": "aca5fb59db69"
+    }
+  },
+  {
+    "id": "num_31",
+    "group": "num",
+    "text": {
+      "de": "einunddreißig",
+      "en": "thirty-one"
+    },
+    "hash": {
+      "de": "69014ec5cb2f",
+      "en": "dfa5c4c47fb2"
+    }
+  },
+  {
+    "id": "num_32",
+    "group": "num",
+    "text": {
+      "de": "zweiunddreißig",
+      "en": "thirty-two"
+    },
+    "hash": {
+      "de": "39dd89026754",
+      "en": "7a78c7548928"
+    }
+  },
+  {
+    "id": "num_33",
+    "group": "num",
+    "text": {
+      "de": "dreiunddreißig",
+      "en": "thirty-three"
+    },
+    "hash": {
+      "de": "475f56f9e7e5",
+      "en": "3c218b98f1bf"
+    }
+  },
+  {
+    "id": "num_34",
+    "group": "num",
+    "text": {
+      "de": "vierunddreißig",
+      "en": "thirty-four"
+    },
+    "hash": {
+      "de": "61e3f68b89b0",
+      "en": "ee9764b6b133"
+    }
+  },
+  {
+    "id": "num_35",
+    "group": "num",
+    "text": {
+      "de": "fünfunddreißig",
+      "en": "thirty-five"
+    },
+    "hash": {
+      "de": "8c84310f2fd4",
+      "en": "49fa6fb4bad9"
+    }
+  },
+  {
+    "id": "num_36",
+    "group": "num",
+    "text": {
+      "de": "sechsunddreißig",
+      "en": "thirty-six"
+    },
+    "hash": {
+      "de": "1e024c888ecc",
+      "en": "56d89c668162"
+    }
+  },
+  {
+    "id": "num_37",
+    "group": "num",
+    "text": {
+      "de": "siebenunddreißig",
+      "en": "thirty-seven"
+    },
+    "hash": {
+      "de": "0d0cd216e2af",
+      "en": "ee0d8e38580a"
+    }
+  },
+  {
+    "id": "num_38",
+    "group": "num",
+    "text": {
+      "de": "achtunddreißig",
+      "en": "thirty-eight"
+    },
+    "hash": {
+      "de": "2e91a9d103e8",
+      "en": "518ce854e4d7"
+    }
+  },
+  {
+    "id": "num_39",
+    "group": "num",
+    "text": {
+      "de": "neununddreißig",
+      "en": "thirty-nine"
+    },
+    "hash": {
+      "de": "18b62d2b1d87",
+      "en": "c19e6b18f754"
+    }
+  },
+  {
+    "id": "num_40",
+    "group": "num",
+    "text": {
+      "de": "vierzig",
+      "en": "forty"
+    },
+    "hash": {
+      "de": "ac478c92465a",
+      "en": "9cee2304bd63"
+    }
+  },
+  {
+    "id": "num_41",
+    "group": "num",
+    "text": {
+      "de": "einundvierzig",
+      "en": "forty-one"
+    },
+    "hash": {
+      "de": "4301739b4cbb",
+      "en": "074ec9ddfe44"
+    }
+  },
+  {
+    "id": "num_42",
+    "group": "num",
+    "text": {
+      "de": "zweiundvierzig",
+      "en": "forty-two"
+    },
+    "hash": {
+      "de": "06961f330de0",
+      "en": "5cc47001f7c1"
+    }
+  },
+  {
+    "id": "num_43",
+    "group": "num",
+    "text": {
+      "de": "dreiundvierzig",
+      "en": "forty-three"
+    },
+    "hash": {
+      "de": "0a5adffc1e8f",
+      "en": "fbcb14038f6b"
+    }
+  },
+  {
+    "id": "num_44",
+    "group": "num",
+    "text": {
+      "de": "vierundvierzig",
+      "en": "forty-four"
+    },
+    "hash": {
+      "de": "ca419677a5f0",
+      "en": "9a56bd594d93"
+    }
+  },
+  {
+    "id": "num_45",
+    "group": "num",
+    "text": {
+      "de": "fünfundvierzig",
+      "en": "forty-five"
+    },
+    "hash": {
+      "de": "9e710f85cbfe",
+      "en": "ce8cdef089ac"
+    }
+  },
+  {
+    "id": "num_46",
+    "group": "num",
+    "text": {
+      "de": "sechsundvierzig",
+      "en": "forty-six"
+    },
+    "hash": {
+      "de": "56799127133a",
+      "en": "17b42cc951ba"
+    }
+  },
+  {
+    "id": "num_47",
+    "group": "num",
+    "text": {
+      "de": "siebenundvierzig",
+      "en": "forty-seven"
+    },
+    "hash": {
+      "de": "ab8e06e8bf57",
+      "en": "11d5b531ae2c"
+    }
+  },
+  {
+    "id": "num_48",
+    "group": "num",
+    "text": {
+      "de": "achtundvierzig",
+      "en": "forty-eight"
+    },
+    "hash": {
+      "de": "61efa025758c",
+      "en": "2b8de4d500dd"
+    }
+  },
+  {
+    "id": "num_49",
+    "group": "num",
+    "text": {
+      "de": "neunundvierzig",
+      "en": "forty-nine"
+    },
+    "hash": {
+      "de": "f03857e83138",
+      "en": "0f09c0097e47"
+    }
+  },
+  {
+    "id": "num_50",
+    "group": "num",
+    "text": {
+      "de": "fünfzig",
+      "en": "fifty"
+    },
+    "hash": {
+      "de": "269973463ed6",
+      "en": "f8d807ee15e9"
+    }
+  },
+  {
+    "id": "num_51",
+    "group": "num",
+    "text": {
+      "de": "einundfünfzig",
+      "en": "fifty-one"
+    },
+    "hash": {
+      "de": "f175c1e55633",
+      "en": "76bcec87152d"
+    }
+  },
+  {
+    "id": "num_52",
+    "group": "num",
+    "text": {
+      "de": "zweiundfünfzig",
+      "en": "fifty-two"
+    },
+    "hash": {
+      "de": "66fa2f475bf5",
+      "en": "7236b63e2db5"
+    }
+  },
+  {
+    "id": "num_53",
+    "group": "num",
+    "text": {
+      "de": "dreiundfünfzig",
+      "en": "fifty-three"
+    },
+    "hash": {
+      "de": "c8269723863b",
+      "en": "6382cd3f5ae1"
+    }
+  },
+  {
+    "id": "num_54",
+    "group": "num",
+    "text": {
+      "de": "vierundfünfzig",
+      "en": "fifty-four"
+    },
+    "hash": {
+      "de": "ca1658130034",
+      "en": "7da3c4346e00"
+    }
+  },
+  {
+    "id": "num_55",
+    "group": "num",
+    "text": {
+      "de": "fünfundfünfzig",
+      "en": "fifty-five"
+    },
+    "hash": {
+      "de": "2ca786c9be7e",
+      "en": "25102b4dfe05"
+    }
+  },
+  {
+    "id": "num_56",
+    "group": "num",
+    "text": {
+      "de": "sechsundfünfzig",
+      "en": "fifty-six"
+    },
+    "hash": {
+      "de": "cce26e4d18b2",
+      "en": "ee41e5464eec"
+    }
+  },
+  {
+    "id": "num_57",
+    "group": "num",
+    "text": {
+      "de": "siebenundfünfzig",
+      "en": "fifty-seven"
+    },
+    "hash": {
+      "de": "b70603ca04eb",
+      "en": "d376c3658fc4"
+    }
+  },
+  {
+    "id": "num_58",
+    "group": "num",
+    "text": {
+      "de": "achtundfünfzig",
+      "en": "fifty-eight"
+    },
+    "hash": {
+      "de": "f9301efccb96",
+      "en": "dcf2928126cc"
+    }
+  },
+  {
+    "id": "num_59",
+    "group": "num",
+    "text": {
+      "de": "neunundfünfzig",
+      "en": "fifty-nine"
+    },
+    "hash": {
+      "de": "98ea239a45ec",
+      "en": "69193cd7186a"
+    }
+  },
+  {
+    "id": "num_60",
+    "group": "num",
+    "text": {
+      "de": "sechzig",
+      "en": "sixty"
+    },
+    "hash": {
+      "de": "a1510e783717",
+      "en": "df41164e1512"
+    }
+  },
+  {
+    "id": "num_61",
+    "group": "num",
+    "text": {
+      "de": "einundsechzig",
+      "en": "sixty-one"
+    },
+    "hash": {
+      "de": "7fbfa166e678",
+      "en": "ccfe4766f535"
+    }
+  },
+  {
+    "id": "num_62",
+    "group": "num",
+    "text": {
+      "de": "zweiundsechzig",
+      "en": "sixty-two"
+    },
+    "hash": {
+      "de": "9d0e17268634",
+      "en": "e904d40a691e"
+    }
+  },
+  {
+    "id": "num_63",
+    "group": "num",
+    "text": {
+      "de": "dreiundsechzig",
+      "en": "sixty-three"
+    },
+    "hash": {
+      "de": "44f282ddba79",
+      "en": "e2a062cc5c47"
+    }
+  },
+  {
+    "id": "num_64",
+    "group": "num",
+    "text": {
+      "de": "vierundsechzig",
+      "en": "sixty-four"
+    },
+    "hash": {
+      "de": "c67dfca8d14a",
+      "en": "bf9d197ad7d4"
+    }
+  },
+  {
+    "id": "num_65",
+    "group": "num",
+    "text": {
+      "de": "fünfundsechzig",
+      "en": "sixty-five"
+    },
+    "hash": {
+      "de": "d44a27a42346",
+      "en": "4a8692d5b7e3"
+    }
+  },
+  {
+    "id": "num_66",
+    "group": "num",
+    "text": {
+      "de": "sechsundsechzig",
+      "en": "sixty-six"
+    },
+    "hash": {
+      "de": "a53e905c8031",
+      "en": "f63dbf1efd6c"
+    }
+  },
+  {
+    "id": "num_67",
+    "group": "num",
+    "text": {
+      "de": "siebenundsechzig",
+      "en": "sixty-seven"
+    },
+    "hash": {
+      "de": "031f2396c290",
+      "en": "07943fed3e15"
+    }
+  },
+  {
+    "id": "num_68",
+    "group": "num",
+    "text": {
+      "de": "achtundsechzig",
+      "en": "sixty-eight"
+    },
+    "hash": {
+      "de": "be2a18547da8",
+      "en": "783524f5ac6e"
+    }
+  },
+  {
+    "id": "num_69",
+    "group": "num",
+    "text": {
+      "de": "neunundsechzig",
+      "en": "sixty-nine"
+    },
+    "hash": {
+      "de": "9dfd56f44f7f",
+      "en": "db3a6068f1db"
+    }
+  },
+  {
+    "id": "num_70",
+    "group": "num",
+    "text": {
+      "de": "siebzig",
+      "en": "seventy"
+    },
+    "hash": {
+      "de": "d98122c7190f",
+      "en": "ab0e4b1a7839"
+    }
+  },
+  {
+    "id": "num_71",
+    "group": "num",
+    "text": {
+      "de": "einundsiebzig",
+      "en": "seventy-one"
+    },
+    "hash": {
+      "de": "07b4855d6d26",
+      "en": "f02086f9f5f5"
+    }
+  },
+  {
+    "id": "num_72",
+    "group": "num",
+    "text": {
+      "de": "zweiundsiebzig",
+      "en": "seventy-two"
+    },
+    "hash": {
+      "de": "a592025cbfd9",
+      "en": "84c4b20b93e4"
+    }
+  },
+  {
+    "id": "num_73",
+    "group": "num",
+    "text": {
+      "de": "dreiundsiebzig",
+      "en": "seventy-three"
+    },
+    "hash": {
+      "de": "56129d50e3ec",
+      "en": "9b9c69560bb2"
+    }
+  },
+  {
+    "id": "num_74",
+    "group": "num",
+    "text": {
+      "de": "vierundsiebzig",
+      "en": "seventy-four"
+    },
+    "hash": {
+      "de": "c471b7edcba6",
+      "en": "392e02f565ae"
+    }
+  },
+  {
+    "id": "num_75",
+    "group": "num",
+    "text": {
+      "de": "fünfundsiebzig",
+      "en": "seventy-five"
+    },
+    "hash": {
+      "de": "90772c3f79ec",
+      "en": "4dc2e8075c6c"
+    }
+  },
+  {
+    "id": "num_76",
+    "group": "num",
+    "text": {
+      "de": "sechsundsiebzig",
+      "en": "seventy-six"
+    },
+    "hash": {
+      "de": "0bef3a877bb2",
+      "en": "3ba5ea68a8eb"
+    }
+  },
+  {
+    "id": "num_77",
+    "group": "num",
+    "text": {
+      "de": "siebenundsiebzig",
+      "en": "seventy-seven"
+    },
+    "hash": {
+      "de": "bb4342149bcf",
+      "en": "cffdc28faeaa"
+    }
+  },
+  {
+    "id": "num_78",
+    "group": "num",
+    "text": {
+      "de": "achtundsiebzig",
+      "en": "seventy-eight"
+    },
+    "hash": {
+      "de": "0644e5b7e4aa",
+      "en": "1377c1880450"
+    }
+  },
+  {
+    "id": "num_79",
+    "group": "num",
+    "text": {
+      "de": "neunundsiebzig",
+      "en": "seventy-nine"
+    },
+    "hash": {
+      "de": "8a944e2cfece",
+      "en": "14493e55e60a"
+    }
+  },
+  {
+    "id": "num_80",
+    "group": "num",
+    "text": {
+      "de": "achtzig",
+      "en": "eighty"
+    },
+    "hash": {
+      "de": "32323f5eb965",
+      "en": "0dbc3407a708"
+    }
+  },
+  {
+    "id": "num_81",
+    "group": "num",
+    "text": {
+      "de": "einundachtzig",
+      "en": "eighty-one"
+    },
+    "hash": {
+      "de": "cb0b19b668d8",
+      "en": "ad5070bcac4c"
+    }
+  },
+  {
+    "id": "num_82",
+    "group": "num",
+    "text": {
+      "de": "zweiundachtzig",
+      "en": "eighty-two"
+    },
+    "hash": {
+      "de": "a254bf3db387",
+      "en": "e80f294b0b49"
+    }
+  },
+  {
+    "id": "num_83",
+    "group": "num",
+    "text": {
+      "de": "dreiundachtzig",
+      "en": "eighty-three"
+    },
+    "hash": {
+      "de": "af70a3d10d91",
+      "en": "dbcb538af292"
+    }
+  },
+  {
+    "id": "num_84",
+    "group": "num",
+    "text": {
+      "de": "vierundachtzig",
+      "en": "eighty-four"
+    },
+    "hash": {
+      "de": "4445476161dc",
+      "en": "c3dc190dd3a7"
+    }
+  },
+  {
+    "id": "num_85",
+    "group": "num",
+    "text": {
+      "de": "fünfundachtzig",
+      "en": "eighty-five"
+    },
+    "hash": {
+      "de": "2f4998605547",
+      "en": "d4e7456af463"
+    }
+  },
+  {
+    "id": "num_86",
+    "group": "num",
+    "text": {
+      "de": "sechsundachtzig",
+      "en": "eighty-six"
+    },
+    "hash": {
+      "de": "caf491c901f2",
+      "en": "964899f3dfc0"
+    }
+  },
+  {
+    "id": "num_87",
+    "group": "num",
+    "text": {
+      "de": "siebenundachtzig",
+      "en": "eighty-seven"
+    },
+    "hash": {
+      "de": "d27ab87860a1",
+      "en": "16898b9b8503"
+    }
+  },
+  {
+    "id": "num_88",
+    "group": "num",
+    "text": {
+      "de": "achtundachtzig",
+      "en": "eighty-eight"
+    },
+    "hash": {
+      "de": "d4ab17bbe9da",
+      "en": "1bbfc0a45053"
+    }
+  },
+  {
+    "id": "num_89",
+    "group": "num",
+    "text": {
+      "de": "neunundachtzig",
+      "en": "eighty-nine"
+    },
+    "hash": {
+      "de": "e485e1b725b8",
+      "en": "5c64a2202314"
+    }
+  },
+  {
+    "id": "num_90",
+    "group": "num",
+    "text": {
+      "de": "neunzig",
+      "en": "ninety"
+    },
+    "hash": {
+      "de": "38ed1bfd317f",
+      "en": "521c74a4d582"
+    }
+  },
+  {
+    "id": "num_91",
+    "group": "num",
+    "text": {
+      "de": "einundneunzig",
+      "en": "ninety-one"
+    },
+    "hash": {
+      "de": "ffc11fc31de3",
+      "en": "009a3a2549a0"
+    }
+  },
+  {
+    "id": "num_92",
+    "group": "num",
+    "text": {
+      "de": "zweiundneunzig",
+      "en": "ninety-two"
+    },
+    "hash": {
+      "de": "2f0abf5a75d4",
+      "en": "1a79274e8f29"
+    }
+  },
+  {
+    "id": "num_93",
+    "group": "num",
+    "text": {
+      "de": "dreiundneunzig",
+      "en": "ninety-three"
+    },
+    "hash": {
+      "de": "5c3956e6f940",
+      "en": "2acfc7ff4195"
+    }
+  },
+  {
+    "id": "num_94",
+    "group": "num",
+    "text": {
+      "de": "vierundneunzig",
+      "en": "ninety-four"
+    },
+    "hash": {
+      "de": "24876618ab2b",
+      "en": "17901bab2d97"
+    }
+  },
+  {
+    "id": "num_95",
+    "group": "num",
+    "text": {
+      "de": "fünfundneunzig",
+      "en": "ninety-five"
+    },
+    "hash": {
+      "de": "4ad132b6481c",
+      "en": "8562e935d3b8"
+    }
+  },
+  {
+    "id": "num_96",
+    "group": "num",
+    "text": {
+      "de": "sechsundneunzig",
+      "en": "ninety-six"
+    },
+    "hash": {
+      "de": "0b948679f157",
+      "en": "1ceeaf17724b"
+    }
+  },
+  {
+    "id": "num_97",
+    "group": "num",
+    "text": {
+      "de": "siebenundneunzig",
+      "en": "ninety-seven"
+    },
+    "hash": {
+      "de": "99a51e9e2108",
+      "en": "0bdb23f9e3ec"
+    }
+  },
+  {
+    "id": "num_98",
+    "group": "num",
+    "text": {
+      "de": "achtundneunzig",
+      "en": "ninety-eight"
+    },
+    "hash": {
+      "de": "8ffd384ef5e7",
+      "en": "60e6dda7a5e4"
+    }
+  },
+  {
+    "id": "num_99",
+    "group": "num",
+    "text": {
+      "de": "neunundneunzig",
+      "en": "ninety-nine"
+    },
+    "hash": {
+      "de": "8f58daeba6f0",
+      "en": "1a2516bbaf9c"
+    }
+  },
+  {
+    "id": "num_100",
+    "group": "num",
+    "text": {
+      "de": "hundert",
+      "en": "one hundred"
+    },
+    "hash": {
+      "de": "9c39e2518016",
+      "en": "a86a6a017586"
+    }
+  },
+  {
+    "id": "num_101",
+    "group": "num",
+    "text": {
+      "de": "hunderteins",
+      "en": "one hundred one"
+    },
+    "hash": {
+      "de": "06bce27c231b",
+      "en": "61c4dd679bb0"
+    }
+  },
+  {
+    "id": "num_102",
+    "group": "num",
+    "text": {
+      "de": "hundertzwei",
+      "en": "one hundred two"
+    },
+    "hash": {
+      "de": "46574951236c",
+      "en": "eb493abec5c6"
+    }
+  },
+  {
+    "id": "num_103",
+    "group": "num",
+    "text": {
+      "de": "hundertdrei",
+      "en": "one hundred three"
+    },
+    "hash": {
+      "de": "306d8858408f",
+      "en": "8c74408f1419"
+    }
+  },
+  {
+    "id": "num_104",
+    "group": "num",
+    "text": {
+      "de": "hundertvier",
+      "en": "one hundred four"
+    },
+    "hash": {
+      "de": "2138b0e7e009",
+      "en": "8c840ac442ec"
+    }
+  },
+  {
+    "id": "num_105",
+    "group": "num",
+    "text": {
+      "de": "hundertfünf",
+      "en": "one hundred five"
+    },
+    "hash": {
+      "de": "bee178443247",
+      "en": "64051f558810"
+    }
+  },
+  {
+    "id": "num_106",
+    "group": "num",
+    "text": {
+      "de": "hundertsechs",
+      "en": "one hundred six"
+    },
+    "hash": {
+      "de": "217e1b9d7eb3",
+      "en": "0d6db5d717b0"
+    }
+  },
+  {
+    "id": "num_107",
+    "group": "num",
+    "text": {
+      "de": "hundertsieben",
+      "en": "one hundred seven"
+    },
+    "hash": {
+      "de": "651950625c05",
+      "en": "dbcb6056f1a6"
+    }
+  },
+  {
+    "id": "num_108",
+    "group": "num",
+    "text": {
+      "de": "hundertacht",
+      "en": "one hundred eight"
+    },
+    "hash": {
+      "de": "b8762a0732bd",
+      "en": "949333fc9f19"
+    }
+  },
+  {
+    "id": "num_109",
+    "group": "num",
+    "text": {
+      "de": "hundertneun",
+      "en": "one hundred nine"
+    },
+    "hash": {
+      "de": "d9da2779151c",
+      "en": "163e9a065c3a"
+    }
+  },
+  {
+    "id": "num_110",
+    "group": "num",
+    "text": {
+      "de": "hundertzehn",
+      "en": "one hundred ten"
+    },
+    "hash": {
+      "de": "0b413f254224",
+      "en": "adad016b729a"
+    }
+  },
+  {
+    "id": "num_111",
+    "group": "num",
+    "text": {
+      "de": "hundertelf",
+      "en": "one hundred eleven"
+    },
+    "hash": {
+      "de": "be852fcb217b",
+      "en": "0bbe74579702"
+    }
+  },
+  {
+    "id": "num_112",
+    "group": "num",
+    "text": {
+      "de": "hundertzwölf",
+      "en": "one hundred twelve"
+    },
+    "hash": {
+      "de": "b2565cc6438e",
+      "en": "d9925152f625"
+    }
+  },
+  {
+    "id": "num_113",
+    "group": "num",
+    "text": {
+      "de": "hundertdreizehn",
+      "en": "one hundred thirteen"
+    },
+    "hash": {
+      "de": "cea3e41f4b6b",
+      "en": "0318cef4a8a0"
+    }
+  },
+  {
+    "id": "num_114",
+    "group": "num",
+    "text": {
+      "de": "hundertvierzehn",
+      "en": "one hundred fourteen"
+    },
+    "hash": {
+      "de": "d65fbb7cd3d7",
+      "en": "5d2cf9c7d842"
+    }
+  },
+  {
+    "id": "num_115",
+    "group": "num",
+    "text": {
+      "de": "hundertfünfzehn",
+      "en": "one hundred fifteen"
+    },
+    "hash": {
+      "de": "4068911bc490",
+      "en": "e07f25ed1712"
+    }
+  },
+  {
+    "id": "num_116",
+    "group": "num",
+    "text": {
+      "de": "hundertsechzehn",
+      "en": "one hundred sixteen"
+    },
+    "hash": {
+      "de": "b48917baf9db",
+      "en": "59b4150faaf1"
+    }
+  },
+  {
+    "id": "num_117",
+    "group": "num",
+    "text": {
+      "de": "hundertsiebzehn",
+      "en": "one hundred seventeen"
+    },
+    "hash": {
+      "de": "0aa6929edf52",
+      "en": "c15284f77817"
+    }
+  },
+  {
+    "id": "num_118",
+    "group": "num",
+    "text": {
+      "de": "hundertachtzehn",
+      "en": "one hundred eighteen"
+    },
+    "hash": {
+      "de": "dcfc26470f53",
+      "en": "1800626827f2"
+    }
+  },
+  {
+    "id": "num_119",
+    "group": "num",
+    "text": {
+      "de": "hundertneunzehn",
+      "en": "one hundred nineteen"
+    },
+    "hash": {
+      "de": "025f2d7cfaa8",
+      "en": "2e51a98993e2"
+    }
+  },
+  {
+    "id": "num_120",
+    "group": "num",
+    "text": {
+      "de": "hundertzwanzig",
+      "en": "one hundred twenty"
+    },
+    "hash": {
+      "de": "9c5d2f24dea6",
+      "en": "879e5817fe21"
+    }
+  },
+  {
+    "id": "num_121",
+    "group": "num",
+    "text": {
+      "de": "hunderteinundzwanzig",
+      "en": "one hundred twenty-one"
+    },
+    "hash": {
+      "de": "239672d7fbff",
+      "en": "053fa63e2d15"
+    }
+  },
+  {
+    "id": "num_122",
+    "group": "num",
+    "text": {
+      "de": "hundertzweiundzwanzig",
+      "en": "one hundred twenty-two"
+    },
+    "hash": {
+      "de": "ba82e99d2cff",
+      "en": "9ec7294f13cc"
+    }
+  },
+  {
+    "id": "num_123",
+    "group": "num",
+    "text": {
+      "de": "hundertdreiundzwanzig",
+      "en": "one hundred twenty-three"
+    },
+    "hash": {
+      "de": "e957d86432a2",
+      "en": "8720fd3bc7fe"
+    }
+  },
+  {
+    "id": "num_124",
+    "group": "num",
+    "text": {
+      "de": "hundertvierundzwanzig",
+      "en": "one hundred twenty-four"
+    },
+    "hash": {
+      "de": "354b5dc0556a",
+      "en": "19a3df97c382"
+    }
+  },
+  {
+    "id": "num_125",
+    "group": "num",
+    "text": {
+      "de": "hundertfünfundzwanzig",
+      "en": "one hundred twenty-five"
+    },
+    "hash": {
+      "de": "c0a6011ab3fa",
+      "en": "db7c76efb922"
+    }
+  },
+  {
+    "id": "num_126",
+    "group": "num",
+    "text": {
+      "de": "hundertsechsundzwanzig",
+      "en": "one hundred twenty-six"
+    },
+    "hash": {
+      "de": "5d99edf2f5b4",
+      "en": "906e4aa54d02"
+    }
+  },
+  {
+    "id": "num_127",
+    "group": "num",
+    "text": {
+      "de": "hundertsiebenundzwanzig",
+      "en": "one hundred twenty-seven"
+    },
+    "hash": {
+      "de": "1193137ac9e9",
+      "en": "73c7e5439313"
+    }
+  },
+  {
+    "id": "num_128",
+    "group": "num",
+    "text": {
+      "de": "hundertachtundzwanzig",
+      "en": "one hundred twenty-eight"
+    },
+    "hash": {
+      "de": "b06fbfd06cfd",
+      "en": "2b6c4b98894a"
+    }
+  },
+  {
+    "id": "num_129",
+    "group": "num",
+    "text": {
+      "de": "hundertneunundzwanzig",
+      "en": "one hundred twenty-nine"
+    },
+    "hash": {
+      "de": "3d4e0967425f",
+      "en": "1f30a7a5f4bf"
+    }
+  },
+  {
+    "id": "num_130",
+    "group": "num",
+    "text": {
+      "de": "hundertdreißig",
+      "en": "one hundred thirty"
+    },
+    "hash": {
+      "de": "01d900d0586f",
+      "en": "06328dd77923"
+    }
   }
 ]

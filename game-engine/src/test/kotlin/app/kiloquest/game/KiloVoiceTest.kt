@@ -97,3 +97,35 @@ class KiloVoiceTest {
         }
     }
 }
+
+class VoicePartsTest {
+    @Test fun numbersInRangeOnly() {
+        assertEquals("num_0", VoiceParts.number(0))
+        assertEquals("num_130", VoiceParts.number(130))
+        assertNull(VoiceParts.number(131))
+        assertNull(VoiceParts.number(-1))
+    }
+
+    @Test fun speedLimitSentence() {
+        assertEquals(listOf("part_limit_is", "num_80"), VoiceParts.speedLimitIs(80))
+        assertNull(VoiceParts.speedLimitIs(999))
+    }
+
+    @Test fun weatherSentenceWithMinusAndUnknownCondition() {
+        assertEquals(listOf("part_weather_at_dest", "wcond_rain", "num_12", "part_degrees"), VoiceParts.weatherAtDestination("rain", 12))
+        assertEquals(listOf("part_weather_at_dest", "wcond_snow", "part_minus", "num_3", "part_degrees"), VoiceParts.weatherAtDestination("snow", -3))
+        assertNull(VoiceParts.weatherAtDestination("unknown", 5))
+        assertNull(VoiceParts.weatherAtDestination("clear", 500))
+    }
+
+    // Jede Teilclip-Id, die der Code verwenden kann, ist in lines.json beschrieben (Texte fuer die Aufnahme)
+    @Test fun allPartIdsAreDescribedInLines() {
+        val lines = File("../tools/voice/lines.json").readText()
+        val ids = buildList {
+            add("part_limit_is"); add("part_weather_at_dest"); add("part_minus"); add("part_degrees")
+            VoiceParts.CONDITIONS.forEach { add("wcond_$it") }
+            for (n in 0..VoiceParts.MAX_NUMBER) add("num_$n")
+        }
+        ids.forEach { assertTrue(lines.contains("\"id\": \"$it\""), "fehlt in lines.json: $it") }
+    }
+}
