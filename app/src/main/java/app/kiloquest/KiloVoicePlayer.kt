@@ -43,6 +43,21 @@ class KiloVoicePlayer(private val context: Context) {
         return enqueue(paths)
     }
 
+    /**
+     * Spielt Slots einer Navigationsansage: Bausteine aus den Assets, Namen aus dem Cache (`filesDir/voice_cache/<lang>/<hash>.ogg`,
+     * siehe Spec 016). Nur wenn ALLE Teile vorhanden sind; sonst false und nichts wird eingereiht.
+     */
+    fun playSlots(slots: List<app.kiloquest.nav.Slot>): Boolean {
+        val lang = Locale.getDefault().language
+        val paths = slots.map { slot ->
+            when (slot) {
+                is app.kiloquest.nav.Slot.Clip -> "kilo_voice/$lang/${slot.id}.ogg"
+                is app.kiloquest.nav.Slot.Name -> java.io.File(context.filesDir, "voice_cache/$lang/${VoiceIndex.hash(slot.text)}.ogg").path
+            }
+        }
+        return enqueue(paths)
+    }
+
     /** Spielt Teilclips (Ids aus tools/voice, z. B. `part_limit_is`, `num_80`) nacheinander; false, wenn eine Datei fehlt. */
     fun playParts(ids: List<String>?): Boolean {
         ids ?: return false
@@ -62,21 +77,22 @@ class KiloVoicePlayer(private val context: Context) {
         release()
     }
 
-    private fun exists(path: String) = runCatching { context.assets.openFd(path).close() }.isSuccess
+    private fun isFile(path: String) = path.startsWith("/")
+
+    private fun exists(path: String) = if (isFile(path)) java.io.File(path).length() > 0 else runCatching { context.assets.openFd(path).close() }.isSuccess
 
     private fun next() {
         val path = queue.removeFirstOrNull() ?: run { abandonFocus(); return }
         val mp = MediaPlayer()
         runCatching {
-            context.assets.openFd(path).use { afd ->
-                mp.setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                        .build(),
-                )
-                mp.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
-            }
+            mp.setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build(),
+            )
+            if (isFile(path)) mp.setDataSource(path)
+            else context.assets.openFd(path).use { afd -> mp.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length) }
             mp.setOnCompletionListener { release(); next() }
             mp.setOnErrorListener { _, _, _ -> release(); next(); true }
             mp.prepare()

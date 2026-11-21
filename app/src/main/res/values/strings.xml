@@ -1028,4 +1028,6 @@
     <string name="cmp_sw">south-west</string>
     <string name="cmp_w">west</string>
     <string name="cmp_nw">north-west</string>
+    <string name="set_composed_nav">Short turn announcements (beta)</string>
+    <string name="set_composed_nav_hint">Builds turn announcements from short building blocks, in the recorded voice where recordings exist (otherwise the device voice). Off by default.</string>
 </resources>

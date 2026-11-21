@@ -38,6 +38,13 @@ Straßennamen sind ein Long-Tail: allein in NRW 96.838 verschiedene Namen, die h
 4. Proxy + Pro-Fahrt-Paket, danach Namenpakete.
 5. Qualitätstest (Zufallsproben per Spracherkennung gegenprüfen) + Hörtest im Auto.
 
+## Stand Schritt 2 (Satzbaukasten, umgesetzt)
+- `nav/SpokenPlan.kt`: baut Abbiegeansagen aus Bausteinen (`In 300 Metern links abbiegen auf die Hauptstraße.`), DE und EN; Slots = aufgenommene Bausteine (`NavVocab`, 36 Ids in `tools/voice/nav_vocab.json`) und Namen. Ungewöhnliche Fälle (Start, Ziel, unbekannte Typen, Kreisverkehr ohne bekannte Ausfahrt) und andere Sprachen liefern den Text von Valhalla.
+- Deutsche Straßennamen: Artikel (die/den/das) nach Endung geraten; bei Unsicherheit („Am Markt“) wird der Name weggelassen statt falsch gesprochen.
+- `AnnouncementPlanner.nextSpoken` und `KiloVoicePlayer.playSlots` (Bausteine aus Assets, Namen aus `filesDir/voice_cache/<lang>/<hash>.ogg`): Sätze nur mit aufgenommenen Clips, wenn ALLE Teile vorhanden sind, sonst ganzer Satz per Sprachausgabe.
+- Einstellung „Kurze Abbiegeansagen (Beta)“, Standard **aus** (bis Aufnahmen vorhanden sind; der zusammengesetzte Text ist kürzer als Valhalla-Anweisungen).
+- Noch nicht aufgenommen: die 36 Bausteine (je Sprache) und die Namenclips; Aufnahme erst nach der Entscheidung zur Navi-Stimme.
+
 ## Offene Entscheidungen (Nutzer)
 - Server-Proxy mit Cloud-Anbindung akzeptabel (opt-in)?
 - Navigation in zweiter ElevenLabs-Stimme (statt Geräte-Stimme)?

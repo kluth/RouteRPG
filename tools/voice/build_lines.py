@@ -91,6 +91,9 @@ def main():
             lines.append(("quest_opts", key + ".opts", {l: full(l) for l in strings}))
     for key in FIXED:
         lines.append(("fixed", key, {l: strings[l][key] for l in strings}))
+    nav = json.loads((ROOT / "tools/voice/nav_vocab.json").read_text(encoding="utf-8"))
+    for nid, t in sorted(nav.items()):
+        lines.append(("nav", nid, t))
     for pid, t in PARTS.items():
         lines.append(("part", pid, t))
     for c in CONDITIONS:

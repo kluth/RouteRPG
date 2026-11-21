@@ -94,6 +94,8 @@ fun SettingsScreen(state: UiState, nav: NavController) {
             SettingsSection(stringResource(R.string.sec_navigation)) {
                 SettingSwitch(stringResource(R.string.set_navi_voice), stringResource(R.string.set_navi_voice_hint), s.naviVoice) { v -> nav.updateSettings { it.copy(naviVoice = v) } }
                 SettingDivider()
+                SettingSwitch(stringResource(R.string.set_composed_nav), stringResource(R.string.set_composed_nav_hint), s.composedNavVoice) { v -> nav.updateSettings { it.copy(composedNavVoice = v) } }
+                SettingDivider()
                 SettingSwitch(stringResource(R.string.set_speed_limit), null, s.showSpeedLimit) { v -> nav.updateSettings { it.copy(showSpeedLimit = v) } }
                 SettingDivider()
                 SettingSwitch(stringResource(R.string.set_avoid_tolls), null, s.avoidTolls) { v -> nav.updateSettings { it.copy(avoidTolls = v) } }

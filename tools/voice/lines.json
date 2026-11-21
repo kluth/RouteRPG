@@ -1584,6 +1584,438 @@
     }
   },
   {
+    "id": "nav_exit_left",
+    "group": "nav",
+    "text": {
+      "de": "die Ausfahrt links nehmen",
+      "en": "take the exit on the left"
+    },
+    "hash": {
+      "de": "be5593d6ef42",
+      "en": "9aa53c9c06f0"
+    }
+  },
+  {
+    "id": "nav_exit_right",
+    "group": "nav",
+    "text": {
+      "de": "die Ausfahrt rechts nehmen",
+      "en": "take the exit on the right"
+    },
+    "hash": {
+      "de": "2ebd834ed795",
+      "en": "707574a3104a"
+    }
+  },
+  {
+    "id": "nav_ferry",
+    "group": "nav",
+    "text": {
+      "de": "die Fähre nehmen",
+      "en": "take the ferry"
+    },
+    "hash": {
+      "de": "0ec0bf756b67",
+      "en": "eb766c8ad6cd"
+    }
+  },
+  {
+    "id": "nav_in_100m",
+    "group": "nav",
+    "text": {
+      "de": "In 100 Metern",
+      "en": "In 100 meters"
+    },
+    "hash": {
+      "de": "cc09b8814cf3",
+      "en": "90b8823ed091"
+    }
+  },
+  {
+    "id": "nav_in_150m",
+    "group": "nav",
+    "text": {
+      "de": "In 150 Metern",
+      "en": "In 150 meters"
+    },
+    "hash": {
+      "de": "d11c3c6a92b3",
+      "en": "1821a44516ea"
+    }
+  },
+  {
+    "id": "nav_in_200m",
+    "group": "nav",
+    "text": {
+      "de": "In 200 Metern",
+      "en": "In 200 meters"
+    },
+    "hash": {
+      "de": "bed499363d32",
+      "en": "f62edd7e872f"
+    }
+  },
+  {
+    "id": "nav_in_250m",
+    "group": "nav",
+    "text": {
+      "de": "In 250 Metern",
+      "en": "In 250 meters"
+    },
+    "hash": {
+      "de": "a8620e4b6994",
+      "en": "33f0ae8559c5"
+    }
+  },
+  {
+    "id": "nav_in_300m",
+    "group": "nav",
+    "text": {
+      "de": "In 300 Metern",
+      "en": "In 300 meters"
+    },
+    "hash": {
+      "de": "0a90be95469d",
+      "en": "be27b09b14ad"
+    }
+  },
+  {
+    "id": "nav_in_350m",
+    "group": "nav",
+    "text": {
+      "de": "In 350 Metern",
+      "en": "In 350 meters"
+    },
+    "hash": {
+      "de": "a028d8fc8f71",
+      "en": "e62899811e33"
+    }
+  },
+  {
+    "id": "nav_in_400m",
+    "group": "nav",
+    "text": {
+      "de": "In 400 Metern",
+      "en": "In 400 meters"
+    },
+    "hash": {
+      "de": "dcc6b666023f",
+      "en": "7645cfc8d1b1"
+    }
+  },
+  {
+    "id": "nav_in_450m",
+    "group": "nav",
+    "text": {
+      "de": "In 450 Metern",
+      "en": "In 450 meters"
+    },
+    "hash": {
+      "de": "fed3957abfa3",
+      "en": "f63a98e633fa"
+    }
+  },
+  {
+    "id": "nav_in_500m",
+    "group": "nav",
+    "text": {
+      "de": "In 500 Metern",
+      "en": "In 500 meters"
+    },
+    "hash": {
+      "de": "11bc4f037aee",
+      "en": "bbe22c53f594"
+    }
+  },
+  {
+    "id": "nav_keep_left",
+    "group": "nav",
+    "text": {
+      "de": "links halten",
+      "en": "keep left"
+    },
+    "hash": {
+      "de": "167738d17869",
+      "en": "0eaa7d44608f"
+    }
+  },
+  {
+    "id": "nav_keep_right",
+    "group": "nav",
+    "text": {
+      "de": "rechts halten",
+      "en": "keep right"
+    },
+    "hash": {
+      "de": "7c57579e6eaa",
+      "en": "9af1b17a9672"
+    }
+  },
+  {
+    "id": "nav_left",
+    "group": "nav",
+    "text": {
+      "de": "links abbiegen",
+      "en": "turn left"
+    },
+    "hash": {
+      "de": "920fbc3fb990",
+      "en": "b5c6b0758264"
+    }
+  },
+  {
+    "id": "nav_merge",
+    "group": "nav",
+    "text": {
+      "de": "einfädeln",
+      "en": "merge"
+    },
+    "hash": {
+      "de": "b8db7f0ab0db",
+      "en": "283128acef14"
+    }
+  },
+  {
+    "id": "nav_onto_das",
+    "group": "nav",
+    "text": {
+      "de": "auf das",
+      "en": "onto"
+    },
+    "hash": {
+      "de": "aacc55cd91c4",
+      "en": "a44853642e54"
+    }
+  },
+  {
+    "id": "nav_onto_den",
+    "group": "nav",
+    "text": {
+      "de": "auf den",
+      "en": "onto"
+    },
+    "hash": {
+      "de": "b47a6d0d1bd1",
+      "en": "a44853642e54"
+    }
+  },
+  {
+    "id": "nav_onto_die",
+    "group": "nav",
+    "text": {
+      "de": "auf die",
+      "en": "onto"
+    },
+    "hash": {
+      "de": "bc383b22b6fb",
+      "en": "a44853642e54"
+    }
+  },
+  {
+    "id": "nav_ramp_left",
+    "group": "nav",
+    "text": {
+      "de": "die Auffahrt links nehmen",
+      "en": "take the ramp on the left"
+    },
+    "hash": {
+      "de": "47c215a0919a",
+      "en": "2766b5279a0d"
+    }
+  },
+  {
+    "id": "nav_ramp_right",
+    "group": "nav",
+    "text": {
+      "de": "die Auffahrt rechts nehmen",
+      "en": "take the ramp on the right"
+    },
+    "hash": {
+      "de": "1735c14365b7",
+      "en": "5edea62ac188"
+    }
+  },
+  {
+    "id": "nav_right",
+    "group": "nav",
+    "text": {
+      "de": "rechts abbiegen",
+      "en": "turn right"
+    },
+    "hash": {
+      "de": "ceb3801b413a",
+      "en": "534e16333016"
+    }
+  },
+  {
+    "id": "nav_round_1",
+    "group": "nav",
+    "text": {
+      "de": "in den Kreisverkehr fahren und die erste Ausfahrt nehmen",
+      "en": "enter the roundabout and take the first exit"
+    },
+    "hash": {
+      "de": "50c1830baeee",
+      "en": "e986a2cb3b01"
+    }
+  },
+  {
+    "id": "nav_round_2",
+    "group": "nav",
+    "text": {
+      "de": "in den Kreisverkehr fahren und die zweite Ausfahrt nehmen",
+      "en": "enter the roundabout and take the second exit"
+    },
+    "hash": {
+      "de": "0ed8bed84223",
+      "en": "9d7acfa9e3f5"
+    }
+  },
+  {
+    "id": "nav_round_3",
+    "group": "nav",
+    "text": {
+      "de": "in den Kreisverkehr fahren und die dritte Ausfahrt nehmen",
+      "en": "enter the roundabout and take the third exit"
+    },
+    "hash": {
+      "de": "f7f4751be87e",
+      "en": "85deded68832"
+    }
+  },
+  {
+    "id": "nav_round_4",
+    "group": "nav",
+    "text": {
+      "de": "in den Kreisverkehr fahren und die vierte Ausfahrt nehmen",
+      "en": "enter the roundabout and take the fourth exit"
+    },
+    "hash": {
+      "de": "89b10fcb7f41",
+      "en": "b44f3e4c5c9e"
+    }
+  },
+  {
+    "id": "nav_round_5",
+    "group": "nav",
+    "text": {
+      "de": "in den Kreisverkehr fahren und die fünfte Ausfahrt nehmen",
+      "en": "enter the roundabout and take the fifth exit"
+    },
+    "hash": {
+      "de": "895a316b13bd",
+      "en": "eab6296a20b0"
+    }
+  },
+  {
+    "id": "nav_round_6",
+    "group": "nav",
+    "text": {
+      "de": "in den Kreisverkehr fahren und die sechste Ausfahrt nehmen",
+      "en": "enter the roundabout and take the sixth exit"
+    },
+    "hash": {
+      "de": "a9e443eb175d",
+      "en": "dbe26d78904b"
+    }
+  },
+  {
+    "id": "nav_round_7",
+    "group": "nav",
+    "text": {
+      "de": "in den Kreisverkehr fahren und die siebte Ausfahrt nehmen",
+      "en": "enter the roundabout and take the seventh exit"
+    },
+    "hash": {
+      "de": "af8c5d49148d",
+      "en": "ca331f5c2240"
+    }
+  },
+  {
+    "id": "nav_round_8",
+    "group": "nav",
+    "text": {
+      "de": "in den Kreisverkehr fahren und die achte Ausfahrt nehmen",
+      "en": "enter the roundabout and take the eighth exit"
+    },
+    "hash": {
+      "de": "593e67a52817",
+      "en": "9f34259ef04b"
+    }
+  },
+  {
+    "id": "nav_sharp_left",
+    "group": "nav",
+    "text": {
+      "de": "scharf links abbiegen",
+      "en": "turn sharp left"
+    },
+    "hash": {
+      "de": "e7264236ffc7",
+      "en": "44a700ac4e61"
+    }
+  },
+  {
+    "id": "nav_sharp_right",
+    "group": "nav",
+    "text": {
+      "de": "scharf rechts abbiegen",
+      "en": "turn sharp right"
+    },
+    "hash": {
+      "de": "9a5efdfae0ae",
+      "en": "d4b59ff3cc63"
+    }
+  },
+  {
+    "id": "nav_slight_left",
+    "group": "nav",
+    "text": {
+      "de": "leicht links abbiegen",
+      "en": "bear left"
+    },
+    "hash": {
+      "de": "3e34bf14bedb",
+      "en": "9e72bd3ab6a0"
+    }
+  },
+  {
+    "id": "nav_slight_right",
+    "group": "nav",
+    "text": {
+      "de": "leicht rechts abbiegen",
+      "en": "bear right"
+    },
+    "hash": {
+      "de": "35ef22409376",
+      "en": "2267e76c63c7"
+    }
+  },
+  {
+    "id": "nav_straight",
+    "group": "nav",
+    "text": {
+      "de": "geradeaus weiterfahren",
+      "en": "continue straight"
+    },
+    "hash": {
+      "de": "d02204d39b89",
+      "en": "7987731573f1"
+    }
+  },
+  {
+    "id": "nav_uturn",
+    "group": "nav",
+    "text": {
+      "de": "wenden",
+      "en": "make a U-turn"
+    },
+    "hash": {
+      "de": "2a7a148dc727",
+      "en": "49535743a60b"
+    }
+  },
+  {
     "id": "part_limit_is",
     "group": "part",
     "text": {

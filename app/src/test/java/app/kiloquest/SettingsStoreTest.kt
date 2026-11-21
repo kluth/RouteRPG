@@ -21,7 +21,7 @@ class SettingsStoreTest {
     @Test fun roundTrip() {
         val s = AppSettings(
             theme = ThemeMode.DARK, naviVoice = false, kiloVoice = false, keepScreenOn = false, showSpeedLimit = false,
-            laneHints = false, detourSuggestions = false, weatherHints = false, breakSuggestions = false, liveQuests = false, toiletCorridorKm = 4, powerSaver = app.kiloquest.nav.PowerSaverMode.ON, cloudSpeech = true, dynamicNotifIcons = false, calmView = true, playerNames = listOf("Mia", "", "Ben"), carParkedGames = true,
+            laneHints = false, detourSuggestions = false, weatherHints = false, breakSuggestions = false, liveQuests = false, toiletCorridorKm = 4, powerSaver = app.kiloquest.nav.PowerSaverMode.ON, cloudSpeech = true, dynamicNotifIcons = false, calmView = true, playerNames = listOf("Mia", "", "Ben"), carParkedGames = true, composedNavVoice = true,
         )
         SettingsStore.save(prefs, s)
         assertEquals(s, SettingsStore.load(prefs))
@@ -30,6 +30,10 @@ class SettingsStoreTest {
     @Test fun unknownPowerSaverFallsBackToAuto() {
         prefs.edit().putString("set_power_saver", "TURBO").apply()
         assertEquals(app.kiloquest.nav.PowerSaverMode.AUTO, SettingsStore.load(prefs).powerSaver)
+    }
+
+    @Test fun composedNavVoiceIsOffByDefault() {
+        assertEquals(false, SettingsStore.load(prefs).composedNavVoice)
     }
 
     @Test fun carParkedGamesIsOffByDefault() {

@@ -59,6 +59,8 @@ import app.kiloquest.nav.SpeechArbiter
 import kotlin.random.Random
 import kotlinx.coroutines.withContext
 import app.kiloquest.nav.AnnouncementPlanner
+import app.kiloquest.nav.Spoken
+import app.kiloquest.nav.SpokenLang
 import app.kiloquest.nav.Corridor
 import app.kiloquest.nav.CountryTimeline
 import app.kiloquest.nav.BreakPlanner
@@ -618,7 +620,7 @@ class NavController(private val app: Application) : KidsActions {
     /** Richtet Fuehrung, Spuren und Tempolimit-Cache fuer eine neue Route ein. */
     private fun installRoute(l: LoadedRoute) {
         engine = GuidanceEngine(l.route)
-        planner = AnnouncementPlanner(l.route)
+        planner = AnnouncementPlanner(l.route, spokenLang = SpokenLang.of(Locale.getDefault().language))
         laneAnnouncer = LaneAnnouncer(l.lanes)
         currentLanes = l.lanes
         offlineToilets = emptyList()
@@ -902,7 +904,8 @@ class NavController(private val app: Application) : KidsActions {
             stopNavigation()
             return
         }
-        planner?.next(g)?.let(::speak)
+        // Zusammengesetzte Ansage (Bausteine, ggf. aufgenommen) nur, wenn eingeschaltet; sonst der Text von Valhalla
+        if (_state.value.settings.composedNavVoice) planner?.nextSpoken(g)?.let(::speakSpoken) else planner?.next(g)?.let(::speak)
         updateDrivingAssist(loc, g.alongMeters)
         maybePromptPhoto(g)
         val now0 = System.currentTimeMillis()
@@ -2825,6 +2828,16 @@ class NavController(private val app: Application) : KidsActions {
         arbiter.navSpoken(System.currentTimeMillis())
         lastNavSpokenAt = System.currentTimeMillis()
         tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "kq-nav-${System.nanoTime()}")
+    }
+
+    /** Navigationsansage aus Bausteinen: mit aufgenommenen Clips, wenn ALLE Teile vorhanden sind, sonst als Text per Sprachausgabe. */
+    private fun speakSpoken(s: Spoken) {
+        if (!_state.value.settings.naviVoice) return
+        if (s.slots.isEmpty() || !kiloClips.playSlots(s.slots)) { speak(s.text); return }
+        if (foreignActive) endForeign()
+        tts?.stop()
+        arbiter.navSpoken(System.currentTimeMillis())
+        lastNavSpokenAt = System.currentTimeMillis()
     }
 
     private fun speakQuest(text: String, utteranceId: String = "kq-quest-${System.nanoTime()}") {
