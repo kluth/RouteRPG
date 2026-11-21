@@ -269,6 +269,8 @@ data class UiState(
     val plan: List<Quest> = emptyList(),
     /** Gekoppeltes Geraet: Zustand kommt vom Hauptgeraet (keine eigene Route). */
     val remote: Boolean = false,
+    /** Kinder-Geraet: Verbindung zum Hauptgeraet weg, wird neu aufgebaut (zeigt einen ruhigen Hinweis, Spielstand bleibt sichtbar). */
+    val linkLost: Boolean = false,
     /** Figur, die die eigene Position auf der Karte zeigt (Emoji, frei waehlbar). */
     val avatar: String = Avatars.DEFAULT,
     /** Kinderkarte mit echten Kacheln (sonst schematisch); faellt ohne Netz von selbst auf schematisch zurueck. */

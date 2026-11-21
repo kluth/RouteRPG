@@ -16,7 +16,12 @@
 ## Code
 `app/.../ui/kids/` (KidsStyle, Motion, KidsParts, KidsHome); `KidsScreen` delegiert dorthin. `KidsMini.kt` entfällt.
 
+## Nachtrag: Restpunkte umgesetzt
+- Hauptgerät: Quests-Knopf ab > 10 km/h ausgeblendet (Kinder nutzen ihr eigenes Gerät, Fahrer nur Audio).
+- Karte: Karteninhalt nicht mehr antippbar, nur Knöpfe öffnen sie; runde Knöpfe und Figur-Feld Mini 72 dp, sonst 56 dp (`mapButtonSize`, Unit-Test).
+- Alters-/Spielerwahl und Trennen kommen in der Kinderansicht nicht vor (nur Eltern-/Einstellungsbereich); Foto-Aufnahme nur im Elternbereich. Die Figur-Wahl bleibt bewusst für Kinder.
+- Verbindung weg (Kinder-Gerät): Kinderansicht bleibt mit ruhigem Kilo-Hinweis „Kilo sucht das Auto“, Klo-Knopf sendet dann nichts; automatischer Neuaufbau (`UiState.linkLost`).
+- Kein Mikrofon (Hauptgerät): Spielstart fragt die Erlaubnis an, bei „Nein“ ruhiger Hinweis für Erwachsene; das Geschichtenspiel läuft ohne Mikrofon.
+
 ## Nicht geprüft / offen
-- Echte Geräte, TalkBack, Schriftgröße 2,0.
-- Fahrt: Aufgaben-Pille auf dem Hauptgerät während der Fahrt sperren.
-- KidMap-Buttons auf ≥ 72 dp, Alters-/Spielerwahl hinter Eltern-Hürde, Zustände „Verbindung weg“ und „kein Mikrofon“.
+- Echte Geräte, TalkBack, Schriftgröße 2,0, Bluetooth-Abbruch im Auto.

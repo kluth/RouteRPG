@@ -121,6 +121,8 @@ private fun KidsMain(state: UiState, nav: KidsActions, style: KidsStyle, onOpenM
             if (state.questsTotal > 0 && !calm) ProgressTrail(state.questsDone, state.questsTotal, style)
         }
 
+        if (state.linkLost) LinkLostBanner(style)
+
         val mainContent: @Composable () -> Unit = {
             Column(Modifier.widthIn(max = 640.dp).fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 ToiletStatusCard(state.toilet, {}, showActions = false)
@@ -148,6 +150,17 @@ private fun KidsMain(state: UiState, nav: KidsActions, style: KidsStyle, onOpenM
             Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) { mainContent() }
         }
         BottomBar(state, nav, style, onOpenMap, onMore)
+    }
+}
+
+/** Verbindung zum Auto weg: ruhiger Hinweis, kein Fehlerton; der Spielstand bleibt sichtbar, die App verbindet sich von selbst neu. */
+@Composable
+private fun LinkLostBanner(style: KidsStyle) {
+    Surface(shape = RoundedCornerShape(24.dp), color = style.container, contentColor = style.text, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).politeLive()) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            KiloAvatar(KiloMood.SLEEPY, 56.dp)
+            Text(stringResource(R.string.kids_link_lost), style = kidsText(if (style.band == AgeBand.MINI) 22 else 18), color = style.text, modifier = Modifier.weight(1f))
+        }
     }
 }
 
@@ -289,7 +302,7 @@ private fun BottomBar(state: UiState, nav: KidsActions, style: KidsStyle, onOpen
         if (sent && !alarm) Text(stringResource(R.string.kids_toilet_wait), Modifier.padding(bottom = 6.dp).politeLive(), style = kidsText(16, androidx.compose.ui.text.font.FontWeight.Bold), color = style.text)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             BarButton(
-                stringResource(R.string.kids_bar_toilet), { if (!alarm && !sent) { sent = true; nav.requestToilet() } }, style, Modifier.weight(1f),
+                stringResource(R.string.kids_bar_toilet), { if (!alarm && !sent && !state.linkLost) { sent = true; nav.requestToilet() } }, style, Modifier.weight(1f),
                 icon = painterResource(R.drawable.ic_wc),
                 container = if (alarm) AlarmYellow else MaterialTheme.colorScheme.errorContainer,
                 content = if (alarm) OnAlarmYellow else MaterialTheme.colorScheme.onErrorContainer,
@@ -331,12 +344,29 @@ internal fun KidsMore(state: UiState, nav: KidsActions, style: KidsStyle, onClos
                         Text(stringResource(R.string.game_running), style = kidsText(22), color = style.text)
                         BigActionButton(stringResource(R.string.game_stop), { nav.stopGame(); onClose() }, style, Modifier.fillMaxWidth(), debouncer = rememberDebouncer("stop"))
                     } else {
+                        val ctx = LocalContext.current
                         val deb = rememberDebouncer("games")
+                        // Spiele laufen auf dem Hauptgeraet; nur dort braucht Kilo das Mikrofon. Ohne Erlaubnis: nachfragen, bei "Nein" ruhiger Hinweis fuer Erwachsene
+                        var pending by rememberSaveable { mutableStateOf<String?>(null) }
+                        var micDenied by rememberSaveable { mutableStateOf(false) }
+                        val mic = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) { ok ->
+                            val p = pending; pending = null
+                            if (ok && p != null) { nav.startGame(AudioGameType.valueOf(p)); onClose() } else micDenied = true
+                        }
+                        val needsMic = !state.remote
+                        fun start(t: AudioGameType) {
+                            val granted = androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                            if (t == AudioGameType.STORY_RELAY || !needsMic || granted) { nav.startGame(t); onClose() }
+                            else { pending = t.name; mic.launch(android.Manifest.permission.RECORD_AUDIO) }
+                        }
+                        if (micDenied) Surface(shape = RoundedCornerShape(20.dp), color = style.container, modifier = Modifier.fillMaxWidth().politeLive()) {
+                            Text(stringResource(R.string.kids_no_mic), Modifier.padding(14.dp), style = kidsText(if (mini) 20 else 17), color = style.text)
+                        }
                         listOf(
                             "🔗" to (R.string.game_word_chain to AudioGameType.WORD_CHAIN), "🔤" to (R.string.game_letters to AudioGameType.LETTER_CATEGORY),
                             "🎵" to (R.string.game_rhyme to AudioGameType.RHYME), "📚" to (R.string.game_story to AudioGameType.STORY_RELAY),
                         ).forEach { (emoji, p) ->
-                            BigActionButton(stringResource(p.first), { nav.startGame(p.second); onClose() }, style, Modifier.fillMaxWidth(), leading = { Text(emoji, style = TextStyle(fontSize = 34.sp)) }, kind = ButtonKind.SECONDARY, labelSp = 24, debouncer = deb)
+                            BigActionButton(stringResource(p.first), { start(p.second) }, style, Modifier.fillMaxWidth(), leading = { Text(emoji, style = TextStyle(fontSize = 34.sp)) }, kind = ButtonKind.SECONDARY, labelSp = 24, debouncer = deb)
                         }
                     }
                 }

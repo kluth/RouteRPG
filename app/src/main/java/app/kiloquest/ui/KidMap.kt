@@ -3,7 +3,6 @@ package app.kiloquest.ui
 import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -402,30 +401,34 @@ fun KidMapView(state: UiState, mode: MapMode, modifier: Modifier = Modifier, int
 fun KidMapCard(state: UiState, onOpen: () -> Unit, onPickAvatar: () -> Unit, modifier: Modifier = Modifier, height: androidx.compose.ui.unit.Dp = 160.dp) {
     Box(modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(24.dp))) {
         KidMapView(state, MapMode.FOLLOW, Modifier.fillMaxSize())
-        // Tippen oeffnet die grosse Karte (die Kartenansicht selbst nimmt keine Gesten an)
-        Box(Modifier.fillMaxSize().clickable(onClick = onOpen))
+        // Nur die Knoepfe oeffnen die grosse Karte: kein versehentliches Antippen der ganzen Flaeche (Kartenansicht nimmt keine Gesten an)
         if (state.route == null && state.position == null) {
             Text(stringResource(R.string.map_waiting), Modifier.align(Alignment.Center).padding(16.dp), style = MaterialTheme.typography.bodyMedium)
         }
-        MapRoundButton(R.drawable.ic_open_in_full, stringResource(R.string.map_fullscreen), onOpen, Modifier.align(Alignment.TopEnd).padding(8.dp))
-        AvatarBadge(state.avatar, onPickAvatar, Modifier.align(Alignment.BottomStart).padding(8.dp))
+        val size = mapButtonSize(state.ageBand)
+        MapRoundButton(R.drawable.ic_open_in_full, stringResource(R.string.map_fullscreen), onOpen, Modifier.align(Alignment.TopEnd).padding(8.dp), size)
+        AvatarBadge(state.avatar, onPickAvatar, Modifier.align(Alignment.BottomStart).padding(8.dp), size)
     }
 }
 
+/** Zielgroesse der runden Kartenknoepfe je Altersband (Mini >= 72 dp, sonst >= 56 dp). */
+internal fun mapButtonSize(band: app.kiloquest.game.AgeBand): androidx.compose.ui.unit.Dp =
+    if (band == app.kiloquest.game.AgeBand.MINI) 72.dp else 56.dp
+
 @Composable
-private fun MapRoundButton(icon: Int, description: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(onClick = onClick, modifier = modifier.size(48.dp), shape = CircleShape, color = MaterialTheme.colorScheme.surface, shadowElevation = 3.dp) {
+private fun MapRoundButton(icon: Int, description: String, onClick: () -> Unit, modifier: Modifier = Modifier, size: androidx.compose.ui.unit.Dp = 56.dp) {
+    Surface(onClick = onClick, modifier = modifier.size(size), shape = CircleShape, color = MaterialTheme.colorScheme.surface, shadowElevation = 3.dp) {
         Box(contentAlignment = Alignment.Center) {
-            Icon(painterResource(icon), contentDescription = description, modifier = Modifier.size(24.dp))
+            Icon(painterResource(icon), contentDescription = description, modifier = Modifier.size(size / 2))
         }
     }
 }
 
 /** Rundes Feld mit der aktuellen Figur; Tippen oeffnet die Auswahl. */
 @Composable
-fun AvatarBadge(avatar: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Surface(onClick = onClick, modifier = modifier.size(56.dp), shape = CircleShape, color = MaterialTheme.colorScheme.surface, shadowElevation = 3.dp) {
-        Box(contentAlignment = Alignment.Center) { AvatarImage(avatar, 40.dp) }
+fun AvatarBadge(avatar: String, onClick: () -> Unit, modifier: Modifier = Modifier, size: androidx.compose.ui.unit.Dp = 56.dp) {
+    Surface(onClick = onClick, modifier = modifier.size(size), shape = CircleShape, color = MaterialTheme.colorScheme.surface, shadowElevation = 3.dp) {
+        Box(contentAlignment = Alignment.Center) { AvatarImage(avatar, size * 0.7f) }
     }
 }
 
@@ -446,8 +449,9 @@ fun KidMapFull(state: UiState, onClose: () -> Unit, onPickAvatar: () -> Unit, on
                 FilterChip(selected = state.realMap, onClick = { onRealMap(true) }, label = { Text(stringResource(R.string.map_style_real)) })
                 FilterChip(selected = !state.realMap, onClick = { onRealMap(false) }, label = { Text(stringResource(R.string.map_style_sketch)) })
             }
-            MapRoundButton(R.drawable.ic_close, stringResource(R.string.map_close), onClose, Modifier.align(Alignment.TopEnd).padding(12.dp))
-            AvatarBadge(state.avatar, onPickAvatar, Modifier.align(Alignment.CenterEnd).padding(16.dp))
+            val size = mapButtonSize(state.ageBand)
+            MapRoundButton(R.drawable.ic_close, stringResource(R.string.map_close), onClose, Modifier.align(Alignment.TopEnd).padding(12.dp), size)
+            AvatarBadge(state.avatar, onPickAvatar, Modifier.align(Alignment.CenterEnd).padding(16.dp), size)
             val remaining = state.guidance?.remainingMeters
             if (remaining != null && remaining > 0) {
                 Surface(Modifier.align(Alignment.BottomStart).padding(16.dp), shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 3.dp) {

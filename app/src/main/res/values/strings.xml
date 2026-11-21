@@ -926,4 +926,6 @@
     <string name="kids_turn_marker">▶ %1$s</string>
     <string name="kids_sticker_missing">not found yet</string>
     <string name="kids_toilet_wait">Sent! Please wait a moment.</string>
+    <string name="kids_link_lost">Kilo is looking for the car again… Your stars are safe!</string>
+    <string name="kids_no_mic">Kilo can\'t hear you yet. Please ask a grown-up to allow the microphone. The story game works without it.</string>
 </resources>

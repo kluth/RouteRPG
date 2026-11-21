@@ -215,7 +215,8 @@ internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
             horizontalAlignment = Alignment.End,
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            QuestsPill({ vm.showKids(true) }, onLongClick = { vm.showParent(true) })
+            // Waehrend der Fahrt (> 10 km/h) kein Quests-Knopf auf dem Hauptgeraet: Kinder nutzen ihr eigenes Geraet, der Fahrer bekommt nur Audio
+            if ((state.speedKmh ?: 0) <= 10) QuestsPill({ vm.showKids(true) }, onLongClick = { vm.showParent(true) })
             app.kiloquest.ui.ToiletAlarmButton(vm::toiletAlarm, active = state.toilet?.phase.let { it != null && it != ToiletPhase.NONE })
         }
         if (state.settings.laneHints) state.lanes?.let { LaneStrip(it, Modifier.align(Alignment.BottomCenter).padding(bottom = if (win.shortHeight) 76.dp else 100.dp)) }
@@ -239,12 +240,16 @@ internal fun BoxScope.AppOverlays(state: UiState, vm: NavController) {
     val linkApp = LocalContext.current.applicationContext as? KiloQuestApp
     if (linkApp != null) {
         val client by linkApp.linkClient.state.collectAsState()
-        if (client.status == app.kiloquest.link.ClientStatus.CONNECTED && !state.parentScreen && !state.settingsScreen) {
+        val connected = client.status == app.kiloquest.link.ClientStatus.CONNECTED
+        // Kinder-Geraet: nach Verbindungsabbruch die Kinderansicht behalten (mit freundlichem Hinweis), statt in die Hauptkarte zu fallen
+        val kidReconnecting = !connected && client.snapshot != null && client.role == app.kiloquest.link.Role.KID &&
+            client.status in setOf(app.kiloquest.link.ClientStatus.LOST, app.kiloquest.link.ClientStatus.CONNECTING, app.kiloquest.link.ClientStatus.WAITING)
+        if ((connected || kidReconnecting) && !state.parentScreen && !state.settingsScreen) {
             val snap = client.snapshot
             if (client.role == app.kiloquest.link.Role.COPILOT) {
                 app.kiloquest.link.CopilotRemoteScreen(snap, client.drive, client.extras, client.photoRequest, client.pos, snap?.toUiStateFor(state.ageBand, state.avatar, state.realMap, client.route, client.pos)) { vm.showParent(true) }
             } else if (snap != null) {
-                KidsScreen(snap.toUiStateFor(state.ageBand, state.avatar, state.realMap, client.route, client.pos), app.kiloquest.link.RemoteActions(linkApp.linkClient, vm))
+                KidsScreen(snap.toUiStateFor(state.ageBand, state.avatar, state.realMap, client.route, client.pos).copy(linkLost = kidReconnecting), app.kiloquest.link.RemoteActions(linkApp.linkClient, vm))
             }
         }
     }

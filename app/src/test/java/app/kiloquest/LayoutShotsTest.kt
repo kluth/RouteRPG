@@ -135,6 +135,8 @@ class LayoutShotsTest {
         }
     })
     @Config(qualifiers = "w390dp-h844dp-port-night-xxhdpi")
+    @Test fun miniLinkLostShot() = shot("mini-linklost-390x844", 390, 844, state = { mini.copy(linkLost = true, remote = true) }, screen = true)
+
     @Test fun miniDarkShot() = shot("mini-dark-390x844", 390, 844, dark = true, state = { mini }, screen = true)
 
     @Config(qualifiers = "w360dp-h780dp-port-notnight-xxhdpi")

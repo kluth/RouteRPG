@@ -67,6 +67,12 @@ class SpotStringsTest {
 
 /** Farbpaare der Kinderansicht muessen lesbar sein (WCAG: Text >= 4,5:1). */
 class KidsPaletteTest {
+    @Test fun mapButtonsMeetTargetSizes() {
+        assertTrue(app.kiloquest.ui.mapButtonSize(app.kiloquest.game.AgeBand.MINI).value >= 72f)
+        assertTrue(app.kiloquest.ui.mapButtonSize(app.kiloquest.game.AgeBand.EXPLORER).value >= 56f)
+        assertTrue(app.kiloquest.ui.mapButtonSize(app.kiloquest.game.AgeBand.PRO).value >= 56f)
+    }
+
     @Test fun textAndButtonsAreReadableInAllBandsAndModes() {
         for (band in app.kiloquest.game.AgeBand.entries) for (dark in listOf(false, true)) {
             val s = app.kiloquest.ui.kids.KidsPalette.style(band, dark)
