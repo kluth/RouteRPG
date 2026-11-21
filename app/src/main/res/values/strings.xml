@@ -907,4 +907,23 @@
     <string name="icon_mono">Graphite</string>
     <string name="set_dyn_icons">Dynamic notification icon</string>
     <string name="set_dyn_icons_hint">The icon changes with the event (break, toilet, photo, warning …), the time of day, the season and the place. Off: always the pin with the star in your app icon colour.</string>
+    <string name="set_calm_view">Calm view for kids</string>
+    <string name="set_calm_view_hint">No bouncing, no confetti and no moving figures in the kids\' view. It is also used automatically on winding roads in travel sickness mode.</string>
+    <string name="kids_bar_toilet">Toilet</string>
+    <string name="kids_bar_map">Map</string>
+    <string name="kids_bar_more">More</string>
+    <string name="kids_more_title">More fun</string>
+    <string name="kids_tile_album">Stickers</string>
+    <string name="kids_tile_series">Kilo story</string>
+    <string name="kids_tile_games">Games</string>
+    <string name="kids_tile_figure">My figure</string>
+    <string name="kids_tile_story">Place story</string>
+    <string name="kids_tile_back">Close</string>
+    <string name="kids_hold_to_leave">Hold to leave</string>
+    <string name="kids_hold_hint">For grown-ups: keep pressing</string>
+    <string name="kids_games_title">Which game?</string>
+    <string name="kids_idle_listen">Listen</string>
+    <string name="kids_turn_marker">▶ %1$s</string>
+    <string name="kids_sticker_missing">not found yet</string>
+    <string name="kids_toilet_wait">Sent! Please wait a moment.</string>
 </resources>

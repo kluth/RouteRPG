@@ -75,7 +75,8 @@ class DeviceRoster(private val maxKids: Int = 4, private val maxCopilots: Int = 
         is ClientMsg.Age -> role == Role.KID
         ClientMsg.ToiletAlarm, ClientMsg.ToiletResume, ClientMsg.ToiletDismiss, ClientMsg.BreakRequest, is ClientMsg.PhotoAnswer -> role == Role.COPILOT
         ClientMsg.ToiletRequest -> role == Role.KID
-        is ClientMsg.Cmd -> role == Role.COPILOT && msg.name in Cmds.all
+        // Beifahrer duerfen alle Befehle, Kinder nur Hoerspiele und Hoerserie
+        is ClientMsg.Cmd -> msg.name in Cmds.all && (role == Role.COPILOT || msg.name in Cmds.kids)
         ClientMsg.Ping, is ClientMsg.Hello -> true
     }
 }

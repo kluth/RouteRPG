@@ -736,6 +736,9 @@ class NavController(private val app: Application) : KidsActions {
     fun showParent(show: Boolean) = _state.update { it.copy(parentScreen = show) }
     override fun requestToilet() = toiletRequested(null)
 
+    override fun startGame(type: AudioGameType) = startAudioGame(type)
+    override fun stopGame() = stopAudioGame()
+
     override fun showKids(show: Boolean) = _state.update { it.copy(kidsScreen = show) }
 
     override fun speakAloud(text: String): Boolean {
@@ -1684,7 +1687,7 @@ class NavController(private val app: Application) : KidsActions {
     }
 
     /** Spielt die naechste freigeschaltete Folge der Kilo-Hoerserie (eine neue Folge pro Tag). */
-    fun tellSeries() {
+    override fun tellSeries() {
         val heard = KiloSeries.decode(prefs.getString("series_heard", null))
         val ep = seriesNextNow()
         if (ep == null) {

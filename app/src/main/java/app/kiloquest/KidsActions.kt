@@ -17,4 +17,8 @@ interface KidsActions {
     /** Hoergeschichte zu einem Ort in der Naehe vorlesen lassen (nur auf dem Hauptgeraet). */
     fun tellStory() {}
     fun dismissStory() {}
+    /** Audio-Spiele und Hoerserie: laufen auf dem Hauptgeraet (Lautsprecher/Mikrofon dort); auf Kinder-Geraeten ein Bluetooth-Befehl. */
+    fun startGame(type: app.kiloquest.game.AudioGameType) {}
+    fun stopGame() {}
+    fun tellSeries() {}
 }

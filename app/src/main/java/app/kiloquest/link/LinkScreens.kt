@@ -46,6 +46,9 @@ class RemoteActions(private val client: BtClient, private val nav: NavController
     override fun skipQuest() = client.send(ClientMsg.Skip)
     override fun dismissFeedback() = client.send(ClientMsg.Next)
     override fun requestToilet() = client.send(ClientMsg.ToiletRequest)
+    override fun startGame(type: app.kiloquest.game.AudioGameType) = client.send(ClientMsg.Cmd(Cmds.GAME, arg = type.name))
+    override fun stopGame() = client.send(ClientMsg.Cmd(Cmds.STOP_GAME))
+    override fun tellSeries() = client.send(ClientMsg.Cmd(Cmds.SERIES))
     /** Die Figur ist eine Einstellung dieses Geraets: bleibt lokal, geht nicht zum Hauptgeraet. */
     override fun setAvatar(emoji: String) = nav.setAvatar(emoji)
     override fun setRealMap(on: Boolean) = nav.setRealMap(on)

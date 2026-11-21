@@ -47,6 +47,8 @@ data class AppSettings(
     val cloudSpeech: Boolean = false,
     /** Benachrichtigungs-Icon wechselt je nach Anlass, Tageszeit und Ort; aus = immer Pin mit Stern in der Farbe des gewaehlten App-Icons. */
     val dynamicNotifIcons: Boolean = true,
+    /** Ruhige Ansicht fuer Kinder: kein Huepfen, Konfetti oder bewegte Figuren. */
+    val calmView: Boolean = false,
 )
 
 internal object SettingsStore {
@@ -77,6 +79,7 @@ internal object SettingsStore {
             tripReminders = p.getBoolean(P + "trip_reminders", d.tripReminders),
             cloudSpeech = p.getBoolean(P + "cloud_speech", d.cloudSpeech),
             dynamicNotifIcons = p.getBoolean(P + "dyn_notif_icons", d.dynamicNotifIcons),
+            calmView = p.getBoolean(P + "calm_view", d.calmView),
             powerSaver = runCatching { PowerSaverMode.valueOf(p.getString(P + "power_saver", null) ?: "") }.getOrDefault(d.powerSaver),
         )
     }
@@ -106,6 +109,7 @@ internal object SettingsStore {
             .putString(P + "power_saver", s.powerSaver.name)
             .putBoolean(P + "cloud_speech", s.cloudSpeech)
             .putBoolean(P + "dyn_notif_icons", s.dynamicNotifIcons)
+            .putBoolean(P + "calm_view", s.calmView)
             .apply()
     }
 }

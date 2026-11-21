@@ -85,6 +85,8 @@ fun SettingsScreen(state: UiState, nav: NavController) {
                 SettingDivider()
                 SettingRow(stringResource(R.string.set_app_icon), stringResource(R.string.set_app_icon_hint), value = stringResource(AppIcon.current(ctx).labelRes)) { dialog = Dlg.APP_ICON }
                 SettingDivider()
+                SettingSwitch(stringResource(R.string.set_calm_view), stringResource(R.string.set_calm_view_hint), s.calmView) { v -> nav.updateSettings { it.copy(calmView = v) } }
+                SettingDivider()
                 SettingSwitch(stringResource(R.string.set_dyn_icons), stringResource(R.string.set_dyn_icons_hint), s.dynamicNotifIcons) { v -> nav.updateSettings { it.copy(dynamicNotifIcons = v) } }
             }
 

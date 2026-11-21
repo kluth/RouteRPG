@@ -112,6 +112,31 @@ class LayoutShotsTest {
         File(dir, "$name.png").outputStream().use { bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
     }
 
+    private val noKids = object : KidsActions {
+        override fun answerQuest(choice: Int?) {}
+        override fun skipQuest() {}
+        override fun dismissFeedback() {}
+        override fun showKids(show: Boolean) {}
+        override fun requestToilet() {}
+        override fun setAvatar(emoji: String) {}
+        override fun setRealMap(on: Boolean) {}
+    }
+    private val miniDone = mini.copy(quest = null, feedback = app.kiloquest.QuestFeedback(true, 10, null), newSticker = app.kiloquest.game.StickerBook.ALL[2], points = 30)
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun miniDoneShot() = shot("mini-done-390x844", 390, 844, state = { miniDone }, screen = true)
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun miniIdleShot() = shot("mini-idle-390x844", 390, 844, state = { mini.copy(quest = null) }, screen = true)
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun miniCalmShot() = shot("mini-calm-390x844", 390, 844, state = { mini.copy(navigating = true, curvy = true) }, screen = true)
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun miniMoreShot() = shot("mini-more-390x844", 390, 844, state = { mini }, custom = { s ->
+        androidx.compose.material3.Surface(color = app.kiloquest.ui.kids.KidsPalette.style(AgeBand.MINI, false).bg) {
+            app.kiloquest.ui.kids.KidsMore(s, noKids, app.kiloquest.ui.kids.KidsPalette.style(AgeBand.MINI, false), {}, {}, {})
+        }
+    })
+    @Config(qualifiers = "w390dp-h844dp-port-night-xxhdpi")
+    @Test fun miniDarkShot() = shot("mini-dark-390x844", 390, 844, dark = true, state = { mini }, screen = true)
+
     @Config(qualifiers = "w360dp-h780dp-port-notnight-xxhdpi")
     @Test fun driveSmallPortrait() = shot("drive-360x780", 360, 780, state = { driving })
     @Config(qualifiers = "w360dp-h780dp-port-night-xxhdpi")

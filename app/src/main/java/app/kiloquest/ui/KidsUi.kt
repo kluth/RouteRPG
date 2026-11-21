@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -47,7 +49,8 @@ private val Grey = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation
 @Composable
 fun StickerImage(sticker: Sticker, collected: Boolean, size: Dp = 48.dp, modifier: Modifier = Modifier) {
     val res = stickerRes(sticker.id)
-    Box(modifier.size(size).alpha(if (collected) 1f else 0.28f), contentAlignment = Alignment.Center) {
+    val missing = androidx.compose.ui.res.stringResource(R.string.kids_sticker_missing)
+    Box(modifier.size(size).alpha(if (collected) 1f else 0.28f).semantics { if (!collected) stateDescription = missing }, contentAlignment = Alignment.Center) {
         if (res != null) {
             Image(painterResource(res), contentDescription = null, modifier = Modifier.size(size), colorFilter = if (collected) null else Grey)
         } else {

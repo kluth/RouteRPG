@@ -178,6 +178,8 @@ object Cmds {
     const val EMERGENCY = "emergency"
     const val EMERGENCY_CLOSE = "emergency_close"
     const val TOLLS = "tolls"
+    /** Was auch Kinder-Geraete ausloesen duerfen (Audio-Spiele, Hoerserie). */
+    val kids = setOf(GAME, STOP_GAME, SERIES)
     val all = setOf(FIND_SPOTS, GO_SPOT, RESUME_STOPOVER, GAME, STOP_GAME, SERIES, EMERGENCY, EMERGENCY_CLOSE, TOLLS)
 }
 

@@ -64,3 +64,22 @@ class SpotStringsTest {
         }
     }
 }
+
+/** Farbpaare der Kinderansicht muessen lesbar sein (WCAG: Text >= 4,5:1). */
+class KidsPaletteTest {
+    @Test fun textAndButtonsAreReadableInAllBandsAndModes() {
+        for (band in app.kiloquest.game.AgeBand.entries) for (dark in listOf(false, true)) {
+            val s = app.kiloquest.ui.kids.KidsPalette.style(band, dark)
+            val tag = "$band dark=$dark"
+            assertTrue("$tag Akzentflaeche: " + app.kiloquest.ui.kids.KidsPalette.contrast(s.accent, s.onAccent), app.kiloquest.ui.kids.KidsPalette.contrast(s.accent, s.onAccent) >= 4.5)
+            assertTrue("$tag Text auf Hintergrund: " + app.kiloquest.ui.kids.KidsPalette.contrast(s.text, s.bg), app.kiloquest.ui.kids.KidsPalette.contrast(s.text, s.bg) >= 4.5)
+            assertTrue("$tag Stern: " + app.kiloquest.ui.kids.KidsPalette.contrast(s.star, s.onStar), app.kiloquest.ui.kids.KidsPalette.contrast(s.star, s.onStar) >= 4.5)
+        }
+    }
+
+    @Test fun targetsGrowForYoungerChildren() {
+        val mini = app.kiloquest.ui.kids.KidsPalette.style(app.kiloquest.game.AgeBand.MINI, false)
+        val pro = app.kiloquest.ui.kids.KidsPalette.style(app.kiloquest.game.AgeBand.PRO, false)
+        assertTrue(mini.target.value >= 72f && pro.target.value >= 48f && mini.buttonHeight > pro.buttonHeight)
+    }
+}

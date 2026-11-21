@@ -907,4 +907,23 @@
     <string name="icon_mono">Graphit</string>
     <string name="set_dyn_icons">Dynamisches Benachrichtigungs-Icon</string>
     <string name="set_dyn_icons_hint">Das Icon wechselt je nach Anlass (Pause, Klo, Foto, Warnung …), Tageszeit, Jahreszeit und Ort. Aus: immer Pin mit Stern in der Farbe deines App-Icons.</string>
+    <string name="set_calm_view">Ruhige Ansicht für Kinder</string>
+    <string name="set_calm_view_hint">Kein Hüpfen, kein Konfetti und keine bewegten Figuren in der Kinderansicht. Im Reiseübelkeit-Modus gilt sie auf kurvigen Strecken automatisch.</string>
+    <string name="kids_bar_toilet">Klo</string>
+    <string name="kids_bar_map">Karte</string>
+    <string name="kids_bar_more">Mehr</string>
+    <string name="kids_more_title">Mehr Spaß</string>
+    <string name="kids_tile_album">Sticker</string>
+    <string name="kids_tile_series">Kilo-Geschichte</string>
+    <string name="kids_tile_games">Spiele</string>
+    <string name="kids_tile_figure">Meine Figur</string>
+    <string name="kids_tile_story">Orts-Geschichte</string>
+    <string name="kids_tile_back">Schließen</string>
+    <string name="kids_hold_to_leave">Halten zum Verlassen</string>
+    <string name="kids_hold_hint">Für Erwachsene: gedrückt halten</string>
+    <string name="kids_games_title">Welches Spiel?</string>
+    <string name="kids_idle_listen">Hören</string>
+    <string name="kids_turn_marker">▶ %1$s</string>
+    <string name="kids_sticker_missing">noch nicht gefunden</string>
+    <string name="kids_toilet_wait">Abgeschickt! Bitte kurz warten.</string>
 </resources>

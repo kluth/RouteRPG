@@ -171,7 +171,10 @@ class LinkTest {
         assertEquals(cmd, Wire.decodeClient(Wire.encode(cmd)))
         val r = DeviceRoster()
         assertTrue(r.allows(Role.COPILOT, cmd))
-        assertFalse(r.allows(Role.KID, cmd), "Kinder duerfen keine Befehle geben")
+        assertFalse(r.allows(Role.KID, cmd), "Kinder duerfen keine Navigationsbefehle geben")
+        assertTrue(r.allows(Role.KID, ClientMsg.Cmd(Cmds.GAME, arg = "RHYME")))
+        assertTrue(r.allows(Role.KID, ClientMsg.Cmd(Cmds.SERIES)))
+        assertFalse(r.allows(Role.KID, ClientMsg.Cmd(Cmds.EMERGENCY)))
         assertFalse(r.allows(Role.COPILOT, ClientMsg.Cmd("rm_rf")), "unbekannte Befehle werden abgelehnt")
     }
 }

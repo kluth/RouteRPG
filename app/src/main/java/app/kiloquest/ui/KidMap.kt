@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.kiloquest.R
+import app.kiloquest.ui.kids.animateOrFreeze
 import app.kiloquest.UiState
 import app.kiloquest.nav.LatLon
 import kotlin.math.PI
@@ -147,23 +148,24 @@ fun KidMap(state: UiState, mode: MapMode, modifier: Modifier = Modifier) {
     val flag = "🏁"
     val desc = stringResource(R.string.map_live_desc)
 
+    val reducedMotion = app.kiloquest.ui.kids.LocalReducedMotion.current || state.sicknessMode && state.curvy
     val infinite = androidx.compose.animation.core.rememberInfiniteTransition(label = "kidmap")
-    val pulse by infinite.animateFloat(
+    val pulse by infinite.animateOrFreeze(reducedMotion, 
         0f, 1f,
         androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1600, easing = androidx.compose.animation.core.LinearEasing)),
         label = "pulse",
     )
-    val walk by infinite.animateFloat(
+    val walk by infinite.animateOrFreeze(reducedMotion, 
         0f, 1f,
         androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(600, easing = androidx.compose.animation.core.LinearEasing)),
         label = "walk",
     )
-    val shake by infinite.animateFloat(
+    val shake by infinite.animateOrFreeze(reducedMotion, 
         0f, 1f,
         androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(220, easing = androidx.compose.animation.core.LinearEasing)),
         label = "shake",
     )
-    val bob by infinite.animateFloat(
+    val bob by infinite.animateOrFreeze(reducedMotion, 
         0f, 1f,
         androidx.compose.animation.core.infiniteRepeatable(androidx.compose.animation.core.tween(1100, easing = androidx.compose.animation.core.FastOutSlowInEasing), androidx.compose.animation.core.RepeatMode.Reverse),
         label = "bob",

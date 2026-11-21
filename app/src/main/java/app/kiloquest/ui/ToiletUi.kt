@@ -27,13 +27,13 @@ import app.kiloquest.ToiletPhase
 import app.kiloquest.ToiletState
 
 /** Alarm-Gelb: im Alarmmodus ist der Knopf gelb und wackelt (auffaellig, ohne Text lesen zu muessen). */
-private val AlarmYellow = androidx.compose.ui.graphics.Color(0xFFFFC107)
-private val OnAlarmYellow = androidx.compose.ui.graphics.Color(0xFF3B2A00)
+val AlarmYellow = androidx.compose.ui.graphics.Color(0xFFFFC107)
+val OnAlarmYellow = androidx.compose.ui.graphics.Color(0xFF3B2A00)
 
 /** Laesst ein Element wackeln (leichtes Hin- und Herdrehen), solange [enabled]; sonst unveraendert. */
 @Composable
 fun Modifier.wobble(enabled: Boolean): Modifier {
-    if (!enabled) return this
+    if (!enabled || app.kiloquest.ui.kids.LocalReducedMotion.current) return this
     val transition = androidx.compose.animation.core.rememberInfiniteTransition(label = "wobble")
     val angle by transition.animateFloat(
         initialValue = -7f, targetValue = 7f,
