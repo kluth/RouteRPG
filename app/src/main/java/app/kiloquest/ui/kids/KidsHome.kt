@@ -323,7 +323,7 @@ internal fun KidsMore(state: UiState, nav: KidsActions, style: KidsStyle, onClos
     Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                stringResource(if (section == "games") R.string.kids_games_title else if (section == "album") R.string.kids_tile_album else R.string.kids_more_title),
+                stringResource(when (section) { "games" -> R.string.kids_games_title; "album" -> R.string.kids_tile_album; "plates" -> R.string.plates_title; "wildlife" -> R.string.wild_title; "sky" -> R.string.sky_title; else -> R.string.kids_more_title }),
                 Modifier.weight(1f).asHeading(), style = kidsText(30), color = style.text,
             )
             Surface(
@@ -339,6 +339,9 @@ internal fun KidsMore(state: UiState, nav: KidsActions, style: KidsStyle, onClos
                     Text(stringResource(R.string.kids_album, state.album.size, StickerBook.ALL.size), style = kidsText(20, androidx.compose.ui.text.font.FontWeight.Bold))
                     StickerGrid(StickerBook.ALL, state.album, size = 64.dp)
                 }
+                "plates" -> PlatesSection(style)
+                "wildlife" -> WildlifeSection(state, style)
+                "sky" -> SkySection(state, style)
                 "games" -> {
                     if (state.audioGame != null) {
                         Text(stringResource(R.string.game_running), style = kidsText(22), color = style.text)
@@ -375,6 +378,9 @@ internal fun KidsMore(state: UiState, nav: KidsActions, style: KidsStyle, onClos
                         add(Triple("🏆", R.string.kids_tile_album) { section = "album" })
                         add(Triple("🎧", R.string.kids_tile_series) { nav.tellSeries(); onClose() })
                         add(Triple("🎲", R.string.kids_tile_games) { section = "games" })
+                        add(Triple("🚗", R.string.kids_tile_plates) { section = "plates" })
+                        add(Triple("🦌", R.string.kids_tile_wildlife) { section = "wildlife" })
+                        add(Triple("🌙", R.string.kids_tile_sky) { section = "sky" })
                         add(Triple("🦊", R.string.kids_tile_figure) { onPickAvatar() })
                         add(Triple("🗺️", R.string.kids_bar_map) { onOpenMap() })
                         if (!state.remote) add(Triple("📖", R.string.kids_tile_story) { nav.tellStory(); onClose() })

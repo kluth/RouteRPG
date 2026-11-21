@@ -137,6 +137,16 @@ class LayoutShotsTest {
     @Config(qualifiers = "w390dp-h844dp-port-night-xxhdpi")
     @Test fun miniLinkLostShot() = shot("mini-linklost-390x844", 390, 844, state = { mini.copy(linkLost = true, remote = true) }, screen = true)
 
+    @Config(qualifiers = "w390dp-h844dp-port-notnight-xxhdpi")
+    @Test fun explorerPlatesShot() = shot("explorer-plates-390x844", 390, 844, state = { mini }, custom = { _ ->
+        val st = app.kiloquest.ui.kids.KidsPalette.style(AgeBand.EXPLORER, false)
+        androidx.compose.material3.Surface(color = st.bg) {
+            androidx.compose.foundation.layout.Column(androidx.compose.ui.Modifier.padding(16.dp), verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp)) {
+                app.kiloquest.ui.kids.PlatesSection(st)
+            }
+        }
+    })
+
     @Test fun miniDarkShot() = shot("mini-dark-390x844", 390, 844, dark = true, state = { mini }, screen = true)
 
     @Config(qualifiers = "w360dp-h780dp-port-notnight-xxhdpi")

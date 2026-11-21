@@ -133,3 +133,8 @@ suspend fun fetchPlaceName(lat: Double, lon: Double, languageCode: String): Stri
     val pr = f.getJSONObject(0).getJSONObject("properties")
     listOf("city", "town", "village", "name", "county").firstNotNullOfOrNull { k -> pr.optString(k).takeIf { it.isNotBlank() } }
 }.getOrNull()
+
+/** Tierbeobachtungen (GBIF, nur CC0/CC BY) rund um eine auf 0,1 Grad gerundete Position; leer bei Fehler. */
+suspend fun fetchWildlife(lat: Double, lon: Double): List<app.kiloquest.nav.GbifOccurrence> = runCatching {
+    app.kiloquest.nav.GbifParser.parse(http(app.kiloquest.nav.GbifParser.buildUrl(lat, lon)))
+}.getOrDefault(emptyList())
