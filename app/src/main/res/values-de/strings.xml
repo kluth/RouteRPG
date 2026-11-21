@@ -1000,4 +1000,12 @@
     <string name="planet_mars">Mars</string>
     <string name="planet_jupiter">Jupiter</string>
     <string name="planet_saturn">Saturn</string>
+    <string name="trip_overview_title">Tagesplan (%1$d Tage)</string>
+    <string name="trip_overview_end_dest">Ziel</string>
+    <string name="trip_overview_end_stay">Unterkunft: %1$s</string>
+    <string name="trip_overview_end_night">Übernachtungsstopp</string>
+    <string name="trip_overview_day">Tag %1$d: %2$s</string>
+    <string name="trip_overview_info">%1$s, %2$s, etwa %3$d Aufgaben</string>
+    <string name="trip_overview_reminder">Erinnerung: %1$s</string>
+    <string name="trip_overview_long">Dieser Tag ist länger als eure Tagesfahrzeit.</string>
 </resources>

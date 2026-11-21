@@ -75,6 +75,8 @@ fun TripScreen(state: UiState, nav: NavController) {
                 )
             }
 
+            TripOverviewCard(state)
+
             trip?.stops?.forEachIndexed { i, stop ->
                 val done = i < trip.currentStage
                 // legs beginnen bei der aktuellen Etappe
@@ -222,5 +224,37 @@ fun TripScreen(state: UiState, nav: NavController) {
             },
             confirmButton = { TextButton(onClick = nav::closeLodging) { Text(stringResource(R.string.dlg_close_short)) } },
         )
+    }
+}
+
+/** Tagesuebersicht der aktuellen Route: Etappen nach Tagesfahrzeit mit Ziel, Strecke, Quest-Vorschlag und Erinnerung am Vorabend. */
+@Composable
+private fun TripOverviewCard(state: UiState) {
+    val route = state.route ?: return
+    val hours = state.settings.dailyDriveHours
+    val days = remember(route, state.booked, hours) {
+        val zone = java.util.TimeZone.getDefault()
+        val today = (System.currentTimeMillis() / 86_400_000L).toInt()
+        app.kiloquest.nav.TripOverview.build(route, today, state.booked.map { app.kiloquest.nav.BookedStay(it.name, it.position) }, hours * 3600.0, zone.rawOffset / 1000)
+    }
+    if (days.size <= 1) return
+    val fmt = remember { java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT) }
+    Surface(tonalElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.trip_overview_title, days.size), style = MaterialTheme.typography.titleMedium)
+            days.forEach { d ->
+                val end = when {
+                    d.endKey == "destination" -> stringResource(R.string.trip_overview_end_dest)
+                    d.endKey.startsWith("stay:") -> stringResource(R.string.trip_overview_end_stay, d.endKey.removePrefix("stay:"))
+                    else -> stringResource(R.string.trip_overview_end_night)
+                }
+                Column {
+                    Text(stringResource(R.string.trip_overview_day, d.day, end), style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.trip_overview_info, distanceText(d.distanceMeters), durationText(d.driveSeconds), d.questSuggestion), style = MaterialTheme.typography.bodyMedium)
+                    if (d.day > 1 && state.settings.tripReminders) Text(stringResource(R.string.trip_overview_reminder, fmt.format(java.util.Date(d.reminderAtMillis))), style = MaterialTheme.typography.bodySmall)
+                    if (d.overBudget) Text(stringResource(R.string.trip_overview_long), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                }
+            }
+        }
     }
 }
