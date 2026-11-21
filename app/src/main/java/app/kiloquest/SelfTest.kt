@@ -27,7 +27,25 @@ object SelfTest {
         if (Build.VERSION.SDK_INT >= 33) add(check(R.string.st_notif, R.string.st_notif_hint, granted(ctx, Manifest.permission.POST_NOTIFICATIONS), CheckLevel.WARN))
         add(check(R.string.st_offline, R.string.st_offline_hint, state.pkg.phase == PackagePhase.READY, CheckLevel.WARN))
         add(check(R.string.st_camera, R.string.st_camera_hint, granted(ctx, Manifest.permission.CAMERA), CheckLevel.WARN))
+        add(check(R.string.st_auto_app, R.string.st_auto_app_hint, autoInstalled(ctx), CheckLevel.WARN))
+        add(check(R.string.st_auto_service, R.string.st_auto_service_hint, carServiceDeclared(ctx), CheckLevel.FAIL))
+        // Nicht aus dem Play Store installiert: Android Auto zeigt solche Apps nur mit "Unbekannte Quellen" in dessen Entwicklereinstellungen
+        add(check(R.string.st_auto_source, R.string.st_auto_source_hint, !sideloaded(ctx), CheckLevel.WARN))
     }
+
+    private fun autoInstalled(ctx: Context) = runCatching { ctx.packageManager.getPackageInfo("com.google.android.projection.gearhead", 0) }.isSuccess
+
+    /** Ist unser Auto-Dienst (CarAppService) im Manifest sichtbar registriert? */
+    private fun carServiceDeclared(ctx: Context): Boolean = runCatching {
+        ctx.packageManager.queryIntentServices(android.content.Intent("androidx.car.app.CarAppService").setPackage(ctx.packageName), 0).isNotEmpty()
+    }.getOrDefault(false)
+
+    @Suppress("DEPRECATION")
+    private fun sideloaded(ctx: Context): Boolean = runCatching {
+        val installer = if (Build.VERSION.SDK_INT >= 30) ctx.packageManager.getInstallSourceInfo(ctx.packageName).installingPackageName
+        else ctx.packageManager.getInstallerPackageName(ctx.packageName)
+        installer != "com.android.vending"
+    }.getOrDefault(true)
 
     private fun check(title: Int, hint: Int, ok: Boolean, whenMissing: CheckLevel) = SelfCheck(title, hint, if (ok) CheckLevel.OK else whenMissing)
 

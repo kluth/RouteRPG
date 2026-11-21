@@ -27,6 +27,8 @@
 
     <queries>
         <intent><action android:name="android.speech.RecognitionService" /></intent>
+        <!-- Selbsttest: ist Android Auto installiert? -->
+        <package android:name="com.google.android.projection.gearhead" />
     </queries>
 
     <application

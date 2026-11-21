@@ -1040,4 +1040,10 @@
     <string name="voicepack_progress">Kilos Straßennamen: %1$d von %2$d</string>
     <string name="voicepack_ready">Kilos Straßennamen: bereit</string>
     <string name="voicepack_partial">Kilos Straßennamen: %1$d von %2$d bereit (Rest per Geräte-Stimme)</string>
+    <string name="st_auto_app">Android-Auto-App</string>
+    <string name="st_auto_app_hint">Android Auto ist auf diesem Handy nicht installiert (nur fürs Auto-Display nötig).</string>
+    <string name="st_auto_service">Auto-Dienst in dieser App</string>
+    <string name="st_auto_service_hint">Der Auto-Dienst ist nicht registriert. Bitte die App neu installieren.</string>
+    <string name="st_auto_source">Android Auto und App-Quelle</string>
+    <string name="st_auto_source_hint">Diese App stammt nicht aus dem Play Store. Android Auto zeigt solche Apps nur, wenn „Unbekannte Quellen“ eingeschaltet ist: Android-Auto-Einstellungen öffnen, 10-mal auf die Versionsnummer tippen, Menü (drei Punkte) › Entwicklereinstellungen › „Unbekannte Quellen“ einschalten, danach das Auto neu verbinden.</string>
 </resources>

@@ -1040,4 +1040,10 @@
     <string name="voicepack_progress">Kilo’s street names: %1$d of %2$d</string>
     <string name="voicepack_ready">Kilo’s street names: ready</string>
     <string name="voicepack_partial">Kilo’s street names: %1$d of %2$d ready (the rest by device voice)</string>
+    <string name="st_auto_app">Android Auto app</string>
+    <string name="st_auto_app_hint">Android Auto is not installed on this phone (only needed for the car screen).</string>
+    <string name="st_auto_service">Car service in this app</string>
+    <string name="st_auto_service_hint">The car service is not registered. Please reinstall the app.</string>
+    <string name="st_auto_source">Android Auto and app source</string>
+    <string name="st_auto_source_hint">This app was not installed from the Play Store. Android Auto only shows such apps if you turn on “Unknown sources”: open Android Auto settings, tap the version number 10 times, open the menu (three dots) › Developer settings › switch on “Unknown sources”, then reconnect the car.</string>
 </resources>
