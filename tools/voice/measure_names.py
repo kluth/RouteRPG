@@ -4,6 +4,7 @@
 Eingabe (eine der Varianten):
   --overpass-json DATEI...   Overpass-Antworten ([out:json]; way[highway][name]; out tags;), z. B. je Region eine Datei
   --fetch                    laedt die Beispielregionen selbst von einer Overpass-Instanz (Netz noetig; Rate beachten, --pause)
+  --pbf DATEI                liest einen OSM-Auszug (.osm.pbf, z. B. Bundesland) mit pyosmium (pip install osmium); zaehlt auch Orte
   --selftest                 prueft das Skript mit eingebauter Mini-Stichprobe
 
 Ausgabe: Zahl der Wege und verschiedenen Namen, die Abdeckungskurve (Anteil der Wege, den die haeufigsten N Namen abdecken),
@@ -34,6 +35,39 @@ def fetch(box, endpoint, pause):
 
 def names_of(data):
     return [el["tags"]["name"] for el in data.get("elements", []) if "name" in el.get("tags", {})]
+
+
+# Fuer Auto-Navigation relevante Wege (ohne Fuss-/Rad-/Waldwege und Zufahrten)
+DRIVABLE = {"motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link", "secondary", "secondary_link",
+            "tertiary", "tertiary_link", "unclassified", "residential", "living_street"}
+PLACES = {"city", "town", "village", "suburb", "hamlet"}
+
+
+def read_pbf(path):
+    import osmium  # nur fuer diesen Modus noetig
+
+    class H(osmium.SimpleHandler):
+        def __init__(self):
+            super().__init__()
+            self.streets = []
+            self.places = collections.Counter()
+            self.place_names = collections.defaultdict(set)
+
+        def way(self, w):
+            t = w.tags
+            if t.get("highway") in DRIVABLE and "name" in t:
+                self.streets.append(t["name"])
+
+        def node(self, n):
+            t = n.tags
+            pl = t.get("place")
+            if pl in PLACES and "name" in t:
+                self.places[pl] += 1
+                self.place_names[pl].add(t["name"])
+
+    h = H()
+    h.apply_file(path)
+    return h.streets, h.places, h.place_names
 
 
 def stem(name):
@@ -81,6 +115,7 @@ def main():
     ap.add_argument("--fetch", action="store_true")
     ap.add_argument("--endpoint", default="https://overpass-api.de/api/interpreter")
     ap.add_argument("--pause", type=float, default=20.0)
+    ap.add_argument("--pbf", nargs="*", default=[])
     ap.add_argument("--selftest", action="store_true")
     a = ap.parse_args()
     names = []
@@ -91,6 +126,12 @@ def main():
         return
     for p in a.overpass_json:
         names += names_of(json.load(open(p, encoding="utf-8")))
+    for p in a.pbf:
+        streets, places, place_names = read_pbf(p)
+        print(f"== {p}: befahrbare benannte Wege {len(streets)}")
+        names += streets
+        print("Orte (Knoten mit name):", dict(places), "| verschiedene Ortsnamen:", {k: len(v) for k, v in place_names.items()},
+              "| gesamt verschieden:", len(set().union(*place_names.values())) if place_names else 0)
     if a.fetch:
         for region, box in REGIONS.items():
             print(f"lade {region} ...", file=sys.stderr)
