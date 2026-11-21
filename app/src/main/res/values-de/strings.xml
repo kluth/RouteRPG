@@ -1008,4 +1008,5 @@
     <string name="trip_overview_info">%1$s, %2$s, etwa %3$d Aufgaben</string>
     <string name="trip_overview_reminder">Erinnerung: %1$s</string>
     <string name="trip_overview_long">Dieser Tag ist länger als eure Tagesfahrzeit.</string>
+    <string name="trip_overview_find">Unterkunft suchen</string>
 </resources>

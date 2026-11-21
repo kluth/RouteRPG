@@ -75,7 +75,7 @@ fun TripScreen(state: UiState, nav: NavController) {
                 )
             }
 
-            TripOverviewCard(state)
+            TripOverviewCard(state, nav)
 
             trip?.stops?.forEachIndexed { i, stop ->
                 val done = i < trip.currentStage
@@ -229,7 +229,7 @@ fun TripScreen(state: UiState, nav: NavController) {
 
 /** Tagesuebersicht der aktuellen Route: Etappen nach Tagesfahrzeit mit Ziel, Strecke, Quest-Vorschlag und Erinnerung am Vorabend. */
 @Composable
-private fun TripOverviewCard(state: UiState) {
+private fun TripOverviewCard(state: UiState, nav: NavController) {
     val route = state.route ?: return
     val hours = state.settings.dailyDriveHours
     val days = remember(route, state.booked, hours) {
@@ -252,6 +252,9 @@ private fun TripOverviewCard(state: UiState) {
                     Text(stringResource(R.string.trip_overview_day, d.day, end), style = MaterialTheme.typography.titleSmall)
                     Text(stringResource(R.string.trip_overview_info, distanceText(d.distanceMeters), durationText(d.driveSeconds), d.questSuggestion), style = MaterialTheme.typography.bodyMedium)
                     if (d.day > 1 && state.settings.tripReminders) Text(stringResource(R.string.trip_overview_reminder, fmt.format(java.util.Date(d.reminderAtMillis))), style = MaterialTheme.typography.bodySmall)
+                    d.lodgingSearch?.takeIf { !d.endsAtBooking }?.let { area ->
+                        OutlinedButton(onClick = { nav.findLodgingNear(area.center, d.day) }) { Text(stringResource(R.string.trip_overview_find)) }
+                    }
                     if (d.overBudget) Text(stringResource(R.string.trip_overview_long), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                 }
             }

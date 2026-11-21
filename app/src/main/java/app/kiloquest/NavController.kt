@@ -219,6 +219,9 @@ data class BreakProposal(val stop: RestStop, val aheadMeters: Double)
 
 /** Route samt Spurinformation. */
 /** Unterkunftssuche fuer die Uebernachtung am Ende von Etappe [stopIndex]. */
+/** stopIndex <= diesem Wert: Suche aus dem Tagesplan (Tag = BASE - stopIndex). */
+const val OVERVIEW_LODGING_BASE = -100
+
 data class LodgingUi(
     val stopIndex: Int,
     val loading: Boolean = true,
@@ -2204,11 +2207,36 @@ class NavController(private val app: Application) : KidsActions {
         planTrip()
     }
 
+    /** Unterkunftssuche aus dem Tagesplan: Treffer wird als gebuchte Unterkunft gemerkt und wird so festes Tagesende. */
+    fun findLodgingNear(point: LatLon, day: Int) {
+        val marker = OVERVIEW_LODGING_BASE - day
+        _state.update { it.copy(lodging = LodgingUi(marker)) }
+        scope.launch {
+            val found = runCatching {
+                withContext(Dispatchers.IO) {
+                    var r = LodgingFinder.parse(fetchOverpass(LodgingFinder.buildQuery(point, 8000, includeCamping = true)))
+                    if (r.isEmpty()) r = LodgingFinder.parse(fetchOverpass(LodgingFinder.buildQuery(point, 20000, includeCamping = true)))
+                    r
+                }
+            }
+            val ui = found.fold(
+                { LodgingUi(marker, loading = false, options = LodgingFinder.rank(it, point)) },
+                { LodgingUi(marker, loading = false, failed = true) },
+            )
+            if (_state.value.lodging?.stopIndex == marker) _state.update { it.copy(lodging = ui) }
+        }
+    }
+
     fun closeLodging() = _state.update { it.copy(lodging = null) }
 
     /** Uebernimmt die gewaehlte Unterkunft als Etappenziel (Ort und Name ersetzt). */
     fun chooseLodging(option: LodgingOption) {
         val ui = _state.value.lodging ?: return
+        if (ui.stopIndex <= OVERVIEW_LODGING_BASE) {
+            _state.update { it.copy(lodging = null) }
+            addBooked(Place(option.name, option.position))
+            return
+        }
         if (ui.planDay != null) {
             _state.update { it.copy(lodging = null) }
             updatePlan { p -> p.copy(stays = p.stays + PlanStay(option.name, option.position.lat, option.position.lon, ui.planDay, 1)) }

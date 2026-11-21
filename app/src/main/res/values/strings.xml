@@ -1008,4 +1008,5 @@
     <string name="trip_overview_info">%1$s, %2$s, about %3$d quests</string>
     <string name="trip_overview_reminder">Reminder: %1$s</string>
     <string name="trip_overview_long">This day is longer than your daily driving time.</string>
+    <string name="trip_overview_find">Find a place to stay</string>
 </resources>
