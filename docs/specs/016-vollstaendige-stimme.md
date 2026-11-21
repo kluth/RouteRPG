@@ -1,6 +1,6 @@
 # 016 – Vollständige Stimme (möglichst alles mit ElevenLabs)
 
-Status: Entwurf. Schritt 1 (Messung) beginnt, der Rest wartet auf die Entscheidungen unten.
+Status: Entwurf. Schritt 1 (Messung) für NRW erledigt, Ergebnis in `016-messung.md` (Top 5.000 Namen = 50 % der Wegabschnitte, 20.000 = 74 %, ~97.000 verschiedene Namen: Pro-Fahrt-Paket bleibt der Kern). Der Rest wartet auf die Entscheidungen unten.
 
 ## Ziel
 Kilo (und optional die Navigation) spricht möglichst alles mit aufgenommener Stimme statt Geräte-Stimme: feste Sätze, Zahlen, Abbiegeansagen mit Straßennamen, Orte, Vornamen der Kinder, Geschichten. Ohne Netz im Auto, ohne dass Orte oder Kindernamen unbemerkt an einen Cloud-Dienst gehen (AGENTS.md Regeln 2 und 3).
