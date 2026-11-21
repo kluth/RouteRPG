@@ -13,6 +13,8 @@ keine Daten und braucht kein Netz.
 - Lob und Trost (`kilo_praise_1..6`, `kilo_retry_1..4`), die Kilo nach einer Antwort wechselnd sagt,
 - Sätze der Hörspiele, Teamziel-Meilensteine, Anpassungs-Ansagen, Hörserien-Hinweise und die Geschichten-Anfänge/-Übergänge (alle Texte ohne Platzhalter, siehe `FIXED` in `build_lines.py`). Die Hörserien-Folgen mit Zielort und Zeilen mit Platzhaltern (z. B. „Mein Wort ist %1$s“) bleiben bei der Sprachausgabe.
 
+- **Block 6 (Nachtrag):** Kilo-eigene feste Ansagen (Sprachbefehl-Antworten `cmd_*`, Maut-Intro und 19 Länderzeilen `toll_<land>`, Klo-Ansagen, Reiseübelkeit, Pause, Stopp), außerdem **Teilclips**: Zahlen `num_0..num_130` und Satzstücke (`part_*`, Wetterlagen `wcond_*`), die `VoiceParts` (`:game-engine`) zu „Das Tempolimit ist N.“ und „Wetter am Ziel: Lage, N Grad.“ zusammensetzt. Liegt ein Wert außerhalb (z. B. > 130) oder fehlt ein Clip, spricht die Geräte-Sprachausgabe den ganzen Satz. Navigationsansagen (Abbiegen, Ankunft, Neuberechnung) bleiben bei der Geräte-Stimme.
+
 Dynamische Aufgaben (Routenfakten, Wikipedia-Geschichten, Natur, Ortsnamen), Navigationsansagen und Zahlen bleiben bei der
 Geräte-Sprachausgabe. Navigation hat immer Vorrang: eine Navigationsansage stoppt jede Aufnahme sofort.
 
@@ -30,6 +32,8 @@ Aufnahme.
 5. `python3 tools/voice/build_lines.py` erneut, dann `./gradlew :game-engine:test` (prüft Dateien und Hashes).
 
 ## Lizenz und Kosten
+Block 6: 189 Zeilen je Sprache (8.647 Zeichen, tatsächlich verbraucht ca. 8.650 Credits; Stand danach 17.954 von 363.000 im Monat), rund +3,6 MB Assets (gesamt 6,7 MB).
+
 Die Aufnahmen sind synthetische Sprache, erzeugt mit dem ElevenLabs-Konto des Projektinhabers. Die zulässige Nutzung (insbesondere
 kommerziell oder bei einer Veröffentlichung im Play Store) richtet sich nach den Bedingungen des jeweiligen ElevenLabs-Tarifs zum
 Zeitpunkt der Erzeugung; vor einer Veröffentlichung prüfen. Verbrauch für 53 Zeilen je Sprache: rund 2.700 Zeichen pro Sprache, zusammen etwa 5.400 Credits (Deutsch und Englisch). Die 33 weiteren Zeilen je Sprache (Hörspiele u. a.) brauchten rund 3.900 Zeichen, zusammen etwa 3.900 Credits.
