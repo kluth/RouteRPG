@@ -1015,4 +1015,17 @@
     <string name="car_games_stopped">The quiz closed because the car is moving.</string>
     <string name="car_games_next">Next question</string>
     <string name="car_games_open">Quiz</string>
+    <string name="iss_title">Space station ISS</string>
+    <string name="iss_entry">%1$s: rises in the %2$s, sets in the %3$s, up to %4$d° high, about %5$d min</string>
+    <string name="iss_none">No visible flyover in the next 3 days.</string>
+    <string name="iss_offline">Kilo needs the internet once to know where the ISS is.</string>
+    <string name="iss_source">ISS orbit data: CelesTrak. Times are approximate.</string>
+    <string name="cmp_n">north</string>
+    <string name="cmp_ne">north-east</string>
+    <string name="cmp_e">east</string>
+    <string name="cmp_se">south-east</string>
+    <string name="cmp_s">south</string>
+    <string name="cmp_sw">south-west</string>
+    <string name="cmp_w">west</string>
+    <string name="cmp_nw">north-west</string>
 </resources>

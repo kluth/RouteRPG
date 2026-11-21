@@ -41,7 +41,13 @@ import app.kiloquest.game.PlateCountry
 import app.kiloquest.game.WildlifeQuestion
 import app.kiloquest.game.WildlifeQuiz
 import app.kiloquest.game.WildlifeSpecies
+import app.kiloquest.nav.IssPass
+import app.kiloquest.nav.IssPasses
 import app.kiloquest.nav.Sky
+import app.kiloquest.nav.Tle
+import app.kiloquest.fetchIssTle
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import app.kiloquest.stringByKey
 
 /** Landesname in der Sprache des Geraets (kein eigener Text noetig). */
@@ -172,6 +178,26 @@ internal fun WildlifeSection(state: UiState, style: KidsStyle) {
     Text(stringResource(R.string.wild_source), style = kidsText(12), color = style.text)
 }
 
+private const val ISS_TLE = "iss_tle"
+private const val ISS_TLE_TIME = "iss_tle_time"
+
+/** ISS-Bahndaten: Cache 24 h, sonst Abruf (eine kurze Anfrage ohne Position); ohne Netz zaehlt ein aelterer Cache, solange er nutzbar ist. */
+private suspend fun loadIssTle(ctx: Context): Tle? {
+    val prefs = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    val now = System.currentTimeMillis()
+    val cached = prefs.getString(ISS_TLE, null)
+    val cachedTime = prefs.getLong(ISS_TLE_TIME, 0L)
+    if (cached != null && now - cachedTime < 24 * 3600_000L) Tle.parse(cached)?.let { return it }
+    val fresh = fetchIssTle()
+    Tle.parse(fresh)?.let { prefs.edit().putString(ISS_TLE, fresh).putLong(ISS_TLE_TIME, now).apply(); return it }
+    return cached?.let { Tle.parse(it) }?.takeIf { it.ageDays(now / 1000) <= IssPasses.MAX_AGE_DAYS }
+}
+
+private fun compassName(az: Double): Int = when ((((az + 22.5) % 360 + 360) % 360 / 45).toInt()) {
+    0 -> R.string.cmp_n; 1 -> R.string.cmp_ne; 2 -> R.string.cmp_e; 3 -> R.string.cmp_se
+    4 -> R.string.cmp_s; 5 -> R.string.cmp_sw; 6 -> R.string.cmp_w; else -> R.string.cmp_nw
+}
+
 private fun compassKey(az: Double): Int = when ((((az + 22.5) % 360 + 360) % 360 / 45).toInt()) {
     0 -> R.string.dir_n; 1 -> R.string.dir_ne; 2 -> R.string.dir_e; 3 -> R.string.dir_se
     4 -> R.string.dir_s; 5 -> R.string.dir_sw; 6 -> R.string.dir_w; else -> R.string.dir_nw
@@ -195,5 +221,33 @@ internal fun SkySection(state: UiState, style: KidsStyle) {
             )
         }
     }
+    IssSection(pos.lat, pos.lon, style)
     Text(stringResource(R.string.sky_note), style = kidsText(14), color = style.text)
+}
+
+/** Naechste sichtbare ISS-Ueberfluege (bis 3), mit "etwa"-Hinweis; ohne Netz und ohne frischen Cache nur ein Hinweis. */
+@Composable
+private fun IssSection(lat: Double, lon: Double, style: KidsStyle) {
+    val ctx = LocalContext.current
+    var state by remember { mutableStateOf<List<IssPass>?>(null) }
+    var offline by remember { mutableStateOf(false) }
+    LaunchedEffect(Math.round(lat * 10) to Math.round(lon * 10)) {
+        val tle = loadIssTle(ctx)
+        if (tle == null) { offline = true; state = emptyList() }
+        else state = withContext(Dispatchers.Default) { IssPasses.next(tle, System.currentTimeMillis() / 1000, lat, lon).take(3) }
+    }
+    val passes = state ?: return
+    val fmt = remember { java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT) }
+    Text("🛰️ " + stringResource(R.string.iss_title), style = kidsText(22, androidx.compose.ui.text.font.FontWeight.Bold), color = style.text, modifier = Modifier.padding(top = 8.dp).asHeading())
+    if (offline) Text(stringResource(R.string.iss_offline), style = kidsText(16), color = style.text)
+    else if (passes.isEmpty()) Text(stringResource(R.string.iss_none), style = kidsText(16), color = style.text)
+    passes.forEach { p ->
+        Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 3.dp, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                stringResource(R.string.iss_entry, fmt.format(java.util.Date(p.startSec * 1000)), stringResource(compassName(p.startAzimuthDeg)), stringResource(compassName(p.endAzimuthDeg)), p.maxAltitudeDeg.toInt(), ((p.durationSec + 30) / 60).toInt().coerceAtLeast(1)),
+                Modifier.padding(16.dp), style = kidsText(if (style.band == AgeBand.MINI) 20 else 17), color = style.text,
+            )
+        }
+    }
+    Text(stringResource(R.string.iss_source), style = kidsText(12), color = style.text)
 }

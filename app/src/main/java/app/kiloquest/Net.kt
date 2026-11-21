@@ -138,3 +138,6 @@ suspend fun fetchPlaceName(lat: Double, lon: Double, languageCode: String): Stri
 suspend fun fetchWildlife(lat: Double, lon: Double): List<app.kiloquest.nav.GbifOccurrence> = runCatching {
     app.kiloquest.nav.GbifParser.parse(http(app.kiloquest.nav.GbifParser.buildUrl(lat, lon)))
 }.getOrDefault(emptyList())
+
+/** ISS-Bahndaten (TLE) von CelesTrak; die Anfrage ist global und enthaelt keine Position. Leer bei Fehler. */
+suspend fun fetchIssTle(): String = runCatching { http("https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=tle") }.getOrDefault("")
