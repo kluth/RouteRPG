@@ -13,9 +13,10 @@ android {
     defaultConfig {
         applicationId = "app.kiloquest"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        targetSdk = 36
+        // Release: -PversionCode=N -PversionName=x.y.z (Play verlangt je Upload einen hoeheren versionCode)
+        versionCode = (project.findProperty("versionCode") as String?)?.toIntOrNull() ?: 1
+        versionName = (project.findProperty("versionName") as String?) ?: "0.1.0"
 
         // Server-Zugang kommt aus local.properties (nicht im Repo): valhalla.url / valhalla.token
         val local = Properties().apply {
@@ -28,8 +29,21 @@ android {
         buildConfigField("String", "VALHALLA_TOKEN", "\"${if (embed) local.getProperty("valhalla.token", "") else ""}\"")
     }
 
+    // Upload-Schluessel NIE ins Repo: nur aus Umgebungsvariablen (siehe docs/release/PLAY_TEST.md). Ohne sie entsteht ein unsigniertes Release.
+    val keystorePath = System.getenv("KILO_KEYSTORE_FILE")
+    signingConfigs {
+        if (!keystorePath.isNullOrBlank()) {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("KILO_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KILO_KEY_ALIAS")
+                keyPassword = System.getenv("KILO_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
+            if (!keystorePath.isNullOrBlank()) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
