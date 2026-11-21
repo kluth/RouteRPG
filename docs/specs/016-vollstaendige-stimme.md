@@ -6,7 +6,7 @@ Status: Entwurf. Schritt 1 (Messung) für NRW erledigt, Ergebnis in `016-messung
 Kilo (und optional die Navigation) spricht möglichst alles mit aufgenommener Stimme statt Geräte-Stimme: feste Sätze, Zahlen, Abbiegeansagen mit Straßennamen, Orte, Vornamen der Kinder, Geschichten. Ohne Netz im Auto, ohne dass Orte oder Kindernamen unbemerkt an einen Cloud-Dienst gehen (AGENTS.md Regeln 2 und 3).
 
 ## Warum keine reinen Listen
-Straßennamen sind ein Long-Tail (in Deutschland rund eine Million verschiedene Namen). Wie viel die häufigsten N abdecken, ist **nicht gemessen** und wird in Schritt 1 ermittelt. Nachnamen kommen in der App nicht vor; Vornamen nur bei den Spielern; Ortsnamen oft (Ziel, Stopps, Geschichten, Unterkünfte).
+Straßennamen sind ein Long-Tail: allein in NRW 96.838 verschiedene Namen, die häufigsten 5.000 decken 50 % der Wegabschnitte (Messung in `016-messung.md`; nur NRW und Abschnitte statt Ansagen). Nachnamen kommen in der App nicht vor; Vornamen nur bei den Spielern; Ortsnamen oft (Ziel, Stopps, Geschichten, Unterkünfte).
 
 ## Strategie: vier Stufen mit Rückfall
 1. **Bausteine in der App (~400 Clips):** Abbiegeverben, Entfernungen, Zahlen, Kreisverkehr-Ausfahrten, „dann“, Autobahn-Begriffe. Sätze werden aus Bausteinen zusammengesetzt (wie `VoiceParts` für Tempolimit/Wetter).
