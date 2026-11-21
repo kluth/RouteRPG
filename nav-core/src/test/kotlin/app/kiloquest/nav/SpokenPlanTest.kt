@@ -105,3 +105,27 @@ class SpokenPlanTest {
         assertEquals(Spoken("Valhalla vorher"), plain)
     }
 }
+
+class DropMissingNamesTest {
+    private val slots = listOf(Slot.Clip("nav_in_300m"), Slot.Clip("nav_left"), Slot.Clip("nav_onto_die"), Slot.Name("Hauptstraße"))
+
+    @Test fun dropsNameAndArticleWhenNoClip() {
+        assertEquals(listOf(Slot.Clip("nav_in_300m"), Slot.Clip("nav_left")), dropMissingNames(slots) { false })
+    }
+
+    @Test fun keepsEverythingWhenNameHasClip() {
+        assertEquals(slots, dropMissingNames(slots) { it == "Hauptstraße" })
+    }
+
+    @Test fun otherClipsBeforeANameAreNotRemoved() {
+        val s = listOf(Slot.Clip("nav_left"), Slot.Name("X"))
+        assertEquals(listOf(Slot.Clip("nav_left")), dropMissingNames(s) { false })
+    }
+
+    @Test fun allVocabHasRecordings() {
+        // Aufnahmen der Bausteine liegen in den Assets (Spec 016); fehlen sie, faellt die App auf die Geraete-Stimme zurueck
+        val dir = java.io.File("../app/src/main/assets/kilo_voice")
+        val missing = NavVocab.ALL.keys.flatMap { id -> listOf("de", "en").filter { !java.io.File(dir, "$it/$id.ogg").exists() }.map { "$it/$id" } }
+        assertTrue(missing.isEmpty(), "Aufnahmen fehlen: $missing")
+    }
+}

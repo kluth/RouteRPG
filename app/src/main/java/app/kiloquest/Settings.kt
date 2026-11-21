@@ -49,8 +49,8 @@ data class AppSettings(
     val dynamicNotifIcons: Boolean = true,
     /** Ruhige Ansicht fuer Kinder: kein Huepfen, Konfetti oder bewegte Figuren. */
     val calmView: Boolean = false,
-    /** Abbiegeansagen aus Bausteinen bauen (Spec 016); mit aufgenommenen Clips, sobald vorhanden. Beta, Standard aus. */
-    val composedNavVoice: Boolean = false,
+    /** Abbiegeansagen aus Bausteinen bauen (Spec 016); mit aufgenommenen Clips, sobald vorhanden. Standard an (nur mit aufgenommenen Bausteinen klingt es nach Kilo, sonst Geraete-Stimme). */
+    val composedNavVoice: Boolean = true,
     /** Auto-Display: kleines Tierquiz nur bei Stillstand (< 3 km/h gemessen) und laufender Navigation; Standard aus. */
     val carParkedGames: Boolean = false,
     /** Eigene Namen der Kinder (bis zu 4, nur auf diesem Geraet gespeichert, nie im Export); leer = "Spieler N". */

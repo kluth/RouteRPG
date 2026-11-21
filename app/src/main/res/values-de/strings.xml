@@ -1028,6 +1028,6 @@
     <string name="cmp_sw">Südwesten</string>
     <string name="cmp_w">Westen</string>
     <string name="cmp_nw">Nordwesten</string>
-    <string name="set_composed_nav">Kurze Abbiegeansagen (Beta)</string>
-    <string name="set_composed_nav_hint">Baut Abbiegeansagen aus kurzen Bausteinen, in der aufgenommenen Stimme, wo es Aufnahmen gibt (sonst die Geräte-Stimme). Standardmäßig aus.</string>
+    <string name="set_composed_nav">Kurze Abbiegeansagen</string>
+    <string name="set_composed_nav_hint">Baut Abbiegeansagen aus kurzen Bausteinen, in der aufgenommenen Stimme, wo es Aufnahmen gibt (sonst die Geräte-Stimme). Straßennamen ohne Aufnahme entfallen.</string>
 </resources>

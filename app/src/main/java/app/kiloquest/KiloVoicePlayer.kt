@@ -49,10 +49,12 @@ class KiloVoicePlayer(private val context: Context) {
      */
     fun playSlots(slots: List<app.kiloquest.nav.Slot>): Boolean {
         val lang = Locale.getDefault().language
-        val paths = slots.map { slot ->
+        // Namen ohne Aufnahme (z. B. noch kein Pro-Fahrt-Paket) entfallen samt "auf die": Kilo spricht dann ohne Strassenname
+        val usable = app.kiloquest.nav.dropMissingNames(slots) { exists(nameFile(lang, it).path) }
+        val paths = usable.map { slot ->
             when (slot) {
                 is app.kiloquest.nav.Slot.Clip -> "kilo_voice/$lang/${slot.id}.ogg"
-                is app.kiloquest.nav.Slot.Name -> java.io.File(context.filesDir, "voice_cache/$lang/${VoiceIndex.hash(slot.text)}.ogg").path
+                is app.kiloquest.nav.Slot.Name -> nameFile(lang, slot.text).path
             }
         }
         return enqueue(paths)
@@ -76,6 +78,8 @@ class KiloVoicePlayer(private val context: Context) {
         queue.clear()
         release()
     }
+
+    private fun nameFile(lang: String, text: String) = java.io.File(context.filesDir, "voice_cache/$lang/${VoiceIndex.hash(text)}.ogg")
 
     private fun isFile(path: String) = path.startsWith("/")
 

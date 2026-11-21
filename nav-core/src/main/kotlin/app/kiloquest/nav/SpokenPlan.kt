@@ -139,6 +139,20 @@ object SpokenPlan {
     }
 }
 
+/**
+ * Laesst Namen ohne Aufnahme samt dem davor stehenden Artikel-Baustein ("auf die") weg, damit der Rest in einer Stimme gesprochen werden kann.
+ * [hasName] sagt, ob zu einem Namen ein Clip vorliegt.
+ */
+fun dropMissingNames(slots: List<Slot>, hasName: (String) -> Boolean): List<Slot> {
+    val out = ArrayList<Slot>(slots.size)
+    for (s in slots) {
+        if (s is Slot.Name && !hasName(s.text)) {
+            if ((out.lastOrNull() as? Slot.Clip)?.id?.startsWith("nav_onto_") == true) out.removeAt(out.lastIndex)
+        } else out += s
+    }
+    return out
+}
+
 enum class GermanArticle { DIE, DEN, DAS }
 
 /** Grober Artikel-Tipp fuer deutsche Strassennamen ("auf die Hauptstraße", "auf den Mühlenweg", "auf das ...ufer"); null = unsicher. */
